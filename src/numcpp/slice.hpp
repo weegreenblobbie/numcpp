@@ -1,3 +1,6 @@
+#ifndef _NUMCPP_SLICE_HPP_
+#define _NUMCPP_SLICE_HPP_
+
 #include <numcpp/types.hpp>
 
 namespace numcpp
@@ -233,3 +236,5 @@ _slice_helper0 operator"" _s (unsigned long long int n)
 
 
 } // namespace
+
+#endif
