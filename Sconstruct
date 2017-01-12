@@ -1,6 +1,19 @@
 # :mode=python:
 
-env = Environment(
+EnsureSConsVersion(2,5,0)
+
+env = Environment(CXX = "g++-5")
+
+cfg = Configure(env)
+
+have_gcc5 = cfg.CheckCXX()
+
+cfg.Finish()
+
+if not have_gcc5:
+    env = Environment()
+
+env.AppendUnique(
     CPPPATH = ['external', 'src'],
     CXXFLAGS = ['-std=c++11', '-Wall'],
 )
