@@ -1,0 +1,12 @@
+# :mode=python:
+
+env = Environment(
+    CPPPATH = ['external', 'src'],
+    CXXFLAGS = ['-std=c++11', '-Wall'],
+)
+
+src = Glob('src/numcpp/tests/*.cpp')
+
+src.append('src/executables/unittests.cpp')
+
+ut = env.Program('src/executables/unittests', src)

@@ -28,7 +28,7 @@ using complex128 = std::complex<float64>;
 
 // I haven't settled on final index type so I'm using this
 
-using index_t = uint64;
+using index_t = int64;
 
 
 } // namespace
