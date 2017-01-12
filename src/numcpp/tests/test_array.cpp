@@ -28,17 +28,17 @@ TEST_CASE( "numcpp::array", "[constructor]" )
         }
     }
 
-    f = 0;
+//~    f = 0;
 
-    for(int m = 0; m < 3; ++m)
-    {
-        for(int n = 0; n < 5; ++n)
-        {
-            std::cout << "a[" << m << "," << n << "] = " << a(m,n) << "\n";
+//~    for(int m = 0; m < 3; ++m)
+//~    {
+//~        for(int n = 0; n < 5; ++n)
+//~        {
+//~            std::cout << "a[" << m << "," << n << "] = " << a(m,n) << "\n";
 
-            REQUIRE( Approx(f) == a(m, n) );
-            f += 1.0f;
-        }
-    }
+//~            REQUIRE( Approx(f) == a(m, n) );
+//~            f += 1.0f;
+//~        }
+//~    }
 
 }

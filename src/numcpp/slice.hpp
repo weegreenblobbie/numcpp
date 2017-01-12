@@ -1,16 +1,44 @@
+//-----------------------------------------------------------------------------
+//
+// slice.hpp
+//
+// slice expressions are used to represent a range of index values, these
+// expressions are my attempt at mimicking Python slicing.
+//
+//-----------------------------------------------------------------------------
+
 #ifndef _NUMCPP_SLICE_HPP_
 #define _NUMCPP_SLICE_HPP_
 
 #include <numcpp/types.hpp>
 
+#include <bitset>
+#include <ostream>
+
+
 namespace numcpp
 {
 
 
-class _slice_helper0;
-class _slice_helper1;
-class _slice_helper2;
+// forward
 
+class slice;
+
+struct missing {};
+
+
+namespace detail
+{
+    // helper classes to enable operator expressions for slices.
+    class slice_0b100;
+    class slice_0b110;
+    class slice_0b111;
+    class slice_0b10_;
+    class slice_0b010;
+    class slice_0b001;
+    class slice_0b101;
+    class slice_0b00_ {};
+}
 
 
 class slice
@@ -18,221 +46,388 @@ class slice
 
 public:
 
-    slice();
+    slice(index_t start_);                                 // 0b100
+    slice(index_t start_, index_t stop_);                  // 0b110
+    slice(index_t start_, index_t stop_, index_t step_);   // 0b111
 
-    // slice x0 = 50;
-    slice(index_t i0_); // implicit conversion okay?
+    slice(missing,        index_t stop_);                  // 0b010
+    slice(missing,        missing,      index_t step_);    // 0b001
+    slice(index_t start_, missing,      index_t step_);    // 0b101
 
-    slice(index_t i0_, index_t i1_);
-    slice(index_t i0_, index_t i1_, index_t step_);
 
     slice(const slice & copy);
 
-    // convert from slice helper
-    slice(const _slice_helper0 & sh);
-    slice(const _slice_helper1 & sh);
-    slice(const _slice_helper2 & sh);
+    index_t start() const     { return _start;}
+    index_t stop() const      { return _stop;}
+    index_t step() const      { return _step;}
 
-    index_t i0() const                 { return _i0; }
-    index_t i1() const                 { return _i1; }
-    index_t step() const               { return _step; }
+    bool start_valid() const    { return _valid[2]; }
+    bool stop_valid() const     { return _valid[1]; }
+    bool step_valid() const     { return _valid[0]; }
 
     // operators
 
-    slice operator-() const            { return slice(-_i0, -_i1, -_step); }
-    slice operator+() const            { return slice(*this); }
+    friend std::ostream & operator<<(std::ostream &, const slice &);
 
-    _slice_helper0 operator+(index_t rhs) const;
-    _slice_helper1 operator|(const _slice_helper0 & rhs) const;
-    _slice_helper1 operator|(index_t rhs) const;
+    slice operator-() const    { return slice(-_start, -_stop, -_step); }
+    slice operator+() const    { return slice(*this); }
 
+    detail::slice_0b100 operator+(index_t rhs) const;
+    detail::slice_0b110 operator|(const detail::slice_0b100 & rhs) const;
+    detail::slice_0b110 operator|(index_t rhs) const;
+
+    // convert from help objects
+    slice(const detail::slice_0b100 &);
+    slice(const detail::slice_0b110 &);
+    slice(const detail::slice_0b111 &);
+    slice(const detail::slice_0b10_ &);
+    slice(const detail::slice_0b010 &);
+    slice(const detail::slice_0b001 &);
+    slice(const detail::slice_0b101 &);
 
 protected:
 
-    index_t _i0;
-    index_t _i1;
-    index_t _step;
+    index_t         _start;
+    index_t         _stop;
+    index_t         _step;
+    std::bitset<3>  _valid;
+
 };
 
-
-// custom literals, so expressions like:
+// literal operator to support these expressions starting with a constant:
 //
-//     5_s;          // slice(5, 6, 1);
-//     0_s | 8;      // slice(0, 8, 1);
-//     2_s | 8 | 3;  // slice(2, 8, 3);
+//     5_s;          // slice(5);                  0b100
+//     0_s | 8;      // slice(0, 8);               0b110
+//     2_s | 8 | 3;  // slice(2, 8, 3);            0b111
 //
 
-_slice_helper0 operator"" _s (unsigned long long int n);
+detail::slice_0b100 operator"" _s (unsigned long long int n);
+
+
+//-----------------------------------------------------------------------------
+//
+// Python slice expressions:
+//
+//      :5   // slice(None, 5, None)  start at begin, stop at 5
+//      5:   // slice(5, None, None)  start at 5,     stop at end
+//      ::2  // slice(None, None, 2)  start at begin, stop at end,   step by 2
+//     6::2  // slice(6, None, 2)     start at 6,     stop at end,   step by 2
+//
+//     :-5   // slice(None, -5, None) start at begin, stop at end-5
+//     -5:   // slice(-5, None, None) start at end-5, stop at end
+//     ::-2  // slice(None, None, 2)  start at end,   stop at begin, step by -2
+//   -6::-2  // slice(6, None, 2)     start at end-6, stop at begin, step by -2
+//
+// C++ slice expressions using the missing object:
+//
+//     missing _;   // delcare short hand missing object
+//
+//     Python            C++
+//       :5              _|5;                             (returns slice_0b010)
+//      5:               5|_;                             (returns slice_0b100)
+//      ::2              _|_|2;                           (returns slice_0b001)
+//     6::2              6|_|2;                           (returns slice_0b101)
+//
+
+detail::slice_0b010 operator|(const missing &, index_t);               // :5
+detail::slice_0b10_ operator|(index_t, const missing &);               // 5:
+detail::slice_0b00_ operator|(const missing &, const missing &);       // ::2 part 1
+detail::slice_0b001 operator|(const detail::slice_0b00_ &, index_t);   // ::2 part 2
+detail::slice_0b101 operator|(const detail::slice_0b10_ &, index_t);   // 6::2
 
 
 //-----------------------------------------------------------------------------
 // inline implementations
 
-inline
-slice::
-slice()
+
+inline slice:: slice(index_t start_)
     :
-    _i0(0),
-    _i1(1),
-    _step(1)
+    _start(start_), _stop(), _step(), _valid(0b100)
+{}
+
+
+inline slice:: slice(index_t start_, index_t stop_)
+    :
+    _start(start_), _stop(stop_), _step(), _valid(0b110)
+{}
+
+
+inline slice:: slice(index_t start_, index_t stop_, index_t step_)
+    :
+    _start(start_), _stop(stop_), _step(step_), _valid(0b111)
+{}
+
+
+inline slice:: slice(missing, index_t stop_)
+    :
+    _start(), _stop(stop_), _step(), _valid(0b010)
+{}
+
+
+inline slice:: slice(missing, missing, index_t step_)
+    :
+    _start(), _stop(), _step(step_), _valid(0b001)
+{}
+
+
+inline slice:: slice(index_t start_, missing, index_t step_)
+    :
+    _start(start_), _stop(), _step(step_), _valid(0b101)
+{}
+
+
+inline
+std::ostream &
+operator<<(std::ostream & out, const slice & s)
 {
+    out << "slice(";
+
+    if(s.start_valid()) out << s.start();
+    else                out << "None";
+
+    out << ", ";
+
+    if(s.stop_valid()) out << s.stop();
+    else               out << "None";
+
+    out << ", ";
+
+    if(s.step_valid()) out << s.step();
+    else               out << "None";
+
+    return out << ")";
 }
 
-
-inline
-slice::
-slice(index_t i0_)
-    :
-    _i0(i0_),
-    _i1(i0_ + 1),
-    _step(1)
-{
-}
-
-
-inline
-slice::
-slice(index_t i0_, index_t i1_)
-    :
-    _i0(i0_),
-    _i1(i1_),
-    _step(1)
-{
-}
-
-
-inline
-slice::
-slice(index_t i0_, index_t i1_, index_t step_)
-    :
-    _i0(i0_),
-    _i1(i1_),
-    _step(step_)
-{
-}
 
 
 //-----------------------------------------------------------------------------
 // slice helpers
 
 
-class _slice_helper2
+namespace detail
+{
+
+class slice_0b111
 {
 private:
-    _slice_helper2(index_t a, index_t b, index_t c) : _a(a), _b(b), _c(c) {}
+    slice_0b111(index_t a, index_t b, index_t c) : _a(a), _b(b), _c(c) {}
 
     index_t _a;
     index_t _b;
     index_t _c;
 
-    friend _slice_helper1;
+    friend slice_0b110;
     friend slice;
 };
 
 
-class _slice_helper1
+class slice_0b110
 {
 public:
 
-    _slice_helper2 operator|(index_t c) const { return _slice_helper2(_a, _b, c); }
+    slice_0b111 operator|(index_t c) const { return slice_0b111(_a, _b, c); }
 
 private:
 
-    _slice_helper1(index_t a, index_t b) : _a(a), _b(b) {}
+    slice_0b110(index_t a, index_t b) : _a(a), _b(b) {}
 
     index_t _a;
     index_t _b;
 
-    friend _slice_helper0;
+    friend slice_0b100;
     friend slice;
 };
 
 
-class _slice_helper0
+class slice_0b100
 {
 public:
 
-    _slice_helper1 operator|(index_t b) const { return _slice_helper1(_a,b);}
+    slice_0b110 operator|(index_t b) const { return slice_0b110(_a,b);}
 
-    _slice_helper0 operator-() const { return _slice_helper0(-_a); }
+    slice_0b100 operator-() const { return slice_0b100(-_a); }
 
 private:
-    _slice_helper0(index_t a) : _a(a) {}
+    slice_0b100(index_t a) : _a(a) {}
 
     index_t _a;
 
     friend slice;
-    friend _slice_helper0 operator"" _s (unsigned long long int n);
+    friend slice_0b100 numcpp::operator"" _s (unsigned long long int n);
 };
 
 
-inline
-slice::
-slice(const _slice_helper0 & from_slice)
+class slice_0b010
+{
+public:
+
+
+private:
+    slice_0b010(index_t b) : _b(b) {}
+
+    index_t _b;
+
+    friend slice;
+    friend detail::slice_0b010 numcpp::operator|(const missing &, index_t);
+};
+
+
+class slice_0b001
+{
+public:
+
+
+private:
+    slice_0b001(index_t c) : _c(c) {}
+
+    index_t _c;
+
+    friend slice;
+    friend detail::slice_0b001 numcpp::operator|(const detail::slice_0b00_ &, index_t);
+};
+
+
+class slice_0b101
+{
+public:
+
+
+private:
+    slice_0b101(index_t a, index_t c) : _a(a), _c(c) {}
+
+    index_t _a;
+    index_t _c;
+
+    friend slice;
+    friend detail::slice_0b101 numcpp::operator|(const detail::slice_0b10_ &, index_t);
+};
+
+
+class slice_0b10_
+{
+public:
+
+
+private:
+    slice_0b10_(index_t a) : _a(a) {}
+
+    index_t _a;
+
+    friend slice;
+    friend detail::slice_0b10_ numcpp::operator|(index_t a, const missing &);
+    friend detail::slice_0b101 numcpp::operator|(const detail::slice_0b10_ &, index_t);
+};
+
+
+} // namespace detail
+
+
+//-----------------------------------------------------------------------------
+// slice constructor from helper objects
+
+inline slice::slice(const detail::slice_0b100 & helper)
     :
-    _i0(from_slice._a),
-    _i1(_i0 + 1),
-    _step(1)
-{
-}
+    _start(helper._a), _stop(), _step(), _valid(0b100)
+{}
 
 
-inline
-slice::
-slice(const _slice_helper1 & from_slice)
+inline slice::slice(const detail::slice_0b10_ & helper)
     :
-    _i0(from_slice._a),
-    _i1(from_slice._b),
-    _step(1)
-{
-}
+    _start(helper._a), _stop(), _step(), _valid(0b100)
+{}
 
-inline
-slice::
-slice(const _slice_helper2 & from_slice)
+
+inline slice::slice(const detail::slice_0b110 & helper)
     :
-    _i0(from_slice._a),
-    _i1(from_slice._b),
-    _step(from_slice._c)
+    _start(helper._a), _stop(helper._b), _step(), _valid(0b110)
+{}
+
+
+inline slice::slice(const detail::slice_0b111 & helper)
+    :
+    _start(helper._a), _stop(helper._b), _step(helper._c), _valid(0b111)
+{}
+
+
+inline slice::slice(const detail::slice_0b010 & helper)
+    :
+    _start(), _stop(helper._b), _step(), _valid(0b010)
+{}
+
+
+inline slice::slice(const detail::slice_0b001 & helper)
+    :
+    _start(), _stop(), _step(helper._c), _valid(0b001)
+{}
+
+
+inline slice::slice(const detail::slice_0b101 & helper)
+    :
+    _start(helper._a), _stop(), _step(helper._c), _valid(0b101)
+{}
+
+
+//-----------------------------------------------------------------------------
+// slice operators
+
+inline detail::slice_0b110 slice::operator|(index_t rhs) const
 {
+    return detail::slice_0b110(_start, rhs);
 }
 
 
-inline
-_slice_helper1
-slice::
-operator|(index_t rhs) const
+inline detail::slice_0b100 slice::operator+(index_t rhs) const
 {
-    return _slice_helper1(_i0, rhs);
+    return detail::slice_0b100(_start + rhs);
 }
 
 
-inline
-_slice_helper0
-slice::
-operator+(index_t rhs) const
+inline detail::slice_0b110 slice::operator|(const detail::slice_0b100 & rhs) const
 {
-    return _slice_helper0(_i0 + rhs);
-}
-
-
-inline
-_slice_helper1
-slice::
-operator|(const _slice_helper0 & rhs) const
-{
-    return _slice_helper1(_i0, rhs._a);
+    return detail::slice_0b110(_start, rhs._a);
 }
 
 
 //-----------------------------------------------------------------------------
 // custom literal operator
 
-_slice_helper0 operator"" _s (unsigned long long int n)
+detail::slice_0b100 operator"" _s (unsigned long long int n)
 {
-    return _slice_helper0(static_cast<index_t>(n));
+    return detail::slice_0b100(static_cast<index_t>(n));
 }
 
+
+//-----------------------------------------------------------------------------
+// other operators
+
+inline detail::slice_0b010 operator|(const missing &, index_t b)
+{
+    return detail::slice_0b010(b);
+}
+
+
+inline detail::slice_0b10_ operator|(index_t a, const missing &)
+{
+    return detail::slice_0b10_(a);
+}
+
+
+inline detail::slice_0b00_ operator|(const missing &, const missing &)
+{
+    return detail::slice_0b00_();
+}
+
+
+inline detail::slice_0b001 operator|(const detail::slice_0b00_ &, index_t c)
+{
+    return detail::slice_0b001(c);
+}
+
+
+inline detail::slice_0b101 operator|(const detail::slice_0b10_ & a, index_t c)
+{
+    return detail::slice_0b101(a._a, c);
+}
 
 
 } // namespace

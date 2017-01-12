@@ -2,7 +2,11 @@
 
 EnsureSConsVersion(2,5,0)
 
-env = Environment(CXX = "g++-5")
+env = Environment(
+    CXX = "g++-5",
+    CPPPATH = ['external', 'src'],
+    CXXFLAGS = ['-std=c++14', '-Wall'],
+)
 
 cfg = Configure(env)
 
@@ -11,15 +15,13 @@ have_gcc5 = cfg.CheckCXX()
 cfg.Finish()
 
 if not have_gcc5:
-    env = Environment()
+    import sys
+    raise RuntimeError('numcpp requires c++14 support')
 
-env.AppendUnique(
-    CPPPATH = ['external', 'src'],
-    CXXFLAGS = ['-std=c++11', '-Wall'],
-)
 
 src = Glob('src/numcpp/tests/*.cpp')
-
 src.append('src/executables/unittests.cpp')
 
 ut = env.Program('src/executables/unittests', src)
+
+env.Default(ut)
