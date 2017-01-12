@@ -177,31 +177,11 @@ TEST_CASE( "numcpp::slice::operators 4", "[using missing]" )
         REQUIRE( s.step_valid()  == false );
     }
 
-    SECTION(" -5: ")
-    {
-        slice s = -5 | _;
-
-        REQUIRE( s.start() == -5  );
-        REQUIRE( s.start_valid() == true  );
-        REQUIRE( s.stop_valid()  == false );
-        REQUIRE( s.step_valid()  == false );
-    }
-
     SECTION(" :5 ")
     {
         slice s = _ | 5;
 
         REQUIRE( s.stop() == 5  );
-        REQUIRE( s.start_valid() == false );
-        REQUIRE( s.stop_valid()  == true  );
-        REQUIRE( s.step_valid()  == false );
-    }
-
-    SECTION(" :-5 ")
-    {
-        slice s = _ | -5;
-
-        REQUIRE( s.stop() == -5  );
         REQUIRE( s.start_valid() == false );
         REQUIRE( s.stop_valid()  == true  );
         REQUIRE( s.step_valid()  == false );
@@ -217,33 +197,12 @@ TEST_CASE( "numcpp::slice::operators 4", "[using missing]" )
         REQUIRE( s.step_valid()  == true  );
     }
 
-    SECTION(" ::-2 ")
-    {
-        slice s = _ | _ | -2;
-
-        REQUIRE( s.step() == -2  );
-        REQUIRE( s.start_valid() == false );
-        REQUIRE( s.stop_valid()  == false );
-        REQUIRE( s.step_valid()  == true  );
-    }
-
     SECTION(" 6::2 ")
     {
         slice s = 6 | _ | 2;
 
         REQUIRE( s.start() == 6 );
         REQUIRE( s.step() == 2 );
-        REQUIRE( s.start_valid() == true );
-        REQUIRE( s.stop_valid()  == false );
-        REQUIRE( s.step_valid()  == true  );
-    }
-
-    SECTION(" -6::-2 ")
-    {
-        slice s = -6 | _ | -2;
-
-        REQUIRE( s.start() == -6 );
-        REQUIRE( s.step() == -2 );
         REQUIRE( s.start_valid() == true );
         REQUIRE( s.stop_valid()  == false );
         REQUIRE( s.step_valid()  == true  );
