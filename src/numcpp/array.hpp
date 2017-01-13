@@ -3,9 +3,9 @@
 
 #include <numcpp/types.hpp>
 
-#include <fmt/fmt.hpp>
+#include <fmt/fmt.hpp>  // https://github.com/fmtlib/fmt
 
-#include <iostream>
+#include <initializer_list>
 #include <memory>
 #include <vector>
 
@@ -30,13 +30,15 @@ public:
 
     using value_type = R;
 
-    array();
-//~    explicit array(std::size_t);
-    array(const std::vector<uint64> & shape, const R & value = R());
-//~    array(const array & other);
+    array(const std::initializer_list<R> & il);
+
+    array(const std::vector<uint64> & shape, const R & value = R()); // std::vector like
+
+//~    array(const array & other) = default;
+
+//~    array<R> & operator=(const array & rhs) = default;
+
 //~    array(array && other);
-//~    array();
-//~    array(std::initializer_list<T> il, const std::vector<uint32> & shape);
 //~
 //~    template <class U>
 //~    array<U>                  astype() const;
@@ -45,8 +47,8 @@ public:
     const uint32              ndim() const                   { return _shape.size(); }
     std::size_t               size() const                   { return _size; }
     const std::vector<uint64> shape() const                  { return _shape; }
-//~    array<R> &                transpose();
-//~    array<R> &                T();
+//~    array<R>                  transpose();
+//~    array<R>                  T();
 
     std::string               print(const std::string & fmt_ = "") const;
 //~
@@ -120,7 +122,7 @@ namespace detail
         std::size_t s = ! shape.empty();
         for(auto x : shape)
         {
-            if(x == 0) continue;
+            if(x == 0) throw std::runtime_error("shape contains 0's!");
             s *= x;
         }
 
@@ -130,15 +132,20 @@ namespace detail
 
 template <class R>
 array<R>::
-array()
+array(const std::initializer_list<R> & il)
     :
-    _size(0),
-    _array(nullptr),
-    _data(nullptr),
-    _shape(),
+    _size(il.size()),
+    _array(std::make_shared<std::vector<R>>(il)),
+    _data(_array->data()),
+    _shape({_size}),
     _strides(),
     _offsets()
-{}
+{
+    if(_size == 0) throw std::runtime_error("initializer list is emtpy!");
+
+    // FIXME: fix strides & offsets
+}
+
 
 
 template <class R>
