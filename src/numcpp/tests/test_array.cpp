@@ -12,10 +12,28 @@ TEST_CASE( "numcpp::array", "[constructor]" )
     auto a = array<>();
 
     REQUIRE( a.size() == 0 );
+    REQUIRE( a.ndim() == 0 );
+    REQUIRE( a.shape().empty() == true );
 
-    a = array<float32>({3, 5}, 3.13f);
+    std::vector<uint64> shape = {3};
 
+    a = array<float32>(shape, 3.14f);
+
+    WARN("a = " << a);
+
+    shape = {3, 5};
+
+    a = array<float32>(shape, 0.0f);
+
+    WARN("a = " << a);
+
+    REQUIRE( a.shape() == shape );
     REQUIRE( a.size() == 15 );
+    REQUIRE( a.ndim() == 2 );
+
+    a(1,3) = 26;
+
+    WARN("a = " << a);
 
     float32 f = 0;
 
@@ -27,6 +45,8 @@ TEST_CASE( "numcpp::array", "[constructor]" )
             f += 1.0f;
         }
     }
+
+    WARN("a = " << a);
 
 //~    f = 0;
 
