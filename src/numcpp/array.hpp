@@ -3,6 +3,8 @@
 
 #include <numcpp/types.hpp>
 
+#include <fmt/fmt.hpp>
+
 #include <iostream>
 #include <memory>
 #include <vector>
@@ -45,6 +47,8 @@ public:
     const std::vector<uint64> shape() const                  { return _shape; }
 //~    array<R> &                transpose();
 //~    array<R> &                T();
+
+    std::string               print(const std::string & fmt_ = "") const;
 //~
 //~    // unary ops
 //~
@@ -88,8 +92,6 @@ public:
 //~    array<R> operator^=( const R & val );
 //~    array<R> operator<<=( const R & val );
 //~    array<R> operator>>=( const R & val );
-
-friend std::ostream & operator<< <>(std::ostream &, const array<R> &);
 
 protected:
 
@@ -194,42 +196,90 @@ template <class R>
 std::ostream &
 operator<<(std::ostream & out, const array<R> & a)
 {
-    if(a.size() > 100) throw std::runtime_error("array to big to print");
+    return out << a.print();
+}
 
-    if(a.ndim() > 2) throw std::runtime_error("fixme");
 
-    if(a.ndim() == 1)
+namespace detail
+{
+    // defaults for POD values
+    template <class T> std::string _array_R_to_fmt() { return "{:g}"; }
+
+    template <> std::string _array_R_to_fmt<int8 >() { return "{:d}"; }
+    template <> std::string _array_R_to_fmt<int16>() { return "{:d}"; }
+    template <> std::string _array_R_to_fmt<int32>() { return "{:d}"; }
+    template <> std::string _array_R_to_fmt<int64>() { return "{:d}"; }
+
+    template <> std::string _array_R_to_fmt<uint8 >() { return "{:d}"; }
+    template <> std::string _array_R_to_fmt<uint16>() { return "{:d}"; }
+    template <> std::string _array_R_to_fmt<uint32>() { return "{:d}"; }
+    template <> std::string _array_R_to_fmt<uint64>() { return "{:d}"; }
+
+    template <> std::string _array_R_to_fmt<float32>() { return "{:11.8f}"; }
+
+    template <> std::string _array_R_to_fmt<complex64>() { return "{:11.8f}+{:.8f}j"; }
+
+    template <> std::string _array_R_to_fmt<complex128>() { return "{:14.11f}+{:.11f}j"; }
+
+    template <class T> std::string _format(const std::string & fmt_, const T & v) { return fmt::format(fmt_, v); }
+
+    template <> std::string _format<complex64>(const std::string & fmt_, const complex64 & v)  { return fmt::format(fmt_, v.real(), v.imag()); }
+    template <> std::string _format<complex128>(const std::string & fmt_, const complex128 & v) { return fmt::format(fmt_, v.real(), v.imag()); }
+
+}
+
+
+template <class R>
+std::string
+array<R>::
+print(const std::string & fmt_in) const
+{
+    if(size() > 100) throw std::runtime_error("array to big to print");
+
+    if(ndim() > 2) throw std::runtime_error("fixme");
+
+    std::string fmt_(fmt_in);
+
+    if(fmt_.length() == 0) fmt_ = detail::_array_R_to_fmt<R>();
+
+    std::stringstream out;
+
+    const array<R> & a = *this;
+
+    if(ndim() == 1)
     {
-        out << "array([";
+        out << "array([ ";
 
-        for(auto x : *a._array)
+        for(auto i = 0u; i < _size; ++i)
         {
-            out << x << ", ";
+            out << detail::_format(fmt_, a(i));
+            if(i + 1 < a.size()) out << ", ";
         }
 
-        out << "])\n";
+        out << " ])\n";
     }
     else
-    if(a.ndim() == 2)
+    if(ndim() == 2)
     {
         out << "array([\n";
 
-        for(auto i = 0u; i < a._shape[0]; ++i)
+        for(auto i = 0u; i < _shape[0]; ++i)
         {
-            out << "    [";
+            out << "    [ ";
 
-            for(auto j = 0u; j < a._shape[1]; ++j)
+            for(auto j = 0u; j < _shape[1]; ++j)
             {
-                out << a(i,j) << ",";
+                out << detail::_format(fmt_, a(i, j));
+                if(j + 1 < _shape[1]) out << ", ";
             }
 
-            out << "],\n";
+            out << " ],\n";
         }
 
         out << "])";
     }
 
-    return out;
+    return out.str();
 }
 
 
