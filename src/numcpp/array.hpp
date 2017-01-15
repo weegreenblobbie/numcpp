@@ -2,6 +2,7 @@
 #define _NUMCPP_ARRAY_HPP_
 
 #include <numcpp/types.hpp>
+#include <numcpp/slice.hpp>
 
 #include <fmt/fmt.hpp>  // https://github.com/fmtlib/fmt
 
@@ -70,6 +71,9 @@ public:
 //~    const R & operator()(index_t i, index_t j, index_t k) const;
 //~    const R & operator()(index_t i, index_t j, index_t k, index_t l) const;
 //~
+
+    array<R> operator()(const slice & s);
+
 //~
 //~    array<R> & operator=(const array<R> & rhs);
 //~
@@ -96,6 +100,8 @@ public:
 //~    array<R> operator>>=( const R & val );
 
 protected:
+
+    array();
 
     std::size_t                     _size;
 
@@ -129,6 +135,14 @@ namespace detail
         return s;
     }
 }
+
+
+template <class R>
+array<R>::
+array()
+    : _size(0), _array(nullptr), _data(nullptr), _shape(), _strides(), _offsets()
+{}
+
 
 template <class R>
 array<R>::
@@ -178,6 +192,17 @@ array<R>::
 operator()(index_t i) const
 {
     return _data[i];
+}
+
+
+template <class R>
+array<R>
+array<R>::
+operator()(const slice & s)
+{
+    array<R> out;
+
+
 }
 
 
