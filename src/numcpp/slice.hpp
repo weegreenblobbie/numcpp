@@ -13,9 +13,8 @@
 #include <numcpp/types.hpp>
 
 #include <bitset>
-#include <ostream>
-
 #include <iostream>
+#include <ostream>
 
 
 namespace numcpp
@@ -68,6 +67,8 @@ public:
     bool step_valid() const     { return _valid[0]; }
 
     uint64 get_size(uint64 axis_length) const;
+
+    uint64 get_valid_bits() const  { return static_cast<uint64>(_valid.to_ulong());}
 
     // operators
 
@@ -474,7 +475,7 @@ private:
 };
 
 
-} // namespace detail
+} // namespace
 
 
 //-----------------------------------------------------------------------------
@@ -587,4 +588,5 @@ inline detail::slice_0b1_1 operator|(const detail::slice_0b1__ & a, index_t c)
 
 } // namespace
 
-#endif
+
+#endif // _NUMCPP_SLICE_HPP_
