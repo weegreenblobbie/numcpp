@@ -36,7 +36,7 @@ public:
 
     static slice_iterator end() { return slice_iterator(0,0,0); }
 
-    slice_iterator(uint64 start, uint64 stop, int64 step)
+    slice_iterator(int64 start, int64 stop, int64 step)
         :
         _start(start),
         _stop(stop),
@@ -59,7 +59,9 @@ public:
         else
         if(_step < 0)
         {
-            if(_start >= _stop - _step)
+            std::cout << "    _start + _step > " << (_start + _step) << " > " << _stop << "\n";
+
+            if(_start + _step > _stop)
             {
                 _start += _step;
                 return *this;
@@ -83,12 +85,12 @@ public:
 
     bool operator!=(const slice_iterator & rhs) const {return !(*this == rhs);}
 
-    uint64 operator*() {return _start;}
+    uint64 operator*() {return static_cast<uint64>(_start);}
 
 protected:
 
-    uint64 _start;
-    uint64 _stop;
+    int64 _start;
+    int64 _stop;
     int64 _step;
 };
 

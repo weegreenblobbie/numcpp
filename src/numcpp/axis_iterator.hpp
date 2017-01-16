@@ -47,6 +47,11 @@ private:
 //-----------------------------------------------------------------------------
 // inline implementation
 
+
+#define DOUT std::cout
+//~#define DOUT if(false) std::cout
+
+
 inline
 axis_iterator::
 axis_iterator(uint64 axis_length, const slice & s)
@@ -56,50 +61,54 @@ axis_iterator(uint64 axis_length, const slice & s)
     index_t start = 0;
     index_t stop  = 0;
 
+    DOUT << "s.get_valid_bits() = " << s.get_valid_bits() << "\n";
+
     switch(s.get_valid_bits())
     {
         // :b
-        case 0b010:
+        case 0b010: // 2
         {
             start = 0;
             stop  = s.stop();
+            auto step = s.step();
+
+            DOUT
+                << "start = " << start << "\n"
+                << "stop  = " << stop << "\n"
+                << "step  = " << step << std::endl;
 
             if(stop < 0) stop += axis_length;
 
-            _begin = slice_iterator(
-                static_cast<uint64>(start),
-                static_cast<uint64>(stop),
-                1
-            );
+            DOUT
+                << "    start = " << start << "\n"
+                << "    stop  = " << stop << std::endl;
+
+            _begin = slice_iterator(start, stop, step);
 
             break;
         }
 
-        // 5_s, slice(5)
-        case 0b100:
+        // a
+        case 0b100: // 4
         {
             start = s.start();
             stop  = axis_length;
 
             if(start < 0) start += axis_length;
 
-            _begin = slice_iterator(
-                static_cast<uint64>(start),
-                static_cast<uint64>(stop),
-                1
-            );
+            _begin = slice_iterator(start, stop, 1);
 
             break;
         }
 
         // a:b
-        case 0b110:
+        case 0b110: // 6
         {
             start = s.start();
             stop  = s.stop();
             index_t step = 1;
 
-            std::cout
+            DOUT
                 << "start = " << start << "\n"
                 << "stop  = " << stop << "\n"
                 << "step  = " << step << std::endl;
@@ -107,7 +116,7 @@ axis_iterator(uint64 axis_length, const slice & s)
             if(start < 0) start += axis_length;
             if(stop < 0)  stop  += axis_length;
 
-            std::cout
+            DOUT
                 << "    start = " << start << "\n"
                 << "    stop  = " << stop << std::endl;
 
@@ -128,23 +137,61 @@ axis_iterator(uint64 axis_length, const slice & s)
                 stop = axis_length;
             }
 
-            _begin = slice_iterator(
-                static_cast<uint64>(start),
-                static_cast<uint64>(stop),
-                step
-            );
+            _begin = slice_iterator(start, stop, step);
+
+            break;
+        }
+
+        // :b:c
+        case 0b011: // 3
+        {
+            start = 0;
+            stop  = s.stop();
+            auto step = s.step();
+
+            DOUT
+                << "start = " << start << "\n"
+                << "stop  = " << stop << "\n"
+                << "step  = " << step << std::endl;
+
+            if(stop < 0) stop += axis_length;
+
+            DOUT
+                << "    .stop = " << stop << std::endl;
+
+            if(step < 0)
+            {
+                stop = start;
+                start = axis_length - 1;
+            }
+
+            DOUT
+                << "    ..start = " << start << "\n"
+                << "    ..stop  = " << stop << std::endl;
+
+            if(start == stop)
+            {
+                step = 0;
+            }
+
+            DOUT
+                << "    start = " << start << "\n"
+                << "    stop  = " << stop << "\n"
+                << "    step  = " << step << std::endl;
+
+            _begin = slice_iterator(start, stop, step);
 
             break;
         }
 
         // a:b:c
-        case 0b111:
+        case 0b111: // 7
         {
             start = s.start();
             stop  = s.stop();
             auto step = s.step();
 
-            std::cout
+            DOUT
                 << "start = " << start << "\n"
                 << "stop  = " << stop << "\n"
                 << "step  = " << step << std::endl;
@@ -152,9 +199,12 @@ axis_iterator(uint64 axis_length, const slice & s)
             if(start < 0) start += axis_length;
             if(stop < 0)  stop  += axis_length;
 
-            std::cout
+            //~            if(step < 0) stop -= step;
+
+            DOUT
                 << "    start = " << start << "\n"
-                << "    stop  = " << stop << std::endl;
+                << "    stop  = " << stop << "\n"
+                << "    step  = " << step << std::endl;
 
             if(step > 0)
             {
@@ -175,11 +225,7 @@ axis_iterator(uint64 axis_length, const slice & s)
                     stop = axis_length;
                 }
 
-                _begin = slice_iterator(
-                    static_cast<uint64>(start),
-                    static_cast<uint64>(stop),
-                    step
-                );
+                _begin = slice_iterator(start, stop, step);
             }
             else
             if(step < 0)
@@ -201,27 +247,37 @@ axis_iterator(uint64 axis_length, const slice & s)
                     start = axis_length - 1;
                 }
 
-                _begin = slice_iterator(
-                    static_cast<uint64>(start),
-                    static_cast<uint64>(stop),
-                    step
-                );
+                _begin = slice_iterator(start, stop, step);
             }
 
             break;
         }
 
-        // ::2
-        case 0b001:
+        // ::c
+        case 0b001: // 1
         {
-            _begin = slice_iterator(0, axis_length, s.step());
+            auto step = s.step();
+
+            if(step > 0)
+            {
+                _begin = slice_iterator(0, axis_length, step);
+            }
+            else
+            if(step < 0)
+            {
+                _begin = slice_iterator(axis_length - 1, -1, step);
+            }
 
             break;
         }
 
-        // 6::2
-        case 0b101:
+        // a::c
+        case 0b101: // 5
         {
+            DOUT
+                << "start = " << s.start() << "\n"
+                << "step  = " << s.step() << std::endl;
+
             start = s.start();
             stop  = axis_length;
 
@@ -229,7 +285,15 @@ axis_iterator(uint64 axis_length, const slice & s)
 
             auto step = s.step();
 
-            if(step < 0) stop = 0;
+            if(step < 0)
+            {
+                stop = -1;
+            }
+
+            DOUT
+                << "    start = " << start << "\n"
+                << "    stop  = " << stop << "\n"
+                << "    step  = " << step << std::endl;
 
             _begin = slice_iterator(start, stop, step);
 
@@ -238,7 +302,7 @@ axis_iterator(uint64 axis_length, const slice & s)
 
         default:
         {
-            throw std::runtime_error("oops, missed case");
+            throw std::runtime_error(__FILE__ ": oops, missed case");
 
             break;
         }
@@ -254,6 +318,7 @@ inline std::vector<uint64> axis_iterator::indices() const
 
     for(auto x : tmp)
     {
+        DOUT << "        push " << x << "\n";
         out.push_back(x);
     }
 

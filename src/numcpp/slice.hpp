@@ -37,6 +37,7 @@ namespace detail
     class slice_0b___ {};
     class slice_0b__1;
     class slice_0b_1_;
+    class slice_0b_11;
     class slice_0b1__;
     class slice_0b1_1;
 }
@@ -52,8 +53,8 @@ public:
     slice(index_t start_, index_t stop_, index_t step_);   // 0b111
 
     slice(missing,        index_t stop_);                  // 0b_1_
-    slice(missing,        missing,      index_t step_);    // 0b__1
-    slice(index_t start_, missing,      index_t step_);    // 0b1_1
+    slice(missing,        missing,        index_t step_);  // 0b__1
+    slice(index_t start_, missing,        index_t step_);  // 0b1_1
 
 
     slice(const slice & copy);
@@ -85,9 +86,10 @@ public:
     slice(const detail::slice_0b100 &);
     slice(const detail::slice_0b110 &);
     slice(const detail::slice_0b111 &);
-    slice(const detail::slice_0b_1_ &);
-    slice(const detail::slice_0b1__ &);
     slice(const detail::slice_0b__1 &);
+    slice(const detail::slice_0b_1_ &);
+    slice(const detail::slice_0b_11 &);
+    slice(const detail::slice_0b1__ &);
     slice(const detail::slice_0b1_1 &);
 
 protected:
@@ -128,54 +130,54 @@ detail::slice_0b100 operator"" _s (unsigned long long int n);
 //     missing _;   // delcare short hand missing object
 //
 //     Python            C++
-//       :5              _|5;                             (returns slice_0b_1_)
-//      5:               5|_;                             (returns slice_0b1__)
-//      ::2              _|_|2;                           (returns slice_0b__1)
-//     6::2              6|_|2;                           (returns slice_0b1_1)
+//       :b              _|b;                             (returns slice_0b_1_)
+//      a:               a|_;                             (returns slice_0b1__)
+//       ::c             _|_|c;                           (returns slice_0b__1)
+//      a::c             a|_|c;                           (returns slice_0b1_1)
 //
 
-detail::slice_0b_1_ operator|(const missing &, index_t);               // :5
-detail::slice_0b1__ operator|(index_t, const missing &);               // 5:
-detail::slice_0b___ operator|(const missing &, const missing &);       // ::2 part 1
-detail::slice_0b__1 operator|(const detail::slice_0b___ &, index_t);   // ::2 part 2
-detail::slice_0b1_1 operator|(const detail::slice_0b1__ &, index_t);   // 6::2
-
+detail::slice_0b_1_ operator|(const missing &, index_t);               //  :b
+detail::slice_0b1__ operator|(index_t, const missing &);               // a:
+detail::slice_0b___ operator|(const missing &, const missing &);       //  ::c part 1
+detail::slice_0b__1 operator|(const detail::slice_0b___ &, index_t);   //  ::c part 2
+detail::slice_0b1_1 operator|(const detail::slice_0b1__ &, index_t);   // a::c
+detail::slice_0b_11 operator|(const detail::slice_0b_1_ &, index_t);   //  :b:c
 
 //-----------------------------------------------------------------------------
 // inline implementations
 
 
-inline slice:: slice(index_t start_)
+inline slice::slice(index_t start_)
     :
     _start(start_), _stop(start_+1), _step(), _valid(0b110)
 {}
 
 
-inline slice:: slice(index_t start_, index_t stop_)
+inline slice::slice(index_t start_, index_t stop_)
     :
     _start(start_), _stop(stop_), _step(), _valid(0b110)
 {}
 
 
-inline slice:: slice(index_t start_, index_t stop_, index_t step_)
+inline slice::slice(index_t start_, index_t stop_, index_t step_)
     :
     _start(start_), _stop(stop_), _step(step_), _valid(0b111)
 {}
 
 
-inline slice:: slice(missing, index_t stop_)
+inline slice::slice(missing, index_t stop_)
     :
     _start(), _stop(stop_), _step(), _valid(0b010)
 {}
 
 
-inline slice:: slice(missing, missing, index_t step_)
+inline slice::slice(missing, missing, index_t step_)
     :
     _start(), _stop(), _step(step_), _valid(0b001)
 {}
 
 
-inline slice:: slice(index_t start_, missing, index_t step_)
+inline slice::slice(index_t start_, missing, index_t step_)
     :
     _start(start_), _stop(), _step(step_), _valid(0b101)
 {}
@@ -425,6 +427,23 @@ private:
 
     friend slice;
     friend detail::slice_0b_1_ numcpp::operator|(const missing &, index_t);
+    friend detail::slice_0b_11 numcpp::operator|(const detail::slice_0b_1_ &, index_t);
+};
+
+
+class slice_0b_11
+{
+public:
+
+
+private:
+    slice_0b_11(index_t b, index_t c) : _b(b), _c(c) {}
+
+    index_t _b;
+    index_t _c;
+
+    friend slice;
+    friend detail::slice_0b_11 numcpp::operator|(const detail::slice_0b_1_ &, index_t);
 };
 
 
@@ -507,7 +526,13 @@ inline slice::slice(const detail::slice_0b__1 & helper)
 
 inline slice::slice(const detail::slice_0b_1_ & helper)
     :
-    _start(), _stop(helper._b), _step(), _valid(0b010)
+    _start(), _stop(helper._b), _step(1), _valid(0b011)
+{}
+
+
+inline slice::slice(const detail::slice_0b_11 & helper)
+    :
+    _start(), _stop(helper._b), _step(helper._c), _valid(0b011)
 {}
 
 
@@ -559,6 +584,12 @@ inline detail::slice_0b100 operator"" _s (unsigned long long int n)
 inline detail::slice_0b_1_ operator|(const missing &, index_t b)
 {
     return detail::slice_0b_1_(b);
+}
+
+
+inline detail::slice_0b_11 operator|(const detail::slice_0b_1_ & helper, index_t c)
+{
+    return detail::slice_0b_11(helper._b, c);
 }
 
 
