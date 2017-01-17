@@ -59,8 +59,6 @@ public:
         else
         if(_step < 0)
         {
-            std::cout << "    _start + _step > " << (_start + _step) << " > " << _stop << "\n";
-
             if(_start + _step > _stop)
             {
                 _start += _step;
