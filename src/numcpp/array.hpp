@@ -51,7 +51,12 @@ public:
 //~    array<R>                  transpose();
 //~    array<R>                  T();
 
+    array<R>                  reshape(const std::vector<uint64> & new_shape);
+
     std::string               print(const std::string & fmt_ = "") const;
+    std::string               debug_print() const;
+
+
 //~
 //~    // unary ops
 //~
@@ -62,18 +67,19 @@ public:
 //~
 
     R &       operator()(index_t i);
+    const R & operator()(index_t i) const;
+
+    array<R>  operator()(const slice &);
+
+
     R &       operator()(index_t i, index_t j);
 //~    R &       operator()(index_t i, index_t j, index_t k);
 //~    R &       operator()(index_t i, index_t j, index_t k, index_t l);
 //~
-    const R & operator()(index_t i) const;
     const R & operator()(index_t i, index_t j) const;
 //~    const R & operator()(index_t i, index_t j, index_t k) const;
 //~    const R & operator()(index_t i, index_t j, index_t k, index_t l) const;
 //~
-
-    array<R> operator()(const slice & s);
-
 //~
 //~    array<R> & operator=(const array<R> & rhs);
 //~
@@ -109,7 +115,7 @@ protected:
     R *                             _data;
 
     std::vector<uint64>             _shape;
-    std::vector<uint64>             _strides;
+    std::vector<int64>              _strides;
     std::vector<uint64>             _offsets;
 };
 
@@ -161,7 +167,6 @@ array(const std::initializer_list<R> & il)
 }
 
 
-
 template <class R>
 array<R>::
 array(const std::vector<uint64> & shape, const R & value)
@@ -174,6 +179,22 @@ array(const std::vector<uint64> & shape, const R & value)
     _offsets()
 {
     // FIXME: fix strides & offsets
+}
+
+template <class R>
+array<R>
+array<R>::
+reshape(const std::vector<uint64> & shape)
+{
+    auto s = detail::_compute_size(shape);
+
+    if(_size != s) throw std::runtime_error("total size of new array must be unchanged");
+
+    array<R> new_array = array(*this);
+
+    new_array._shape = shape;
+
+    return new_array;
 }
 
 
@@ -315,6 +336,39 @@ print(const std::string & fmt_in) const
 }
 
 
+template <class R>
+std::string
+array<R>::
+debug_print() const
+{
+    std::stringstream ss;
+
+    ss
+        << "array:\n"
+        << "    _size:    " << _size << "\n"
+        << "    _data:    " << fmt::format(
+            "0x{:016x}",
+            reinterpret_cast<uint64>(_data)) << "\n"
+        << "    _shape:   (";
+
+    for(const auto & x : _shape) ss << x << ", ";
+
+    ss
+        << ")\n"
+        << "    _strides: (";
+
+    for(const auto & x : _strides) ss << x << ", ";
+
+    ss
+        << ")\n"
+        << "    _offsets: (";
+
+    for(const auto & x : _offsets) ss << x << ", ";
+
+    ss << ")";
+
+    return ss.str();
+}
 
 
 } // namespace
