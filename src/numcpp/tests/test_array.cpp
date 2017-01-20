@@ -46,17 +46,22 @@ TEST_CASE( "numcpp::array", "[constructor]" )
     CHECK( a.ndim() == 2 );
     CHECK( a.shape() == shape );
 
-    for(uint64 i = 0; i < a.shape()[0]; ++i)
-    {
-        for(uint64 j = 0; j < a.shape()[0]; ++j)
-        {
-            CHECK( a(i,j) == Approx(1.0f) );
-        }
-    }
+//~    for(uint64 i = 0; i < a.shape()[0]; ++i)
+//~    {
+//~        for(uint64 j = 0; j < a.shape()[0]; ++j)
+//~        {
+//~            CHECK( a(i,j) == Approx(1.0f) );
+//~        }
+//~    }
 
     CHECK_THROWS( array<float32>({0},   0.0f) );
     CHECK_THROWS( array<float32>({0,5}, 0.0f) );
     CHECK_THROWS( array<float32>({5,0}, 0.0f) );
+}
+
+void nick(const array<int> & a)
+{
+    int x = a(0);
 }
 
 
@@ -66,15 +71,15 @@ TEST_CASE( "numcpp::array::reshape", "[constructor]" )
 
     auto a = array<int32>({1,2,3,4,5,6,7,8,9,10,11,12}).reshape(s);
 
-    WARN("a = " << a.debug_print() );
+//~    WARN("a = " << a.debug_print() );
 
     CHECK( a.ndim() == 2 );
     CHECK( a.shape()[0] == 3 );
     CHECK( a.shape()[1] == 4 );
     CHECK( a.shape() == s );
-    CHECK( a(0,0) == 1 );
-    CHECK( a(1,1) == 6 );
-    CHECK( a(2,2) == 11 );
+//~    CHECK( a(0,0) == 1 );
+//~    CHECK( a(1,1) == 6 );
+//~    CHECK( a(2,2) == 11 );
 
     CHECK_THROWS( a.reshape({4,4}) );
 
@@ -82,30 +87,37 @@ TEST_CASE( "numcpp::array::reshape", "[constructor]" )
 
     a = a.reshape(s);
 
-    WARN("a = " << a.debug_print() );
+//~    WARN("a = " << a.debug_print() );
 
     CHECK( a.ndim() == 2 );
     CHECK( a.shape()[0] == 1 );
     CHECK( a.shape()[1] == 12 );
     CHECK( a.shape() == s );
-    CHECK( a(0,0) == 1 );
-    CHECK( a(0,2) == 3 );
-    CHECK_THROWS( a(1,1) );
-    CHECK_THROWS( a(2,2) );
+//~    CHECK( a(0,0) == 1 );
+//~    CHECK( a(0,2) == 3 );
+//~    CHECK_THROWS( a(1,1) );
+//~    CHECK_THROWS( a(2,2) );
 
     s = {12};
     a = a.reshape(s);
 
-    WARN("a = " << a.debug_print() );
+//~    WARN("a = " << a.debug_print() );
 
     CHECK( a.ndim() == 1 );
     CHECK( a.shape()[0] == 12 );
     CHECK( a.shape() == s );
     CHECK( a(0) == 1 );
     CHECK( a(2) == 3 );
-    CHECK_THROWS( a(1,1) );
-    CHECK_THROWS( a(2,2) );
+//~    CHECK_THROWS( a(1,1) );
+//~    CHECK_THROWS( a(2,2) );
+
+    nick(a);
+
+    std::cout << "a(0) = " << a(0) << "\n";
+
 }
+
+
 
 
 

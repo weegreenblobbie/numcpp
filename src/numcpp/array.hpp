@@ -56,6 +56,17 @@ public:
     std::string               print(const std::string & fmt_ = "") const;
     std::string               debug_print() const;
 
+    //-------------------------------------------------------------------------
+    // operators
+
+    operator R() const;
+
+    bool operator==(const R & rhs) const;
+
+//~    bool operator==(const array<R> & rhs) const;
+
+    array<R> & operator=(const R & rhs);
+
 
 //~
 //~    // unary ops
@@ -66,17 +77,26 @@ public:
 //~    array<bool> operator!() const;
 //~
 
-    R &       operator()(index_t i);
-    const R & operator()(index_t i) const;
+    array<R> operator()(slice);
 
-    array<R>  operator()(const slice &);
+    R operator()(slice) const;
 
 
-    R &       operator()(index_t i, index_t j);
+//~    const array<R> operator()(index_t i) const;
+
+//~    R &       operator()(index_t i);
+//~    const R & operator()(index_t i) const;
+
+//~    array<R>  operator()(const slice &);
+
+
+//~    array<R> operator()(index_t i, index_t j);
+
+//~    R &       operator()(index_t i, index_t j);
 //~    R &       operator()(index_t i, index_t j, index_t k);
 //~    R &       operator()(index_t i, index_t j, index_t k, index_t l);
 //~
-    const R & operator()(index_t i, index_t j) const;
+//~    const R & operator()(index_t i, index_t j) const;
 //~    const R & operator()(index_t i, index_t j, index_t k) const;
 //~    const R & operator()(index_t i, index_t j, index_t k, index_t l) const;
 //~
@@ -181,6 +201,16 @@ array(const std::vector<uint64> & shape, const R & value)
     // FIXME: fix strides & offsets
 }
 
+
+template <class R>
+array<R>::operator R() const
+{
+    if(_size != 1) throw std::runtime_error("converting to single value from array!");
+
+    return _data[0];
+}
+
+
 template <class R>
 array<R>
 array<R>::
@@ -199,50 +229,136 @@ reshape(const std::vector<uint64> & shape)
 
 
 template <class R>
-R &
+bool
 array<R>::
-operator()(index_t i)
+operator==(const R & rhs) const
 {
-    return _data[i];
+    return _size == 1 && _data[0] == rhs;
 }
 
 
 template <class R>
-const R &
+array<R> &
 array<R>::
-operator()(index_t i) const
+operator=(const R & rhs)
 {
-    return _data[i];
+    _size = 1;
+    _data[0] = rhs;
+    _shape = {};
+    _offsets = {};
+    return *this;
 }
+
+
+//~template <class R>
+//~bool
+//~array<R>::
+//~operator==(const array<R> & rhs) const
+//~{
+//~    return _data == rhs._data && _shape == rhs._shape
+//~}
 
 
 template <class R>
 array<R>
 array<R>::
-operator()(const slice & s)
+operator()(slice s)
 {
-    array<R> out;
+    array<R> a;
 
+    a._size = 1;
+    a._array = _array; // increase reference count
+    a._data = _data + s.start();
 
+    return a;
 }
 
 
 template <class R>
-R &
+R
 array<R>::
-operator()(index_t i, index_t j)
+operator()(slice s) const
 {
-    return _data[i * _shape[1] + j];
+    // FIXME: check that slice is 1 long.
+    return _data[s.start()];
 }
 
 
-template <class R>
-const R &
-array<R>::
-operator()(index_t i, index_t j) const
-{
-    return _data[i * _shape[1] + j];
-}
+//~template <class R>
+//~array<R>
+//~array<R>::
+//~operator()(slice s) const
+//~{
+//~    array<R> a;
+
+//~    a._size = 1;
+//~    a._array = _array; // increase reference count
+//~    a._data = _data + s.start();
+
+//~    return a;
+//~}
+
+
+
+//~template <class R>
+//~const R &
+//~array<R>::
+//~operator()(index_t i) const
+//~{
+//~    return _data[i];
+//~}
+
+
+//~template <class R>
+//~array<R>
+//~array<R>::
+//~operator()(const slice & s)
+//~{
+//~    array<R> out;
+
+
+//~}
+
+
+//~#ifndef NUMPCPP_NO_NDIM_CHECKS
+//~    #define _NUMCPP_ASSERT_DIM_ 0
+//~#else
+//~    #define _NUMCPP_ASSERT_DIM_ 1
+//~#endif
+
+//~namspace detail
+//~{
+//~    template <int i>
+//~    void assert_ndim_matches(uint64 expcted, uint64 actual){};
+
+//~    inline
+//~    template <>
+//~    void assert_ndim_matches<1>(uint64 expected, uint64 actual)
+//~    {
+//~        if(expected != actual) throw std::runtime_exception("
+//~    }
+//~}
+
+
+
+//~template <class R>
+//~R &
+//~array<R>::
+//~operator()(index_t i, index_t j)
+//~{
+
+
+//~    return _data[i * _shape[1] + j];
+//~}
+
+
+//~template <class R>
+//~const R &
+//~array<R>::
+//~operator()(index_t i, index_t j) const
+//~{
+//~    return _data[i * _shape[1] + j];
+//~}
 
 
 template <class R>
@@ -299,14 +415,14 @@ print(const std::string & fmt_in) const
 
     const array<R> & a = *this;
 
-    if(ndim() == 1)
+    if(ndim() <= 1)
     {
         out << "array([ ";
 
         for(auto i = 0u; i < _size; ++i)
         {
-            out << detail::_format(fmt_, a(i));
-            if(i + 1 < a.size()) out << ", ";
+            out << detail::_format(fmt_, _data[i]);
+            if(i + 1 < a._size) out << ", ";
         }
 
         out << " ])\n";
@@ -322,7 +438,7 @@ print(const std::string & fmt_in) const
 
             for(auto j = 0u; j < _shape[1]; ++j)
             {
-                out << detail::_format(fmt_, a(i, j));
+//~                out << detail::_format(fmt_, a(i, j));
                 if(j + 1 < _shape[1]) out << ", ";
             }
 

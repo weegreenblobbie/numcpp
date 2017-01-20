@@ -5,7 +5,7 @@ EnsureSConsVersion(2,5,0)
 env = Environment(
     CXX = "g++-5",
     CPPPATH = ['external', 'src'],
-    CXXFLAGS = ['-std=c++14', '-Wall'],
+    CXXFLAGS = ['-std=c++14', '-Wall', '-ggdb'],
 )
 
 cfg = Configure(env)
