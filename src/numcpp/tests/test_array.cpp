@@ -60,11 +60,15 @@ TEST_CASE( "numcpp::array", "[constructor]" )
 }
 
 
-void nick(const array<int> & a)
+const int & nick(const array<int> & a)
 {
     int x = a(0);
 
     std::cout << "x = " << x << "\n";
+
+    const int & y = a(5);
+
+    return y;
 }
 
 
@@ -114,10 +118,9 @@ TEST_CASE( "numcpp::array::reshape", "[constructor]" )
 //~    CHECK_THROWS( a(1,1) );
 //~    CHECK_THROWS( a(2,2) );
 
-    nick(a);
+    auto y = nick(a);
 
-    std::cout << "a(0) = " << a(0) << "\n";
-
+    std::cout << "nick(a) = " << y << "\n";
 }
 
 

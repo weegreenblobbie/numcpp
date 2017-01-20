@@ -61,6 +61,7 @@ public:
     //-------------------------------------------------------------------------
     // operators
 
+//~    operator R & ();
     operator R() const;
 
     bool operator==(const R & rhs) const;
@@ -160,7 +161,7 @@ public:
     std::string               print(const std::string & fmt_ = "") const { return _a.print(fmt_); }
     std::string               debug_print() const                        { return _a.debug_print(); }
 
-    operator R() const;
+    operator const R & () const;
 
     bool operator==(const R & rhs) const                         { return _a._size == 1 && _a._data[0] == rhs; }
 
@@ -176,6 +177,9 @@ protected:
 
     friend class array<R>;
 };
+
+
+
 
 
 //-----------------------------------------------------------------------------
@@ -526,12 +530,21 @@ debug_print() const
 // const_array implementation
 
 template <class R>
-const_array<R>::operator R() const
+const_array<R>::operator const R & () const
 {
     if(_a._size != 1) throw std::runtime_error("converting to single value from array!");
 
     return _a._data[0];
 }
+
+
+//~template <class R>
+//~const_array<R>::operator R() const
+//~{
+//~    if(_a._size != 1) throw std::runtime_error("converting to single value from array!");
+
+//~    return _a._data[0];
+//~}
 
 
 } // namespace
