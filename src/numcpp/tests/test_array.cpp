@@ -59,9 +59,12 @@ TEST_CASE( "numcpp::array", "[constructor]" )
     CHECK_THROWS( array<float32>({5,0}, 0.0f) );
 }
 
+
 void nick(const array<int> & a)
 {
     int x = a(0);
+
+    std::cout << "x = " << x << "\n";
 }
 
 

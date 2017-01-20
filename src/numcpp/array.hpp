@@ -17,9 +17,11 @@ namespace numcpp
 
 // forward
 
-template <class R = float32> class array;
+template <class R> class array;
+template <class R> class const_array;
 
 template <class R> std::ostream & operator<<(std::ostream &, const array<R> &);
+template <class R> std::ostream & operator<<(std::ostream &, const const_array<R> &);
 
 
 template <class R>
@@ -79,7 +81,7 @@ public:
 
     array<R> operator()(slice);
 
-    R operator()(slice) const;
+    const_array<R> operator()(slice) const;
 
 
 //~    const array<R> operator()(index_t i) const;
@@ -137,11 +139,43 @@ protected:
     std::vector<uint64>             _shape;
     std::vector<int64>              _strides;
     std::vector<uint64>             _offsets;
+
+    friend class const_array<R>;
 };
 
 
 template <class R>
-std::ostream & operator<<(std::ostream &, const array<R> &);
+class const_array
+{
+
+
+public:
+
+    using value_type = R;
+
+    const uint32              ndim() const                   { return _a._size; }
+    std::size_t               size() const                   { return _a._size; }
+    const std::vector<uint64> shape() const                  { return _a._shape; }
+
+    std::string               print(const std::string & fmt_ = "") const { return _a.print(fmt_); }
+    std::string               debug_print() const                        { return _a.debug_print(); }
+
+    operator R() const;
+
+    bool operator==(const R & rhs) const                         { return _a._size == 1 && _a._data[0] == rhs; }
+
+    bool operator==(const array<R> & rhs) const                  { return _a == rhs; }
+
+    const_array<R> operator()(slice) const;
+
+protected:
+
+    const_array(const array<R> & a) : _a(a) {}
+
+    array<R> _a;
+
+    friend class array<R>;
+};
 
 
 //-----------------------------------------------------------------------------
@@ -266,7 +300,7 @@ operator()(slice s)
 {
     array<R> a;
 
-    a._size = 1;
+    a._size = 1;  // FIXME: this isn't correct
     a._array = _array; // increase reference count
     a._data = _data + s.start();
 
@@ -275,12 +309,13 @@ operator()(slice s)
 
 
 template <class R>
-R
+const_array<R>
 array<R>::
 operator()(slice s) const
 {
-    // FIXME: check that slice is 1 long.
-    return _data[s.start()];
+    array<R> & r = const_cast<array<R>&>(*this);
+
+    return const_array<R>(r(s));
 }
 
 
@@ -484,6 +519,18 @@ debug_print() const
     ss << ")";
 
     return ss.str();
+}
+
+
+//-----------------------------------------------------------------------------
+// const_array implementation
+
+template <class R>
+const_array<R>::operator R() const
+{
+    if(_a._size != 1) throw std::runtime_error("converting to single value from array!");
+
+    return _a._data[0];
 }
 
 

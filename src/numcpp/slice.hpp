@@ -56,8 +56,7 @@ public:
     slice(missing,        missing,        index_t step_);  // 0b__1
     slice(index_t start_, missing,        index_t step_);  // 0b1_1
 
-
-    slice(const slice & copy);
+    slice(const slice & copy) = default;
 
     index_t start() const     { return _start;}
     index_t stop() const      { return _stop;}
