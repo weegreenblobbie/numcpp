@@ -7,10 +7,15 @@
 
 #include <fmt/fmt.hpp>  // https://github.com/fmtlib/fmt
 
-#include <initializer_list>
 #include <memory>
 #include <sstream>
 #include <vector>
+#include <type_traits>
+
+
+static bool _debug_out = false;
+
+#define DOUT if(_debug_out) std::cout << fmt::format("{}:({}): ", __FILE__, __LINE__)
 
 
 namespace numcpp
@@ -20,6 +25,7 @@ namespace numcpp
 // forward
 
 template <class R> class array;
+using array_bool = array<bool>;
 template <class R> class const_array;
 
 template <class R> std::ostream & operator<<(std::ostream &, const array<R> &);
@@ -36,12 +42,13 @@ public:
     using value_type = R;
 
     array(const std::initializer_list<R> & il);
+    array(const std::vector<R> & v);
 
     array(const std::vector<uint64> & shape, const R & value = R()); // std::vector like
 
-//~    array(const array & other) = default;
+    array(const array<R> & other);
 
-//~    array<R> & operator=(const array & rhs) = default;
+    array<R> & operator=(const array<R> & rhs);
 
 //~    array(array && other);
 //~
@@ -66,11 +73,14 @@ public:
 //~    operator R & ();
     operator R() const;
 
-    bool operator==(const R & rhs) const;
+    array<bool> operator==(const R & rhs) const;
 
-//~    bool operator==(const array<R> & rhs) const;
+    array<bool> operator==(const array<R> & rhs) const;
 
     array<R> & operator=(const R & rhs);
+
+    template <typename U>
+    array<R> & operator=(const U & rhs);
 
 
 //~
@@ -144,6 +154,9 @@ protected:
     std::vector<uint64>             _offsets;
 
     friend class const_array<R>;
+
+    template <typename>
+    friend class array;
 };
 
 
@@ -219,8 +232,16 @@ namespace detail
 template <class R>
 array<R>::
 array()
-    : _size(0), _array(nullptr), _data(nullptr), _shape(), _strides(), _offsets()
-{}
+    :
+    _size(0),
+    _array(nullptr),
+    _data(nullptr),
+    _shape(),
+    _strides(),
+    _offsets()
+{
+    DOUT << __PRETTY_FUNCTION__ << "\n";
+}
 
 
 template <class R>
@@ -234,7 +255,22 @@ array(const std::initializer_list<R> & il)
     _strides(),
     _offsets()
 {
-    if(_size == 0) throw std::runtime_error("initializer list is emtpy!");
+    DOUT << __PRETTY_FUNCTION__ << "\n";
+}
+
+
+template <class R>
+array<R>::
+array(const std::vector<R> & v)
+    :
+    _size(v.size()),
+    _array(std::make_shared<std::vector<R>>(v)),
+    _data(_array->data()),
+    _shape({_size}),
+    _strides(),
+    _offsets()
+{
+    DOUT << __PRETTY_FUNCTION__ << "\n";
 }
 
 
@@ -249,17 +285,42 @@ array(const std::vector<uint64> & shape, const R & value)
     _strides(),
     _offsets()
 {
+    DOUT << __PRETTY_FUNCTION__ << "\n";
+}
+
+
+template <class R>
+array<R>::
+array(const array<R> & other)
+    :
+    array<R>()
+{
+    *this = other;
+
+    DOUT << __PRETTY_FUNCTION__ << "\n";
 }
 
 
 template <class R>
 array<R>::operator R() const
 {
+    DOUT << __PRETTY_FUNCTION__ << "\n";
+
     if(_size != 1) throw std::runtime_error("converting to single value from array!");
 
     return _data[0];
 }
 
+
+template <>
+array<bool>::operator bool() const
+{
+    DOUT << __PRETTY_FUNCTION__ << "\n";
+
+    if(_size != 1) throw std::runtime_error("The truth value of an array with more than one element is ambiguous. Use numcpp::any() or numcpp::all()");
+
+    return (*_array)[0];
+}
 
 template <class R>
 array<R> &
@@ -277,11 +338,61 @@ reshape(const std::vector<uint64> & shape)
 
 
 template <class R>
-bool
+array<bool>
 array<R>::
 operator==(const R & rhs) const
 {
-    return _size == 1 && _data[0] == rhs;
+    DOUT << __PRETTY_FUNCTION__ << "\n";
+
+    std::vector<bool> v(_size, false);
+    array<bool> nick;
+    nick._size = _size;
+    nick._array = std::make_shared<decltype(v)>(v);
+    nick._shape = _shape;
+
+    index_t size_ = static_cast<index_t>(_size);
+
+    if(ndim() == 1)
+    {
+        for(index_t i = 0; i < size_; ++i)
+        {
+            (*nick._array)[i] = (*this)(i) == rhs;
+        }
+
+        return nick;
+    }
+    else
+    if(ndim() == 2)
+    {
+    }
+    else
+    if(ndim() == 3)
+    {
+    }
+
+    throw std::runtime_error(
+        fmt::format("{}({}): unhandled case", __FILE__, __LINE__)
+    );
+
+    return nick;
+}
+
+
+template <class R>
+array<bool>
+array<R>::
+operator==(const array<R> & rhs) const
+{
+    DOUT << __PRETTY_FUNCTION__ << "\n";
+
+    if(_size != rhs._size) return array<bool>({false});
+    if(_shape != rhs._shape) return array<bool>({false});
+
+    throw std::runtime_error(
+        fmt::format("{}({}): unhandled case", __FILE__, __LINE__)
+    );
+
+    return array<bool>();
 }
 
 
@@ -290,10 +401,45 @@ array<R> &
 array<R>::
 operator=(const R & rhs)
 {
-    _size = 1;
-    _data[0] = rhs;
-    _shape = {};
-    _offsets = {};
+    DOUT << __PRETTY_FUNCTION__ << "\n";
+
+    throw std::runtime_error(
+        fmt::format("{}({}): unhandled case", __FILE__, __LINE__)
+    );
+
+    return *this;
+}
+
+
+template <class R> template <class U>
+array<R> &
+array<R>::
+operator=(const U & rhs)
+{
+    static_assert(
+        std::is_same<R, U>::value,
+        "array<R> = array<U> is not allowed"
+    );
+
+    return *this;
+}
+
+
+
+template <class R>
+array<R> &
+array<R>::
+operator=(const array<R> & rhs)
+{
+    DOUT << __PRETTY_FUNCTION__ << "\n";
+
+    if(this == &rhs) return *this;
+
+    _size = rhs._size;
+    _array = rhs._array;
+    _data = rhs._data;
+    _shape = rhs._shape;
+    _offsets = rhs._offsets;
     return *this;
 }
 
@@ -420,6 +566,34 @@ operator()(slice s)
 
                 return a;
             }
+            else
+            {
+                if(stop >= start) return a;
+
+                a._array = _array; // bump shared reference.
+
+                uint64 count = 0;
+
+                for(auto x : ai)
+                {
+                    ++count;
+                }
+
+                if(count > 1) a._shape = {count, _shape[1]};
+                else          a._shape = {_shape[1]};
+
+                a._size = count * _shape[1];
+
+                index_t stride = 1;
+
+                if(!_strides.empty()) stride = _strides[1];
+
+                a._data = _data + start * stride;
+
+                a._strides = {step + stride - 1};
+
+                return a;
+            }
 
             break;
         }
@@ -429,14 +603,11 @@ operator()(slice s)
         {
             break;
         }
-
     }
 
-    std::stringstream ss;
-
-    ss << __FILE__ << "(" << __LINE__ << ") unhandled case";
-
-    throw std::runtime_error(ss.str());
+    throw std::runtime_error(
+        fmt::format("{}({}): unhandled case", __FILE__, __LINE__)
+    );
 
     return a;
 }
@@ -680,6 +851,8 @@ debug_print() const
 template <class R>
 const_array<R>::operator const R & () const
 {
+    DOUT << __PRETTY_FUNCTION__ << "\n";
+
     if(_a._size != 1) throw std::runtime_error("converting to single value from array!");
 
     return _a._data[0];
