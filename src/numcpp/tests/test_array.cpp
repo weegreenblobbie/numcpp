@@ -78,7 +78,7 @@ TEST_CASE( "numcpp::array::reshape", "[constructor]" )
 
     auto a = array<int32>({1,2,3,4,5,6,7,8,9,10,11,12}).reshape(s);
 
-//~    WARN("a = " << a.debug_print() );
+    WARN("a = " << a.debug_print() );
 
     CHECK( a.ndim() == 2 );
     CHECK( a.shape()[0] == 3 );
@@ -88,7 +88,7 @@ TEST_CASE( "numcpp::array::reshape", "[constructor]" )
 //~    CHECK( a(1,1) == 6 );
 //~    CHECK( a(2,2) == 11 );
 
-    CHECK_THROWS( a.reshape({4,4}) );
+//~    CHECK_THROWS( a.reshape({4,4}) );
 
     s = {1,12};
 
@@ -124,6 +124,31 @@ TEST_CASE( "numcpp::array::reshape", "[constructor]" )
 }
 
 
+TEST_CASE( "numcpp::array::slicing 1D", "[slicing]" )
+{
+    auto a = array<int>({0,1,2,3,4,5,6,7,8,9,10,11});
 
+    auto b = a(0_s | 10 | 2);
 
+    WARN("b = " << b << "\n");
 
+    CHECK( b.ndim() == 1 );
+    CHECK( b.shape()[0] == 5 );
+    CHECK( b(0) == 0 );
+    CHECK( b(1) == 2 );
+    CHECK( b(2) == 4 );
+    CHECK( b(3) == 6 );
+    CHECK( b(4) == 8 );
+
+    WARN("b = " << b.debug_print() );
+
+    auto c = b(1_s | -1);
+
+    WARN("c = " << c << "\n");
+
+    CHECK( c.ndim() == 1 );
+    CHECK( c.shape()[0] == 3 );
+    CHECK( c(0) == 2 );
+    CHECK( c(1) == 4 );
+    CHECK( c(2) == 6 );
+}

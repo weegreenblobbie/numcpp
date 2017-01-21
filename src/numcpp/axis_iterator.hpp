@@ -37,11 +37,17 @@ public:
 
     slice_iterator end() const                { return slice_iterator::end(); }
 
-    std::vector<uint64> indices() const;     // convience utiltiy
+    std::vector<uint64> indices() const;      // convience utiltiy
+
+    slice final() const                       { return slice(_start, _stop, _step); }
 
 private:
 
     slice_iterator _begin;
+
+    index_t _start;
+    index_t _stop;
+    index_t _step;
 };
 
 
@@ -53,7 +59,10 @@ inline
 axis_iterator::
 axis_iterator(int64 axis_length, const slice & s)
     :
-    _begin(slice_iterator::end())
+    _begin(slice_iterator::end()),
+    _start(0),
+    _stop(0),
+    _step(0)
 {
     // Reference: https://github.com/python/cpython/blob/c30098c8c6014f3340a369a31df9c74bdbacc269/Lib/test/test_slice.py
 
@@ -118,6 +127,9 @@ axis_iterator(int64 axis_length, const slice & s)
     {
         // good
         _begin = slice_iterator(start, stop, step);
+        _start = start;
+        _stop = stop;
+        _step = step;
     }
 }
 

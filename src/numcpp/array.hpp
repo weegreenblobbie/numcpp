@@ -1,13 +1,15 @@
 #ifndef _NUMCPP_ARRAY_HPP_
 #define _NUMCPP_ARRAY_HPP_
 
-#include <numcpp/types.hpp>
+#include <numcpp/axis_iterator.hpp>
 #include <numcpp/slice.hpp>
+#include <numcpp/types.hpp>
 
 #include <fmt/fmt.hpp>  // https://github.com/fmtlib/fmt
 
 #include <initializer_list>
 #include <memory>
+#include <sstream>
 #include <vector>
 
 
@@ -198,6 +200,19 @@ namespace detail
 
         return s;
     }
+
+    uint64 _flat_index(
+        const std::vector<uint64> & index,
+        const std::vector<int64> & strides,
+        uint64 offset)
+    {
+        for(uint64 i = 0; i < index.size(); ++i)
+        {
+            offset += strides[i] * index[i];
+        }
+
+        return offset;
+    }
 }
 
 
@@ -302,11 +317,74 @@ array<R>
 array<R>::
 operator()(slice s)
 {
+    if(_size == 0) throw std::runtime_error("can't slice an empty array");
+
     array<R> a;
 
-    a._size = 1;  // FIXME: this isn't correct
-    a._array = _array; // increase reference count
-    a._data = _data + s.start();
+    switch(ndim())
+    {
+        // 1D -> 1D
+        case 1:
+        {
+            axis_iterator ai(_shape[0], s);
+            s = ai.final();
+
+            index_t start = s.start();
+            index_t stop = s.stop();
+            index_t step = s.step();
+
+            if(step > 0)
+            {
+                if(start >= stop) return a;
+
+                a._array = _array; // bump shared reference.
+
+                uint64 count = 0;
+
+                for(auto x : ai)
+                {
+                    ++count;
+                }
+
+                a._shape = {count};
+                a._size = count;
+
+                index_t stride = 1;
+
+                if(!_strides.empty()) stride = _strides[0];
+
+                a._data = _data + start * stride;
+
+                a._strides = {step + stride - 1};
+
+                return a;
+            }
+            else
+            {
+                // FIXME
+                break;
+            }
+        }
+
+        // 2D -> 1D
+        case 2:
+        {
+            break;
+        }
+
+        // 3D -> 2D
+        case 3:
+        {
+            break;
+        }
+
+    }
+
+    std::stringstream ss;
+
+    ss << __FILE__ << "(" << __LINE__ << ") unhandled case";
+
+    throw std::runtime_error(ss.str());
 
     return a;
 }
@@ -434,6 +512,23 @@ namespace detail
     template <> std::string _format<complex64>(const std::string & fmt_, const complex64 & v)  { return fmt::format(fmt_, v.real(), v.imag()); }
     template <> std::string _format<complex128>(const std::string & fmt_, const complex128 & v) { return fmt::format(fmt_, v.real(), v.imag()); }
 
+    template <class T> std::string type_name() { return "unknown"; }
+
+    template <> std::string type_name<int8 >() { return "int8"; }
+    template <> std::string type_name<int16>() { return "int16"; }
+    template <> std::string type_name<int32>() { return "int32"; }
+    template <> std::string type_name<int64>() { return "int64"; }
+
+    template <> std::string type_name<uint8 >() { return "uint8"; }
+    template <> std::string type_name<uint16>() { return "uint16"; }
+    template <> std::string type_name<uint32>() { return "uint32"; }
+    template <> std::string type_name<uint64>() { return "uint64"; }
+
+    template <> std::string type_name<float32>() { return "float32"; }
+
+    template <> std::string type_name<complex64>() { return "complex64"; }
+
+    template <> std::string type_name<complex128>() { return "complex128"; }
 }
 
 
@@ -456,15 +551,15 @@ print(const std::string & fmt_in) const
 
     if(ndim() <= 1)
     {
-        out << "array([ ";
+        if(_size > 1) out << "array([ ";
 
         for(auto i = 0u; i < _size; ++i)
         {
-            out << detail::_format(fmt_, _data[i]);
-            if(i + 1 < a._size) out << ", ";
+            out << detail::_format<R>(fmt_, a(i));
+            if(_size > 1 && i + 1 < a._size) out << ", ";
         }
 
-        out << " ])\n";
+        if(_size > 1) out << " ], " << detail::type_name<R>() << ")\n";
     }
     else
     if(ndim() == 2)
@@ -500,6 +595,7 @@ debug_print() const
 
     ss
         << "array:\n"
+        << "        R:    " << detail::type_name<R>() << "\n"
         << "    _size:    " << _size << "\n"
         << "    _data:    " << fmt::format(
             "0x{:016x}",
