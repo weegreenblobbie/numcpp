@@ -141,11 +141,20 @@ TEST_CASE( "numcpp::axis_iterator", "[directed tests]" )
         CHECK( a.indices() == gold );
     }
 
-    INFO(" _ | -10 ");
+    INFO(" :-10 ");
     {
         s = _ | -10;
         a = axis_iterator(10, s);
         gold = {};
+
+        CHECK( a.indices() == gold );
+    }
+
+    INFO(" 6:3-1 ");
+    {
+        s = 6_s | 3 | -1;
+        a = axis_iterator(10, s);
+        gold = {6, 5, 4};
 
         CHECK( a.indices() == gold );
     }

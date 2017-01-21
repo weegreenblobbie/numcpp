@@ -55,7 +55,7 @@ public:
 //~    array<R>                  transpose();
 //~    array<R>                  T();
 
-    array<R>                  reshape(const std::vector<uint64> & new_shape);
+    array<R> &                reshape(const std::vector<uint64> & new_shape);
 
     std::string               print(const std::string & fmt_ = "") const;
     std::string               debug_print() const;
@@ -235,8 +235,6 @@ array(const std::initializer_list<R> & il)
     _offsets()
 {
     if(_size == 0) throw std::runtime_error("initializer list is emtpy!");
-
-    // FIXME: fix strides & offsets
 }
 
 
@@ -251,7 +249,6 @@ array(const std::vector<uint64> & shape, const R & value)
     _strides(),
     _offsets()
 {
-    // FIXME: fix strides & offsets
 }
 
 
@@ -265,7 +262,7 @@ array<R>::operator R() const
 
 
 template <class R>
-array<R>
+array<R> &
 array<R>::
 reshape(const std::vector<uint64> & shape)
 {
@@ -273,11 +270,9 @@ reshape(const std::vector<uint64> & shape)
 
     if(_size != s) throw std::runtime_error("total size of new array must be unchanged");
 
-    array<R> new_array = array(*this);
+    _shape = shape;
 
-    new_array._shape = shape;
-
-    return new_array;
+    return *this;
 }
 
 
@@ -361,14 +356,71 @@ operator()(slice s)
             }
             else
             {
-                // FIXME
-                break;
+                if(stop >= start) return a;
+
+                a._array = _array; // bump shared reference.
+
+                uint64 count = 0;
+
+                for(auto x : ai)
+                {
+                    ++count;
+                }
+
+                a._shape = {count};
+                a._size = count;
+
+                index_t stride = 1;
+
+                if(!_strides.empty()) stride = _strides[0];
+
+                a._data = _data + start * stride;
+
+                a._strides = {step + stride - 1};
+
+                return a;
             }
         }
 
         // 2D -> 1D
         case 2:
         {
+            axis_iterator ai(_shape[0], s);
+            s = ai.final();
+
+            index_t start = s.start();
+            index_t stop = s.stop();
+            index_t step = s.step();
+
+            if(step > 0)
+            {
+                if(start >= stop) return a;
+
+                a._array = _array; // bump shared reference.
+
+                uint64 count = 0;
+
+                for(auto x : ai)
+                {
+                    ++count;
+                }
+
+                if(count > 1) a._shape = {count, _shape[1]};
+                else          a._shape = {_shape[1]};
+
+                a._size = count * _shape[1];
+
+                index_t stride = 1;
+
+                if(!_strides.empty()) stride = _strides[1];
+
+                a._data = _data + start * stride * _shape[1];
+
+                a._strides = {step + stride - 1};
+
+                return a;
+            }
+
             break;
         }
 
@@ -598,7 +650,7 @@ debug_print() const
         << "        R:    " << detail::type_name<R>() << "\n"
         << "    _size:    " << _size << "\n"
         << "    _data:    " << fmt::format(
-            "0x{:016x}",
+            "{:16d}",
             reinterpret_cast<uint64>(_data)) << "\n"
         << "    _shape:   (";
 

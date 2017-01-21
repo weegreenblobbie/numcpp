@@ -64,7 +64,7 @@ const int & nick(const array<int> & a)
 {
     int x = a(0);
 
-    std::cout << "x = " << x << "\n";
+    CHECK( x == 1 );
 
     const int & y = a(5);
 
@@ -77,8 +77,6 @@ TEST_CASE( "numcpp::array::reshape", "[constructor]" )
     std::vector<uint64> s = {3,4};
 
     auto a = array<int32>({1,2,3,4,5,6,7,8,9,10,11,12}).reshape(s);
-
-    WARN("a = " << a.debug_print() );
 
     CHECK( a.ndim() == 2 );
     CHECK( a.shape()[0] == 3 );
@@ -94,8 +92,6 @@ TEST_CASE( "numcpp::array::reshape", "[constructor]" )
 
     a = a.reshape(s);
 
-//~    WARN("a = " << a.debug_print() );
-
     CHECK( a.ndim() == 2 );
     CHECK( a.shape()[0] == 1 );
     CHECK( a.shape()[1] == 12 );
@@ -108,8 +104,6 @@ TEST_CASE( "numcpp::array::reshape", "[constructor]" )
     s = {12};
     a = a.reshape(s);
 
-//~    WARN("a = " << a.debug_print() );
-
     CHECK( a.ndim() == 1 );
     CHECK( a.shape()[0] == 12 );
     CHECK( a.shape() == s );
@@ -120,7 +114,7 @@ TEST_CASE( "numcpp::array::reshape", "[constructor]" )
 
     auto y = nick(a);
 
-    std::cout << "nick(a) = " << y << "\n";
+    CHECK( y == 6 );
 }
 
 
@@ -130,8 +124,6 @@ TEST_CASE( "numcpp::array::slicing 1D", "[slicing]" )
 
     auto b = a(0_s | 10 | 2);
 
-    WARN("b = " << b << "\n");
-
     CHECK( b.ndim() == 1 );
     CHECK( b.shape()[0] == 5 );
     CHECK( b(0) == 0 );
@@ -140,15 +132,45 @@ TEST_CASE( "numcpp::array::slicing 1D", "[slicing]" )
     CHECK( b(3) == 6 );
     CHECK( b(4) == 8 );
 
-    WARN("b = " << b.debug_print() );
-
     auto c = b(1_s | -1);
-
-    WARN("c = " << c << "\n");
 
     CHECK( c.ndim() == 1 );
     CHECK( c.shape()[0] == 3 );
     CHECK( c(0) == 2 );
     CHECK( c(1) == 4 );
     CHECK( c(2) == 6 );
+
+    auto d = a(6_s|3|-2);
+
+    CHECK( d.ndim() == 1 );
+    CHECK( d.shape()[0] == 2 );
+    CHECK( d(0) == 6 );
+    CHECK( d(1) == 4 );
+}
+
+
+
+TEST_CASE( "numcpp::array::slicing 2D -> 1D", "[slicing]" )
+{
+    missing _;
+
+    auto a = array<int>({0,1,2,3,4,5,6,7,8,9,10,11}).reshape({3,4});
+
+    auto b = a(2);
+
+    CHECK( b.ndim() == 1 );
+    CHECK( b.shape()[0] == 4 );
+    CHECK( b(0) == 8 );
+    CHECK( b(1) == 9 );
+    CHECK( b(2) == 10 );
+    CHECK( b(3) == 11 );
+
+    b = a(1);
+
+    CHECK( b.ndim() == 1 );
+    CHECK( b.shape()[0] == 4 );
+    CHECK( b(0) == 4 );
+    CHECK( b(1) == 5 );
+    CHECK( b(2) == 6 );
+    CHECK( b(3) == 7 );
 }
