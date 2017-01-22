@@ -32,6 +32,17 @@ template <class R> std::ostream & operator<<(std::ostream &, const array<R> &);
 template <class R> std::ostream & operator<<(std::ostream &, const const_array<R> &);
 
 
+//~namespace detail
+//~{
+//~    template <class R>
+//~    struct get_value_type { using type R; };
+
+//~    template <>
+//~    struct get_value_type<bool> { using type char; };
+
+//~} // namespace
+
+
 template <class R>
 class array
 {
@@ -39,7 +50,7 @@ class array
 
 public:
 
-    using value_type = R;
+//~    using value_type = detail::get_value_type<R>::type;
 
     array(const std::initializer_list<R> & il);
     array(const std::vector<R> & v);
@@ -70,12 +81,18 @@ public:
     //-------------------------------------------------------------------------
     // operators
 
-//~    operator R & ();
     operator R() const;
+
+//~    array<R> operator~() const;
+    array<bool> operator!() const;
 
     array<bool> operator==(const R & rhs) const;
 
     array<bool> operator==(const array<R> & rhs) const;
+
+    array<bool> operator!=(const R & rhs) const           { return !(*this == rhs); }
+
+    array<bool> operator!=(const array<R> & rhs) const    { return !(*this == rhs); }
 
     array<R> & operator=(const R & rhs);
 
@@ -147,17 +164,29 @@ protected:
     std::size_t                     _size;
 
     std::shared_ptr<std::vector<R>> _array;
-    R *                             _data;
 
     std::vector<uint64>             _shape;
     std::vector<int64>              _strides;
-    std::vector<uint64>             _offsets;
+    index_t                         _offset;
 
     friend class const_array<R>;
 
     template <typename>
     friend class array;
 };
+
+
+namespace detail
+{
+    // special helper expression to disable const & for bools
+
+    template <class R>
+    struct bool_return_type { using type = const R &; };
+
+    template <>
+    struct bool_return_type<bool> { using type = bool; };
+
+} // namespace
 
 
 template <class R>
@@ -169,18 +198,21 @@ public:
 
     using value_type = R;
 
-    const uint32              ndim() const                   { return _a._size; }
-    std::size_t               size() const                   { return _a._size; }
-    const std::vector<uint64> shape() const                  { return _a._shape; }
+    const uint32              ndim() const                   { return _a.ndim(); }
+    std::size_t               size() const                   { return _a.size(); }
+    const std::vector<uint64> shape() const                  { return _a.shape(); }
 
     std::string               print(const std::string & fmt_ = "") const { return _a.print(fmt_); }
     std::string               debug_print() const                        { return _a.debug_print(); }
 
-    operator const R & () const;
 
-    bool operator==(const R & rhs) const                         { return _a._size == 1 && _a._data[0] == rhs; }
+    operator typename detail::bool_return_type<R>::type () const;
 
-    bool operator==(const array<R> & rhs) const                  { return _a == rhs; }
+
+    array<bool> operator==(const R & rhs) const         { return _a == rhs; }
+    array<bool> operator==(const array<R> & rhs) const  { return _a == rhs; }
+
+
 
     const_array<R> operator()(slice) const;
 
@@ -235,10 +267,9 @@ array()
     :
     _size(0),
     _array(nullptr),
-    _data(nullptr),
     _shape(),
     _strides(),
-    _offsets()
+    _offset(0)
 {
     DOUT << __PRETTY_FUNCTION__ << "\n";
 }
@@ -250,10 +281,9 @@ array(const std::initializer_list<R> & il)
     :
     _size(il.size()),
     _array(std::make_shared<std::vector<R>>(il)),
-    _data(_array->data()),
     _shape({_size}),
     _strides(),
-    _offsets()
+    _offset(0)
 {
     DOUT << __PRETTY_FUNCTION__ << "\n";
 }
@@ -265,10 +295,9 @@ array(const std::vector<R> & v)
     :
     _size(v.size()),
     _array(std::make_shared<std::vector<R>>(v)),
-    _data(_array->data()),
     _shape({_size}),
     _strides(),
-    _offsets()
+    _offset(0)
 {
     DOUT << __PRETTY_FUNCTION__ << "\n";
 }
@@ -280,10 +309,9 @@ array(const std::vector<uint64> & shape, const R & value)
     :
     _size(detail::_compute_size(shape)),
     _array(std::make_shared<std::vector<R>>(std::vector<R>(_size, value))),
-    _data(_array->data()),
     _shape(shape),
     _strides(),
-    _offsets()
+    _offset(0)
 {
     DOUT << __PRETTY_FUNCTION__ << "\n";
 }
@@ -308,7 +336,7 @@ array<R>::operator R() const
 
     if(_size != 1) throw std::runtime_error("converting to single value from array!");
 
-    return _data[0];
+    return (*_array)[_offset];
 }
 
 
@@ -317,9 +345,10 @@ array<bool>::operator bool() const
 {
     DOUT << __PRETTY_FUNCTION__ << "\n";
 
+    if(_size == 0) return false;
     if(_size != 1) throw std::runtime_error("The truth value of an array with more than one element is ambiguous. Use numcpp::any() or numcpp::all()");
 
-    return (*_array)[0];
+    return (*_array)[_offset];
 }
 
 template <class R>
@@ -340,15 +369,12 @@ reshape(const std::vector<uint64> & shape)
 template <class R>
 array<bool>
 array<R>::
-operator==(const R & rhs) const
+operator!() const
 {
     DOUT << __PRETTY_FUNCTION__ << "\n";
 
-    std::vector<bool> v(_size, false);
-    array<bool> nick;
-    nick._size = _size;
-    nick._array = std::make_shared<decltype(v)>(v);
-    nick._shape = _shape;
+//~    std::vector<bool> v(_size, false);
+    array<bool> nick(std::vector<bool>(_size, false));
 
     index_t size_ = static_cast<index_t>(_size);
 
@@ -356,7 +382,46 @@ operator==(const R & rhs) const
     {
         for(index_t i = 0; i < size_; ++i)
         {
-            (*nick._array)[i] = (*this)(i) == rhs;
+            (*nick._array)[i] = !(*_array)[_offset + i];
+        }
+
+        return nick;
+    }
+    else
+    if(ndim() == 2)
+    {
+    }
+    else
+    if(ndim() == 3)
+    {
+    }
+
+    throw std::runtime_error(
+        fmt::format("{}({}): unhandled case", __FILE__, __LINE__)
+    );
+
+    return nick;
+}
+
+
+
+template <class R>
+array<bool>
+array<R>::
+operator==(const R & rhs) const
+{
+    DOUT << __PRETTY_FUNCTION__ << "\n";
+
+//~    std::vector<bool> v(_size, false);
+    array<bool> nick(std::vector<bool>(_size, false));
+
+    index_t size_ = static_cast<index_t>(_size);
+
+    if(ndim() == 1)
+    {
+        for(index_t i = 0; i < size_; ++i)
+        {
+            (*nick._array)[i] = (*_array)[_offset + i] == rhs;
         }
 
         return nick;
@@ -387,6 +452,20 @@ operator==(const array<R> & rhs) const
 
     if(_size != rhs._size) return array<bool>({false});
     if(_shape != rhs._shape) return array<bool>({false});
+
+    if(ndim() == 1)
+    {
+        array<bool> nick(std::vector<bool>(_size, false));
+
+        index_t size_ = static_cast<index_t>(_size);
+
+        for(index_t i = 0; i < size_; ++i)
+        {
+            (*nick._array)[i] = (*_array)[_offset + i] == (*rhs._array)[rhs._offset + i];
+        }
+
+        return nick;
+    }
 
     throw std::runtime_error(
         fmt::format("{}({}): unhandled case", __FILE__, __LINE__)
@@ -425,7 +504,6 @@ operator=(const U & rhs)
 }
 
 
-
 template <class R>
 array<R> &
 array<R>::
@@ -437,9 +515,8 @@ operator=(const array<R> & rhs)
 
     _size = rhs._size;
     _array = rhs._array;
-    _data = rhs._data;
     _shape = rhs._shape;
-    _offsets = rhs._offsets;
+    _offset = rhs._offset;
     return *this;
 }
 
@@ -478,7 +555,7 @@ operator()(slice s)
             {
                 if(start >= stop) return a;
 
-                a._array = _array; // bump shared reference.
+                a._array = _array;
 
                 uint64 count = 0;
 
@@ -494,7 +571,7 @@ operator()(slice s)
 
                 if(!_strides.empty()) stride = _strides[0];
 
-                a._data = _data + start * stride;
+                a._offset = _offset + start * stride;
 
                 a._strides = {step + stride - 1};
 
@@ -504,7 +581,7 @@ operator()(slice s)
             {
                 if(stop >= start) return a;
 
-                a._array = _array; // bump shared reference.
+                a._array = _array;
 
                 uint64 count = 0;
 
@@ -520,7 +597,7 @@ operator()(slice s)
 
                 if(!_strides.empty()) stride = _strides[0];
 
-                a._data = _data + start * stride;
+                a._offset = _offset + start * stride;
 
                 a._strides = {step + stride - 1};
 
@@ -542,7 +619,7 @@ operator()(slice s)
             {
                 if(start >= stop) return a;
 
-                a._array = _array; // bump shared reference.
+                a._array = _array;
 
                 uint64 count = 0;
 
@@ -560,7 +637,7 @@ operator()(slice s)
 
                 if(!_strides.empty()) stride = _strides[1];
 
-                a._data = _data + start * stride * _shape[1];
+                a._offset = _offset + start * stride * _shape[1];
 
                 a._strides = {step + stride - 1};
 
@@ -570,7 +647,7 @@ operator()(slice s)
             {
                 if(stop >= start) return a;
 
-                a._array = _array; // bump shared reference.
+                a._array = _array;
 
                 uint64 count = 0;
 
@@ -588,7 +665,7 @@ operator()(slice s)
 
                 if(!_strides.empty()) stride = _strides[1];
 
-                a._data = _data + start * stride;
+                a._offset = _offset + start * stride;
 
                 a._strides = {step + stride - 1};
 
@@ -737,6 +814,8 @@ namespace detail
 
     template <class T> std::string type_name() { return "unknown"; }
 
+    template <> std::string type_name<bool>() { return "bool"; }
+
     template <> std::string type_name<int8 >() { return "int8"; }
     template <> std::string type_name<int16>() { return "int16"; }
     template <> std::string type_name<int32>() { return "int32"; }
@@ -774,15 +853,15 @@ print(const std::string & fmt_in) const
 
     if(ndim() <= 1)
     {
-        if(_size > 1) out << "array([ ";
+        if(_size != 1) out << "array([ ";
 
-        for(auto i = 0u; i < _size; ++i)
+        for(auto i = 0; i < _size; ++i)
         {
-            out << detail::_format<R>(fmt_, a(i));
-            if(_size > 1 && i + 1 < a._size) out << ", ";
+            out << detail::_format<R>(fmt_, (*_array)[_offset + i]);
+            if(_size != 1 && i + 1 < a._size) out << ", ";
         }
 
-        if(_size > 1) out << " ], " << detail::type_name<R>() << ")\n";
+        if(_size != 1) out << " ], " << detail::type_name<R>() << ")";
     }
     else
     if(ndim() == 2)
@@ -822,7 +901,7 @@ debug_print() const
         << "    _size:    " << _size << "\n"
         << "    _data:    " << fmt::format(
             "{:16d}",
-            reinterpret_cast<uint64>(_data)) << "\n"
+            reinterpret_cast<uint64>(_array.get())) << "\n"
         << "    _shape:   (";
 
     for(const auto & x : _shape) ss << x << ", ";
@@ -835,11 +914,7 @@ debug_print() const
 
     ss
         << ")\n"
-        << "    _offsets: (";
-
-    for(const auto & x : _offsets) ss << x << ", ";
-
-    ss << ")";
+        << "    _offset: "<< _offset << "\n";
 
     return ss.str();
 }
@@ -849,23 +924,14 @@ debug_print() const
 // const_array implementation
 
 template <class R>
-const_array<R>::operator const R & () const
+const_array<R>::operator typename detail::bool_return_type<R>::type () const
 {
     DOUT << __PRETTY_FUNCTION__ << "\n";
 
     if(_a._size != 1) throw std::runtime_error("converting to single value from array!");
 
-    return _a._data[0];
+    return (*_a._array)[_a._offset];
 }
-
-
-//~template <class R>
-//~const_array<R>::operator R() const
-//~{
-//~    if(_a._size != 1) throw std::runtime_error("converting to single value from array!");
-
-//~    return _a._data[0];
-//~}
 
 
 } // namespace
