@@ -168,23 +168,12 @@ TEST_CASE( "numcpp::array::slicing 2D -> 1D", "[slicing]" )
 
     auto b = a(2);
 
-    CHECK( b.ndim() == 1 );
-    CHECK( b.shape()[0] == 4 );
-    CHECK( b(0) == 8 );
-    CHECK( b(1) == 9 );
-    CHECK( b(2) == 10 );
-    CHECK( b(3) == 11 );
+    CHECK( all(b == array<int>({8,9,10,11})) );
 
     b = a(-2);
 
-    CHECK( b.ndim() == 1 );
-    CHECK( b.shape()[0] == 4 );
-    CHECK( b(0) == 4 );
-    CHECK( b(1) == 5 );
-    CHECK( b(2) == 6 );
-    CHECK( b(3) == 7 );
+    CHECK( all(b == array<int>({4,5,6,7})) );
 }
-
 
 
 TEST_CASE( "numcpp::array bool operators")
@@ -195,13 +184,55 @@ TEST_CASE( "numcpp::array bool operators")
 
     auto b = a(2);
 
-    auto gold = array<int>({8,9,10,11});
-
-    CHECK( all(gold == b) );
+    CHECK( all(b == array<int>({8,9,10,11})) );
 
     b = a(-2);
 
-    gold = array<int>({4,5,6,7});
+    CHECK( all(b == array<int>({4,5,6,7})) );
 
-    CHECK( all(gold == b) );
+    auto c = array<bool>({0,0,1,0});
+
+    CHECK( any(c) );
+
+    c = array<bool>({0,0,0,0});
+
+    CHECK_FALSE( any(c) );
+
+    c(2) = true;
+
+    CHECK( any(c) );
+
+    bool d = c(2);
+
+    CHECK( d );
+
+    d = c(0);
+
+    CHECK_FALSE( d );
+
+    c = !c;
+
+    CHECK( all(c == array<bool>({1,1,0,1})) );
 }
+
+
+TEST_CASE( "numcpp::array::slicing 2D -> 2D", "[slicing]" )
+{
+    missing _;
+
+    auto a = array<int>({0,1,2,3,4,5,6,7,8,9,10,11}).reshape({3,4});
+
+    auto b = a( 0_s | -2); //, 0 | _ );
+
+    std::cout << "b = " << b << "\n";
+
+//~    auto gold = array<int>(
+//~        {
+//~            4, 5,  6,  7,
+//~            8, 9, 10, 11
+//~        }
+//~    ).reshape({2,4});
+
+//~    CHECK( all(b == gold ) );
+}
+

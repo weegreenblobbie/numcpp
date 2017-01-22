@@ -15,7 +15,7 @@
 
 static bool _debug_out = false;
 
-#define DOUT if(_debug_out) std::cout << fmt::format("{}:({}): ", __FILE__, __LINE__)
+#define DOUT if(_debug_out) std::cout << fmt::format("\nDEBUG OUT | {}:({:4d}) | ", __FILE__, __LINE__)
 
 
 namespace numcpp
@@ -25,7 +25,6 @@ namespace numcpp
 // forward
 
 template <class R> class array;
-using array_bool = array<bool>;
 template <class R> class const_array;
 
 template <class R> std::ostream & operator<<(std::ostream &, const array<R> &);
@@ -42,8 +41,6 @@ public:
     using value_type      = typename std::vector<R>::value_type;
     using reference       = typename std::vector<R>::reference;
     using const_reference = typename std::vector<R>::const_reference;
-
-//~    using value_type = detail::get_value_type<R>::type;
 
     array(const std::initializer_list<R> & il);
     array(const std::vector<R> & v);
@@ -75,6 +72,7 @@ public:
     // operators
 
     operator value_type () const;       // implicitly convert to R
+    operator reference ();            // implicitly convert to R &
 
 //~    array<R> operator~() const;
     array<bool> operator!() const;
@@ -101,10 +99,11 @@ public:
 //~    array<bool> operator!() const;
 //~
 
-    array<R> operator()(slice);
+    array<R> operator()(const slice &);
+    array<R> operator()(const slice & s0, const slice & s1);
 
-    const_array<R> operator()(slice) const;
-
+    const_array<R> operator()(const slice &) const;
+    const_array<R> operator()(const slice &, const slice &) const;
 
 //~    const array<R> operator()(index_t i) const;
 
@@ -261,7 +260,7 @@ array()
     _strides(),
     _offset(0)
 {
-    DOUT << __PRETTY_FUNCTION__ << "\n";
+    DOUT << __PRETTY_FUNCTION__ << std::endl;
 }
 
 
@@ -275,7 +274,7 @@ array(const std::initializer_list<R> & il)
     _strides(),
     _offset(0)
 {
-    DOUT << __PRETTY_FUNCTION__ << "\n";
+    DOUT << __PRETTY_FUNCTION__ << std::endl;
 }
 
 
@@ -289,7 +288,7 @@ array(const std::vector<R> & v)
     _strides(),
     _offset(0)
 {
-    DOUT << __PRETTY_FUNCTION__ << "\n";
+    DOUT << __PRETTY_FUNCTION__ << std::endl;
 }
 
 
@@ -303,7 +302,7 @@ array(const std::vector<uint64> & shape, const R & value)
     _strides(),
     _offset(0)
 {
-    DOUT << __PRETTY_FUNCTION__ << "\n";
+    DOUT << __PRETTY_FUNCTION__ << std::endl;
 }
 
 
@@ -313,18 +312,31 @@ array(const array<R> & other)
     :
     array<R>()
 {
+    DOUT << __PRETTY_FUNCTION__ << std::endl;
+
     *this = other;
 
-    DOUT << __PRETTY_FUNCTION__ << "\n";
+    DOUT << __PRETTY_FUNCTION__ << std::endl;
 }
 
 
 template <class R>
 array<R>::operator array<R>::value_type () const
 {
-    DOUT << __PRETTY_FUNCTION__ << "\n";
+    DOUT << __PRETTY_FUNCTION__ << std::endl;
 
     if(_size != 1) throw std::runtime_error("converting to single value from array!");
+
+    return (*_array)[_offset];
+}
+
+
+template <class R>
+array<R>::operator array<R>::reference ()
+{
+    DOUT << __PRETTY_FUNCTION__ << std::endl;
+
+    if(_size != 1) throw std::runtime_error("converting to single reference from array!");
 
     return (*_array)[_offset];
 }
@@ -333,7 +345,7 @@ array<R>::operator array<R>::value_type () const
 template <>
 array<bool>::operator bool() const
 {
-    DOUT << __PRETTY_FUNCTION__ << "\n";
+    DOUT << __PRETTY_FUNCTION__ << std::endl;
 
     if(_size == 0) return false;
     if(_size != 1) throw std::runtime_error("The truth value of an array with more than one element is ambiguous. Use numcpp::any() or numcpp::all()");
@@ -361,7 +373,7 @@ array<bool>
 array<R>::
 operator!() const
 {
-    DOUT << __PRETTY_FUNCTION__ << "\n";
+    DOUT << __PRETTY_FUNCTION__ << std::endl;
 
 //~    std::vector<bool> v(_size, false);
     array<bool> nick(std::vector<bool>(_size, false));
@@ -400,7 +412,7 @@ array<bool>
 array<R>::
 operator==(const R & rhs) const
 {
-    DOUT << __PRETTY_FUNCTION__ << "\n";
+    DOUT << __PRETTY_FUNCTION__ << std::endl;
 
 //~    std::vector<bool> v(_size, false);
     array<bool> nick(std::vector<bool>(_size, false));
@@ -438,7 +450,7 @@ array<bool>
 array<R>::
 operator==(const array<R> & rhs) const
 {
-    DOUT << __PRETTY_FUNCTION__ << "\n";
+    DOUT << __PRETTY_FUNCTION__ << std::endl;
 
     if(_size != rhs._size) return array<bool>({false});
     if(_shape != rhs._shape) return array<bool>({false});
@@ -456,6 +468,25 @@ operator==(const array<R> & rhs) const
 
         return nick;
     }
+    else
+    if(ndim() == 2)
+    {
+        auto nick = array<bool>(std::vector<bool>(_size, false)).reshape(_shape);
+
+        const index_t M = _shape[0];
+        const index_t N = _shape[1];
+
+        for(index_t m = 0; m < M; ++m)
+        {
+            for(index_t n = 0; n < N; ++n)
+            {
+                (*nick._array)[m * N + n] = (*rhs._array)[rhs._offset + m * N + n];
+            }
+        }
+
+        return nick;
+    }
+
 
     throw std::runtime_error(
         fmt::format("{}({}): unhandled case", __FILE__, __LINE__)
@@ -470,7 +501,27 @@ array<R> &
 array<R>::
 operator=(const R & rhs)
 {
-    DOUT << __PRETTY_FUNCTION__ << "\n";
+    DOUT << __PRETTY_FUNCTION__ << std::endl;
+
+    index_t size_ = static_cast<index_t>(_size);
+
+    if(ndim() == 1)
+    {
+        for(index_t i = 0; i < size_; ++i)
+        {
+            (*_array)[_offset + i] = rhs;
+        }
+
+        return *this;
+    }
+    else
+    if(ndim() == 2)
+    {
+    }
+    else
+    if(ndim() == 3)
+    {
+    }
 
     throw std::runtime_error(
         fmt::format("{}({}): unhandled case", __FILE__, __LINE__)
@@ -499,7 +550,7 @@ array<R> &
 array<R>::
 operator=(const array<R> & rhs)
 {
-    DOUT << __PRETTY_FUNCTION__ << "\n";
+    DOUT << __PRETTY_FUNCTION__ << std::endl;
 
     if(this == &rhs) return *this;
 
@@ -523,8 +574,10 @@ operator=(const array<R> & rhs)
 template <class R>
 array<R>
 array<R>::
-operator()(slice s)
+operator()(const slice & s_)
 {
+    DOUT << __PRETTY_FUNCTION__ << std::endl;
+
     if(_size == 0) throw std::runtime_error("can't slice an empty array");
 
     array<R> a;
@@ -534,8 +587,8 @@ operator()(slice s)
         // 1D -> 1D
         case 1:
         {
-            axis_iterator ai(_shape[0], s);
-            s = ai.final();
+            axis_iterator ai(_shape[0], s_);
+            auto s = ai.final();
 
             index_t start = s.start();
             index_t stop = s.stop();
@@ -598,8 +651,8 @@ operator()(slice s)
         // 2D -> 1D
         case 2:
         {
-            axis_iterator ai(_shape[0], s);
-            s = ai.final();
+            axis_iterator ai(_shape[0], s_);
+            auto s = ai.final();
 
             index_t start = s.start();
             index_t stop = s.stop();
@@ -681,13 +734,136 @@ operator()(slice s)
 
 
 template <class R>
+array<R>
+array<R>::
+operator()(const slice & s0_, const slice & s1_)
+{
+    DOUT << __PRETTY_FUNCTION__ << std::endl;
+
+    if(_size == 0) throw std::runtime_error("can't slice an empty array");
+
+    switch(ndim())
+    {
+        case 1:
+        {
+            throw std::runtime_error("too many indicies for array");
+        }
+
+        case 2:
+        {
+            axis_iterator a0(_shape[0], s0_);
+            auto s0 = a0.final();
+
+            axis_iterator a1(_shape[1], s1_);
+            auto s1 = a1.final();
+
+            index_t start0 = s0.start();
+            index_t stop0  = s0.stop();
+            index_t step0  = s0.step();
+
+            index_t start1 = s1.start();
+            index_t stop1  = s1.stop();
+            index_t step1  = s1.step();
+
+            uint64 count0 = 0;
+            uint64 count1 = 0;
+
+            index_t stride0 = 1;
+            index_t stride1 = 1;
+
+            if(step0 > 0 and start0 < stop0)
+            {
+                for(auto x : a0)
+                {
+                    ++count0;
+                }
+
+                if(!_strides.empty()) stride0 = _strides[1];
+            }
+            else
+            if(step0 < 0 and stop0 < start0)
+            {
+                for(auto x : a1)
+                {
+                    ++count1;
+                }
+            }
+
+            if(step1 > 0 and start1 < stop1)
+            {
+                for(auto x : a1)
+                {
+                    ++count1;
+                }
+
+                if(!_strides.empty()) stride0 = _strides[1];
+            }
+            else
+            if(step1 < 0 and stop1 < start1)
+            {
+                for(auto x : a1)
+                {
+                    ++count1;
+                }
+            }
+
+            //-----------------------------------------------------------------
+            // special case size = 1
+
+            if(count0 == 1 && count1 == 1)
+            {
+                array<R> out;
+
+                out._size = 1;
+                out._array = _array;
+                out._shape = {1};
+                out._offset = _offset + start0 * stride0 + start1;
+                out._strides = {step0 + stride0 - 1};
+
+                return out;
+            }
+
+            break;
+        }
+
+        // 3D -> 2D
+        case 3:
+        {
+            break;
+        }
+    }
+
+    throw std::runtime_error(
+        fmt::format("{}({}): unhandled case", __FILE__, __LINE__)
+    );
+
+    return array<R>();
+}
+
+
+template <class R>
 const_array<R>
 array<R>::
-operator()(slice s) const
+operator()(const slice & s) const
 {
+    DOUT << __PRETTY_FUNCTION__ << std::endl;
+
     array<R> & r = const_cast<array<R>&>(*this);
 
     return const_array<R>(r(s));
+}
+
+
+template <class R>
+const_array<R>
+array<R>::
+operator()(const slice & s0, const slice & s1) const
+{
+    DOUT << __PRETTY_FUNCTION__ << std::endl;
+
+    array<R> & r = const_cast<array<R>&>(*this);
+
+    return const_array<R>(r(s0, s1));
 }
 
 
@@ -781,6 +957,7 @@ namespace detail
     // defaults for POD values
     template <class T> std::string _array_R_to_fmt() { return "{:g}"; }
 
+    template <> std::string _array_R_to_fmt<bool>()  { return "{}"; }
     template <> std::string _array_R_to_fmt<int8 >() { return "{:d}"; }
     template <> std::string _array_R_to_fmt<int16>() { return "{:d}"; }
     template <> std::string _array_R_to_fmt<int32>() { return "{:d}"; }
@@ -829,6 +1006,8 @@ std::string
 array<R>::
 print(const std::string & fmt_in) const
 {
+    DOUT << __PRETTY_FUNCTION__ << std::endl;
+
     if(size() > 100) throw std::runtime_error("array to big to print");
 
     if(ndim() > 2) throw std::runtime_error("fixme");
@@ -864,7 +1043,7 @@ print(const std::string & fmt_in) const
 
             for(auto j = 0u; j < _shape[1]; ++j)
             {
-//~                out << detail::_format(fmt_, a(i, j));
+                out << detail::_format(fmt_, a(i, j));
                 if(j + 1 < _shape[1]) out << ", ";
             }
 
@@ -883,6 +1062,8 @@ std::string
 array<R>::
 debug_print() const
 {
+    DOUT << __PRETTY_FUNCTION__ << std::endl;
+
     std::stringstream ss;
 
     ss
@@ -916,7 +1097,7 @@ debug_print() const
 template <class R>
 const_array<R>::operator typename const_array<R>::const_reference () const
 {
-    DOUT << __PRETTY_FUNCTION__ << "\n";
+    DOUT << __PRETTY_FUNCTION__ << std::endl;
 
     if(_a._size != 1) throw std::runtime_error("converting to single value from array!");
 
