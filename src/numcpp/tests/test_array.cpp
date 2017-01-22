@@ -216,23 +216,42 @@ TEST_CASE( "numcpp::array bool operators")
 }
 
 
+template <class T>
+std::ostream & operator<< (std::ostream & out, const std::vector<T> & vec)
+{
+    out << "[";
+
+    for(const auto & x : vec) out << x << ", ";
+
+    return out << "\b\b ]";
+}
+
+
 TEST_CASE( "numcpp::array::slicing 2D -> 2D", "[slicing]" )
 {
     missing _;
 
     auto a = array<int>({0,1,2,3,4,5,6,7,8,9,10,11}).reshape({3,4});
 
-    auto b = a( 0_s | -2); //, 0 | _ );
+    auto b = a( 0_s | -1);
 
-//~    std::cout << "b = " << b << "\n";
+    std::cout << "b = " << b << "\n";
 
-//~    auto gold = array<int>(
-//~        {
-//~            4, 5,  6,  7,
-//~            8, 9, 10, 11
-//~        }
-//~    ).reshape({2,4});
+    auto gold = array<int>(
+        {
+            4, 5,  6,  7,
+            8, 9, 10, 11
+        }
+    ).reshape({2,4});
 
-//~    CHECK( all(b == gold ) );
+    std::cout << "b.shape() = " << b.shape() << "\n";
+
+    auto c = b == gold;
+
+    std::cout << "c = " << c << "\n";
+
+    CHECK( all(b == gold ) );
+
+    std::cout << "c(1,1) = " << c(1,1) << "\n";
 }
 

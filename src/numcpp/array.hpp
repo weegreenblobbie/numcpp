@@ -989,22 +989,22 @@ print(const std::string & fmt_in) const
     else
     if(ndim() == 2)
     {
-        out << "array([\n";
+        if(_size != 1) out << "array([\n";
 
         for(auto i = 0u; i < _shape[0]; ++i)
         {
-            out << "    [ ";
+            if(_size != 1) out << "    [ ";
 
             for(auto j = 0u; j < _shape[1]; ++j)
             {
                 out << detail::_format(fmt_, a(i, j));
-                if(j + 1 < _shape[1]) out << ", ";
+                if(_size != 1 && j + 1 < _shape[1]) out << ", ";
             }
 
-            out << " ],\n";
+            if(_size != 1) out << " ],\n";
         }
 
-        out << "])";
+        if(_size != 1) out << "], " << detail::type_name<R>() << ")";
     }
 
     return out.str();
