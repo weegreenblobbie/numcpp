@@ -41,6 +41,8 @@ public:
 
     slice final() const                       { return slice(_start, _stop, _step); }
 
+    index_t size() const; // compute the number of elements in the slice
+
 private:
 
     slice_iterator _begin;
@@ -146,6 +148,21 @@ inline std::vector<uint64> axis_iterator::indices() const
     }
 
     return out;
+}
+
+
+inline index_t axis_iterator::size() const
+{
+    index_t s = (_stop - _start);
+
+    if(_step != 0)
+    {
+        if(s % _step) s += _step;
+
+        s /= _step;
+    }
+
+    return s;
 }
 
 

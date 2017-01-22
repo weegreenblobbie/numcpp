@@ -600,12 +600,7 @@ operator()(const slice & s_)
 
                 a._array = _array;
 
-                uint64 count = 0;
-
-                for(auto x : ai)
-                {
-                    ++count;
-                }
+                uint64 count = ai.size();
 
                 a._shape = {count};
                 a._size = count;
@@ -626,12 +621,7 @@ operator()(const slice & s_)
 
                 a._array = _array;
 
-                uint64 count = 0;
-
-                for(auto x : ai)
-                {
-                    ++count;
-                }
+                uint64 count = ai.size();
 
                 a._shape = {count};
                 a._size = count;
@@ -664,12 +654,7 @@ operator()(const slice & s_)
 
                 a._array = _array;
 
-                uint64 count = 0;
-
-                for(auto x : ai)
-                {
-                    ++count;
-                }
+                uint64 count = ai.size();
 
                 if(count > 1) a._shape = {count, _shape[1]};
                 else          a._shape = {_shape[1]};
@@ -692,12 +677,7 @@ operator()(const slice & s_)
 
                 a._array = _array;
 
-                uint64 count = 0;
-
-                for(auto x : ai)
-                {
-                    ++count;
-                }
+                uint64 count = ai.size();
 
                 if(count > 1) a._shape = {count, _shape[1]};
                 else          a._shape = {_shape[1]};
@@ -765,46 +745,20 @@ operator()(const slice & s0_, const slice & s1_)
             index_t stop1  = s1.stop();
             index_t step1  = s1.step();
 
-            uint64 count0 = 0;
-            uint64 count1 = 0;
+            uint64 count0 = a0.size();
+            uint64 count1 = a1.size();
 
             index_t stride0 = 1;
             index_t stride1 = 1;
 
             if(step0 > 0 and start0 < stop0)
             {
-                for(auto x : a0)
-                {
-                    ++count0;
-                }
-
                 if(!_strides.empty()) stride0 = _strides[1];
-            }
-            else
-            if(step0 < 0 and stop0 < start0)
-            {
-                for(auto x : a1)
-                {
-                    ++count1;
-                }
             }
 
             if(step1 > 0 and start1 < stop1)
             {
-                for(auto x : a1)
-                {
-                    ++count1;
-                }
-
                 if(!_strides.empty()) stride0 = _strides[1];
-            }
-            else
-            if(step1 < 0 and stop1 < start1)
-            {
-                for(auto x : a1)
-                {
-                    ++count1;
-                }
             }
 
             //-----------------------------------------------------------------

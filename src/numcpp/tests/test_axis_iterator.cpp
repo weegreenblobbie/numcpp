@@ -20,6 +20,8 @@ TEST_CASE( "numcpp::axis_iterator", "[directed tests]" )
         gold = {4};
 
         CHECK( a.indices() == gold );
+
+        CHECK( a.size() == gold.size() );
     }
 
     INFO(" a:b ");
@@ -29,6 +31,8 @@ TEST_CASE( "numcpp::axis_iterator", "[directed tests]" )
         gold = {4,5,6,7};
 
         CHECK( a.indices() == gold );
+
+        CHECK( a.size() == gold.size() );
     }
 
     INFO(" a:b:c ");
@@ -38,6 +42,8 @@ TEST_CASE( "numcpp::axis_iterator", "[directed tests]" )
         gold = {4,6};
 
         CHECK( a.indices() == gold );
+
+        CHECK( a.size() == gold.size() );
     }
 
     INFO(" -a ");
@@ -47,6 +53,8 @@ TEST_CASE( "numcpp::axis_iterator", "[directed tests]" )
         gold = {6};
 
         CHECK( a.indices() == gold );
+
+        CHECK( a.size() == gold.size() );
     }
 
     INFO(" invalid a:-1:-1 ");
@@ -56,6 +64,8 @@ TEST_CASE( "numcpp::axis_iterator", "[directed tests]" )
         gold = {};
 
         CHECK( a.indices() == gold );
+
+        CHECK( a.size() == gold.size() );
     }
 
     INFO(" invalid -a:-b ");
@@ -65,6 +75,8 @@ TEST_CASE( "numcpp::axis_iterator", "[directed tests]" )
         gold = {};
 
         CHECK( a.indices() == gold );
+
+        CHECK( a.size() == gold.size() );
     }
 
     INFO(" -a:-b:-c ");
@@ -74,6 +86,8 @@ TEST_CASE( "numcpp::axis_iterator", "[directed tests]" )
         gold = {6, 4};
 
         CHECK( a.indices() == gold );
+
+        CHECK( a.size() == gold.size() );
     }
 
     missing _;
@@ -85,6 +99,8 @@ TEST_CASE( "numcpp::axis_iterator", "[directed tests]" )
         gold = {0,1,2,3,4,5};
 
         CHECK( a.indices() == gold );
+
+        CHECK( a.size() == gold.size() );
     }
 
     INFO(" ::2 ");
@@ -94,6 +110,8 @@ TEST_CASE( "numcpp::axis_iterator", "[directed tests]" )
         gold = {0,2,4,6,8};
 
         CHECK( a.indices() == gold );
+
+        CHECK( a.size() == gold.size() );
     }
 
     INFO(" ::-2 ");
@@ -103,6 +121,8 @@ TEST_CASE( "numcpp::axis_iterator", "[directed tests]" )
         gold = {9,7,5,3,1};
 
         CHECK( a.indices() == gold );
+
+        CHECK( a.size() == gold.size() );
     }
 
     INFO(" 4::2 ");
@@ -112,6 +132,8 @@ TEST_CASE( "numcpp::axis_iterator", "[directed tests]" )
         gold = {4,6,8};
 
         CHECK( a.indices() == gold );
+
+        CHECK( a.size() == gold.size() );
     }
 
     INFO(" -4::2 ");
@@ -121,6 +143,8 @@ TEST_CASE( "numcpp::axis_iterator", "[directed tests]" )
         gold = {6,8};
 
         CHECK( a.indices() == gold );
+
+        CHECK( a.size() == gold.size() );
     }
 
     INFO(" 4::-2 ");
@@ -130,6 +154,8 @@ TEST_CASE( "numcpp::axis_iterator", "[directed tests]" )
         gold = {4,2,0};
 
         CHECK( a.indices() == gold );
+
+        CHECK( a.size() == gold.size() );
     }
 
     INFO(" -4::-2 ");
@@ -139,6 +165,8 @@ TEST_CASE( "numcpp::axis_iterator", "[directed tests]" )
         gold = {6,4,2,0};
 
         CHECK( a.indices() == gold );
+
+        CHECK( a.size() == gold.size() );
     }
 
     INFO(" :-10 ");
@@ -148,6 +176,8 @@ TEST_CASE( "numcpp::axis_iterator", "[directed tests]" )
         gold = {};
 
         CHECK( a.indices() == gold );
+
+        CHECK( a.size() == gold.size() );
     }
 
     INFO(" 6:3-1 ");
@@ -157,6 +187,8 @@ TEST_CASE( "numcpp::axis_iterator", "[directed tests]" )
         gold = {6, 5, 4};
 
         CHECK( a.indices() == gold );
+
+        CHECK( a.size() == gold.size() );
     }
 
 }
@@ -177,6 +209,8 @@ TEST_CASE( "numcpp::axis_iterator random", "[randomly generated test cases]" )
         gold = {0, 7};
 
         CHECK( a.indices() == gold );
+
+        CHECK( a.size() == gold.size() );
     }
 
     INFO(" -7 | _ | -3 ");
@@ -186,6 +220,8 @@ TEST_CASE( "numcpp::axis_iterator random", "[randomly generated test cases]" )
         gold = {3, 0};
 
         CHECK( a.indices() == gold );
+
+        CHECK( a.size() == gold.size() );
     }
 
     INFO(" _ | 6 | 4 ");
@@ -195,6 +231,8 @@ TEST_CASE( "numcpp::axis_iterator random", "[randomly generated test cases]" )
         gold = {0, 4};
 
         CHECK( a.indices() == gold );
+
+        CHECK( a.size() == gold.size() );
     }
 
     INFO(" _ | _ | -1 ");
@@ -204,6 +242,8 @@ TEST_CASE( "numcpp::axis_iterator random", "[randomly generated test cases]" )
         gold = {9, 8, 7, 6, 5, 4, 3, 2, 1, 0};
 
         CHECK( a.indices() == gold );
+
+        CHECK( a.size() == gold.size() );
     }
 
     INFO(" -1_s | 5 | -7 ");
@@ -213,6 +253,8 @@ TEST_CASE( "numcpp::axis_iterator random", "[randomly generated test cases]" )
         gold = {9};
 
         CHECK( a.indices() == gold );
+
+        CHECK( a.size() == gold.size() );
     }
 
     INFO(" _ | -2 | -10 ");
@@ -222,6 +264,8 @@ TEST_CASE( "numcpp::axis_iterator random", "[randomly generated test cases]" )
         gold = {9};
 
         CHECK( a.indices() == gold );
+
+        CHECK( a.size() == gold.size() );
     }
 
     INFO(" _ | -7 | -6 ");
@@ -231,6 +275,8 @@ TEST_CASE( "numcpp::axis_iterator random", "[randomly generated test cases]" )
         gold = {9};
 
         CHECK( a.indices() == gold );
+
+        CHECK( a.size() == gold.size() );
     }
 
     INFO(" _ | -9 | 6 ");
@@ -240,6 +286,8 @@ TEST_CASE( "numcpp::axis_iterator random", "[randomly generated test cases]" )
         gold = {0};
 
         CHECK( a.indices() == gold );
+
+        CHECK( a.size() == gold.size() );
     }
 
     INFO(" 2_s | -10 | 3 ");
@@ -249,6 +297,8 @@ TEST_CASE( "numcpp::axis_iterator random", "[randomly generated test cases]" )
         gold = {};
 
         CHECK( a.indices() == gold );
+
+        CHECK( a.size() == gold.size() );
     }
 
     INFO(" 3_s | 7 | -6 ");
@@ -258,6 +308,8 @@ TEST_CASE( "numcpp::axis_iterator random", "[randomly generated test cases]" )
         gold = {};
 
         CHECK( a.indices() == gold );
+
+        CHECK( a.size() == gold.size() );
     }
 
     INFO(" _ | -10 | -4 ");
@@ -267,6 +319,8 @@ TEST_CASE( "numcpp::axis_iterator random", "[randomly generated test cases]" )
         gold = {9, 5, 1};
 
         CHECK( a.indices() == gold );
+
+        CHECK( a.size() == gold.size() );
     }
 
     INFO(" -4_s | 3 | 9 ");
@@ -276,6 +330,8 @@ TEST_CASE( "numcpp::axis_iterator random", "[randomly generated test cases]" )
         gold = {};
 
         CHECK( a.indices() == gold );
+
+        CHECK( a.size() == gold.size() );
     }
 
     INFO(" 7_s | 6 | -5 ");
@@ -285,6 +341,8 @@ TEST_CASE( "numcpp::axis_iterator random", "[randomly generated test cases]" )
         gold = {7};
 
         CHECK( a.indices() == gold );
+
+        CHECK( a.size() == gold.size() );
     }
 
     INFO(" 4_s | -6 ");
@@ -294,6 +352,8 @@ TEST_CASE( "numcpp::axis_iterator random", "[randomly generated test cases]" )
         gold = {};
 
         CHECK( a.indices() == gold );
+
+        CHECK( a.size() == gold.size() );
     }
 
     INFO(" 9_s | -5 | 7 ");
@@ -303,6 +363,8 @@ TEST_CASE( "numcpp::axis_iterator random", "[randomly generated test cases]" )
         gold = {};
 
         CHECK( a.indices() == gold );
+
+        CHECK( a.size() == gold.size() );
     }
 
     INFO(" 1_s | 5 ");
@@ -312,6 +374,8 @@ TEST_CASE( "numcpp::axis_iterator random", "[randomly generated test cases]" )
         gold = {1, 2, 3, 4};
 
         CHECK( a.indices() == gold );
+
+        CHECK( a.size() == gold.size() );
     }
 
     INFO(" -8_s | -9 | 3 ");
@@ -321,6 +385,8 @@ TEST_CASE( "numcpp::axis_iterator random", "[randomly generated test cases]" )
         gold = {};
 
         CHECK( a.indices() == gold );
+
+        CHECK( a.size() == gold.size() );
     }
 
     INFO(" -1 | _ ");
@@ -330,6 +396,8 @@ TEST_CASE( "numcpp::axis_iterator random", "[randomly generated test cases]" )
         gold = {9};
 
         CHECK( a.indices() == gold );
+
+        CHECK( a.size() == gold.size() );
     }
 
     INFO(" -6_s | 7 | 6 ");
@@ -339,6 +407,8 @@ TEST_CASE( "numcpp::axis_iterator random", "[randomly generated test cases]" )
         gold = {4};
 
         CHECK( a.indices() == gold );
+
+        CHECK( a.size() == gold.size() );
     }
 
     INFO(" 4_s | 2 | 7 ");
@@ -348,6 +418,8 @@ TEST_CASE( "numcpp::axis_iterator random", "[randomly generated test cases]" )
         gold = {};
 
         CHECK( a.indices() == gold );
+
+        CHECK( a.size() == gold.size() );
     }
 
     INFO(" 5_s | -2 | 2 ");
@@ -357,6 +429,8 @@ TEST_CASE( "numcpp::axis_iterator random", "[randomly generated test cases]" )
         gold = {5, 7};
 
         CHECK( a.indices() == gold );
+
+        CHECK( a.size() == gold.size() );
     }
 
     INFO(" 8_s | -2 | -10 ");
@@ -366,6 +440,8 @@ TEST_CASE( "numcpp::axis_iterator random", "[randomly generated test cases]" )
         gold = {};
 
         CHECK( a.indices() == gold );
+
+        CHECK( a.size() == gold.size() );
     }
 
     INFO(" -5_s | 9 | -4 ");
@@ -375,6 +451,8 @@ TEST_CASE( "numcpp::axis_iterator random", "[randomly generated test cases]" )
         gold = {};
 
         CHECK( a.indices() == gold );
+
+        CHECK( a.size() == gold.size() );
     }
 
     INFO(" 0_s | 6 | -4 ");
@@ -384,6 +462,8 @@ TEST_CASE( "numcpp::axis_iterator random", "[randomly generated test cases]" )
         gold = {};
 
         CHECK( a.indices() == gold );
+
+        CHECK( a.size() == gold.size() );
     }
 
     INFO(" _ | _ | 6 ");
@@ -393,6 +473,8 @@ TEST_CASE( "numcpp::axis_iterator random", "[randomly generated test cases]" )
         gold = {0, 6};
 
         CHECK( a.indices() == gold );
+
+        CHECK( a.size() == gold.size() );
     }
 
     INFO(" -9 | _ | -2 ");
@@ -402,6 +484,8 @@ TEST_CASE( "numcpp::axis_iterator random", "[randomly generated test cases]" )
         gold = {1};
 
         CHECK( a.indices() == gold );
+
+        CHECK( a.size() == gold.size() );
     }
 
     INFO(" 5_s | 4 | 2 ");
@@ -411,6 +495,8 @@ TEST_CASE( "numcpp::axis_iterator random", "[randomly generated test cases]" )
         gold = {};
 
         CHECK( a.indices() == gold );
+
+        CHECK( a.size() == gold.size() );
     }
 
     INFO(" 4_s | 9 | -8 ");
@@ -420,6 +506,8 @@ TEST_CASE( "numcpp::axis_iterator random", "[randomly generated test cases]" )
         gold = {};
 
         CHECK( a.indices() == gold );
+
+        CHECK( a.size() == gold.size() );
     }
 
     INFO(" 4_s | 9 | -4 ");
@@ -429,6 +517,8 @@ TEST_CASE( "numcpp::axis_iterator random", "[randomly generated test cases]" )
         gold = {};
 
         CHECK( a.indices() == gold );
+
+        CHECK( a.size() == gold.size() );
     }
 
     INFO(" -7_s | 6 ");
@@ -438,6 +528,8 @@ TEST_CASE( "numcpp::axis_iterator random", "[randomly generated test cases]" )
         gold = {3, 4, 5};
 
         CHECK( a.indices() == gold );
+
+        CHECK( a.size() == gold.size() );
     }
 
     INFO(" _ | _ | 6 ");
@@ -447,6 +539,8 @@ TEST_CASE( "numcpp::axis_iterator random", "[randomly generated test cases]" )
         gold = {0, 6};
 
         CHECK( a.indices() == gold );
+
+        CHECK( a.size() == gold.size() );
     }
 
     INFO(" -9_s | 4 | 3 ");
@@ -456,6 +550,8 @@ TEST_CASE( "numcpp::axis_iterator random", "[randomly generated test cases]" )
         gold = {1};
 
         CHECK( a.indices() == gold );
+
+        CHECK( a.size() == gold.size() );
     }
 }
 

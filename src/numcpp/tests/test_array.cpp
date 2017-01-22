@@ -224,7 +224,7 @@ TEST_CASE( "numcpp::array::slicing 2D -> 2D", "[slicing]" )
 
     auto b = a( 0_s | -2); //, 0 | _ );
 
-    std::cout << "b = " << b << "\n";
+//~    std::cout << "b = " << b << "\n";
 
 //~    auto gold = array<int>(
 //~        {
