@@ -32,23 +32,16 @@ template <class R> std::ostream & operator<<(std::ostream &, const array<R> &);
 template <class R> std::ostream & operator<<(std::ostream &, const const_array<R> &);
 
 
-//~namespace detail
-//~{
-//~    template <class R>
-//~    struct get_value_type { using type R; };
-
-//~    template <>
-//~    struct get_value_type<bool> { using type char; };
-
-//~} // namespace
-
-
 template <class R>
 class array
 {
 
 
 public:
+
+    using value_type      = typename std::vector<R>::value_type;
+    using reference       = typename std::vector<R>::reference;
+    using const_reference = typename std::vector<R>::const_reference;
 
 //~    using value_type = detail::get_value_type<R>::type;
 
@@ -81,7 +74,7 @@ public:
     //-------------------------------------------------------------------------
     // operators
 
-    operator R() const;
+    operator value_type () const;       // implicitly convert to R
 
 //~    array<R> operator~() const;
     array<bool> operator!() const;
@@ -97,8 +90,7 @@ public:
     array<R> & operator=(const R & rhs);
 
     template <typename U>
-    array<R> & operator=(const U & rhs);
-
+    array<R> & operator=(const U & rhs);  // used to create compiler error for type mismatch
 
 //~
 //~    // unary ops
@@ -196,7 +188,9 @@ class const_array
 
 public:
 
-    using value_type = R;
+    using value_type      = typename array<R>::value_type;
+    using reference       = typename array<R>::reference;
+    using const_reference = typename array<R>::const_reference;
 
     const uint32              ndim() const                   { return _a.ndim(); }
     std::size_t               size() const                   { return _a.size(); }
@@ -205,14 +199,10 @@ public:
     std::string               print(const std::string & fmt_ = "") const { return _a.print(fmt_); }
     std::string               debug_print() const                        { return _a.debug_print(); }
 
-
-    operator typename detail::bool_return_type<R>::type () const;
-
+    operator const_reference () const;
 
     array<bool> operator==(const R & rhs) const         { return _a == rhs; }
     array<bool> operator==(const array<R> & rhs) const  { return _a == rhs; }
-
-
 
     const_array<R> operator()(slice) const;
 
@@ -330,7 +320,7 @@ array(const array<R> & other)
 
 
 template <class R>
-array<R>::operator R() const
+array<R>::operator array<R>::value_type () const
 {
     DOUT << __PRETTY_FUNCTION__ << "\n";
 
@@ -855,7 +845,7 @@ print(const std::string & fmt_in) const
     {
         if(_size != 1) out << "array([ ";
 
-        for(auto i = 0; i < _size; ++i)
+        for(index_t i = 0; i < _size; ++i)
         {
             out << detail::_format<R>(fmt_, (*_array)[_offset + i]);
             if(_size != 1 && i + 1 < a._size) out << ", ";
@@ -924,7 +914,7 @@ debug_print() const
 // const_array implementation
 
 template <class R>
-const_array<R>::operator typename detail::bool_return_type<R>::type () const
+const_array<R>::operator typename const_array<R>::const_reference () const
 {
     DOUT << __PRETTY_FUNCTION__ << "\n";
 
