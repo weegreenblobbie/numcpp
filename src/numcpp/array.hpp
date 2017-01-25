@@ -501,12 +501,16 @@ operator==(const array<R> & rhs) const
 
         const index_t M = _shape[0];
         const index_t N = _shape[1];
+        const index_t stride = _strides[0];
 
         for(index_t m = 0; m < M; ++m)
         {
             for(index_t n = 0; n < N; ++n)
             {
-                (*nick._array)[m * N + n] = (*rhs._array)[rhs._offset + m * N + n];
+                auto l = (*this->_array)[_offset + m * stride + n];
+                auto r = (*rhs._array)[rhs._offset + m * rhs._strides[0] + n];
+
+                (*nick._array)[m * N + n] = l == r;
             }
         }
 
@@ -677,6 +681,12 @@ operator()(const slice & s_)
             index_t stop = s.stop();
             index_t step = s.step();
 
+            DOUT
+                << "\n    -------------------------------------------\n"
+                <<   "    start = " << start << "\n"
+                <<   "    stop  = " << stop << "\n"
+                <<   "    step  = " << step << "\n";
+
             if(step > 0)
             {
                 if(start >= stop) return a;
@@ -690,13 +700,15 @@ operator()(const slice & s_)
 
                 a._size = count * _shape[1];
 
-                index_t stride = 1;
+                a._offset = _offset + start * _strides[0];
 
-//~                if(!_strides.empty()) stride = _strides[1];
+                a._strides = _strides;
 
-                a._offset = _offset + start * stride * _shape[1];
+                a._strides[0] += (step - 1);
 
-                a._strides = {step + stride - 1};
+                DOUT
+                    << "\n    offset  = " << a._offset << "\n"
+                    <<   "    strides = " << a._strides[0] << "\n";
 
                 return a;
             }
@@ -713,13 +725,13 @@ operator()(const slice & s_)
 
                 a._size = count * _shape[1];
 
-                index_t stride = 1;
+                a._offset = _offset + start * _strides[0];
 
-//~                if(!_strides.empty()) stride = _strides[1];
+                a._strides = _strides;
 
-                a._offset = _offset + start * stride;
-
-                a._strides = {step + stride - 1};
+                DOUT
+                    << "\n    offset  = " << a._offset << "\n"
+                    <<   "    strides = " << a._strides[0] << "\n";
 
                 return a;
             }
@@ -790,7 +802,8 @@ operator()(const slice & s0_, const slice & s1_)
                 out._offset = _offset + start0 * _strides[0] + start1;
                 out._strides = {_strides[0]};
 
-                std::cout << "-------------------------------------------1\n"
+                DOUT << "\n"
+                    << "-------------------------------------------1\n"
                     << "    start0 = " << start0 << "\n"
                     << "    start1 = " << start1 << "\n"
                     << "        _strides[0] = " << _strides[0] << "\n"
@@ -816,7 +829,8 @@ operator()(const slice & s0_, const slice & s1_)
                 out._offset = _offset + start0 * _strides[0] + start1;
                 out._strides = {_strides[0]};
 
-                std::cout << "-------------------------------------------2d\n"
+                DOUT << "\n"
+                    << "-------------------------------------------2d\n"
                     << "    start0 = " << start0 << "\n"
                     << "    start1 = " << start1 << "\n"
                     << "        _strides[0] = " << _strides[0] << "\n"

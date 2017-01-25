@@ -164,9 +164,18 @@ TEST_CASE( "numcpp::array::slicing 2D -> 1D", "[slicing]" )
 {
     missing _;
 
-    auto a = array<int>({0,1,2,3,4,5,6,7,8,9,10,11}).reshape({3,4});
+    auto a = array<int>(
+        {
+            0, 1,  2,  3,
+            4, 5,  6,  7,
+            8, 9, 10, 11
+        }
+    ).reshape({3,4});
 
     auto b = a(2);
+
+    INFO("a = " << a.debug_print());
+    INFO("b = " << b.debug_print());
 
     CHECK( all(b == array<int>({8,9,10,11})) );
 
@@ -240,28 +249,22 @@ TEST_CASE( "numcpp::array::slicing 2D -> 2D", "[slicing]" )
         }
     ).reshape({4,5});
 
-    WARN("a = " << a.print("{:2d}") << "\n");
+    INFO(" slice along rows ");
+    {
+        auto gold = array<int>(
+            {
+                 0,  1,  2,  3,  4,
+                 5,  6,  7,  8,  9,
+                10, 11, 12, 13, 14,
+            }
+        ).reshape({3,5});
 
-//~    INFO(" slice along rows ");
-//~    {
-//~        _debug_out = true;
+        auto b = a( 0_s | -1);
 
-//~        auto b = a( 0_s | -1);
+        auto c = b == gold;
 
-//~        auto gold = array<int>(
-//~            {
-//~                 0,  1,  2,  3,  4,
-//~                 5,  6,  7,  8,  9,
-//~                10, 11, 12, 13, 14,
-//~            }
-//~        ).reshape({3,5});
-
-//~        WARN("b = " << b << "\n");
-
-//~        auto c = b == gold;
-
-//~        CHECK( all(b == gold ) );
-//~    }
+        CHECK( all(b == gold ) );
+    }
 
 //~    INFO(" slice along rows ");
 //~    {
