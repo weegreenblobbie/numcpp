@@ -215,11 +215,11 @@ protected:
 };
 
 
-
-
-
 //-----------------------------------------------------------------------------
 // inline implementation
+
+#define M_THROW_RT_ERROR( msg_expr ) \
+    {std::stringstream ss; ss << __FILE__ << "(" << __LINE__ << ") " << msg_expr; throw std::runtime_error(ss.str());}
 
 namespace detail
 {
@@ -257,7 +257,7 @@ array()
     _size(0),
     _array(nullptr),
     _shape(),
-    _strides(),
+    _strides({1}),
     _offset(0)
 {
     DOUT << __PRETTY_FUNCTION__ << std::endl;
@@ -271,7 +271,7 @@ array(const std::initializer_list<R> & il)
     _size(il.size()),
     _array(std::make_shared<std::vector<R>>(il)),
     _shape({_size}),
-    _strides(),
+    _strides({1}),
     _offset(0)
 {
     DOUT << __PRETTY_FUNCTION__ << std::endl;
@@ -285,7 +285,7 @@ array(const std::vector<R> & v)
     _size(v.size()),
     _array(std::make_shared<std::vector<R>>(v)),
     _shape({_size}),
-    _strides(),
+    _strides({1}),
     _offset(0)
 {
     DOUT << __PRETTY_FUNCTION__ << std::endl;
@@ -299,10 +299,12 @@ array(const std::vector<uint64> & shape, const R & value)
     _size(detail::_compute_size(shape)),
     _array(std::make_shared<std::vector<R>>(std::vector<R>(_size, value))),
     _shape(shape),
-    _strides(),
+    _strides({1}),
     _offset(0)
 {
     DOUT << __PRETTY_FUNCTION__ << std::endl;
+
+//~    if(ndim() > 1) _strides[0] = _shape[1];
 }
 
 
@@ -353,6 +355,7 @@ array<bool>::operator bool() const
     return (*_array)[_offset];
 }
 
+
 template <class R>
 array<R> &
 array<R>::
@@ -363,6 +366,28 @@ reshape(const std::vector<uint64> & shape)
     if(_size != s) throw std::runtime_error("total size of new array must be unchanged");
 
     _shape = shape;
+
+    switch(ndim())
+    {
+        case 1:
+        {
+            _strides = {1};
+            break;
+        }
+
+        case 2:
+        {
+            _strides = {static_cast<index_t>(_shape[1])};
+            break;
+        }
+
+        default:
+        {
+            throw std::runtime_error(
+                fmt::format("{}({}): unhandled case", __FILE__, __LINE__)
+            );
+        }
+    }
 
     return *this;
 }
@@ -423,6 +448,7 @@ operator==(const R & rhs) const
     {
         for(index_t i = 0; i < size_; ++i)
         {
+            // FIXME: invalid read
             (*nick._array)[i] = (*_array)[_offset + i] == rhs;
         }
 
@@ -558,17 +584,10 @@ operator=(const array<R> & rhs)
     _array = rhs._array;
     _shape = rhs._shape;
     _offset = rhs._offset;
+    _strides = rhs._strides;
+
     return *this;
 }
-
-
-//~template <class R>
-//~bool
-//~array<R>::
-//~operator==(const array<R> & rhs) const
-//~{
-//~    return _data == rhs._data && _shape == rhs._shape
-//~}
 
 
 template <class R>
@@ -594,6 +613,12 @@ operator()(const slice & s_)
             index_t stop = s.stop();
             index_t step = s.step();
 
+            DOUT
+                << "\n    -------------------------------------------\n"
+                <<   "    start = " << start << "\n"
+                <<   "    stop  = " << stop << "\n"
+                <<   "    step  = " << step << "\n";
+
             if(step > 0)
             {
                 if(start >= stop) return a;
@@ -605,13 +630,15 @@ operator()(const slice & s_)
                 a._shape = {count};
                 a._size = count;
 
-                index_t stride = 1;
-
-                if(!_strides.empty()) stride = _strides[0];
+                index_t stride = _strides[0];
 
                 a._offset = _offset + start * stride;
 
-                a._strides = {step + stride - 1};
+                a._strides = {step * stride};
+
+                DOUT
+                    << "\n    offset  = " << a._offset << "\n"
+                    <<   "    strides = " << a._strides[0] << "\n";
 
                 return a;
             }
@@ -626,13 +653,15 @@ operator()(const slice & s_)
                 a._shape = {count};
                 a._size = count;
 
-                index_t stride = 1;
-
-                if(!_strides.empty()) stride = _strides[0];
+                index_t stride = _strides[0];
 
                 a._offset = _offset + start * stride;
 
-                a._strides = {step + stride - 1};
+                a._strides = {step * stride};
+
+                DOUT
+                    << "    offset  = " << a._offset << "\n"
+                    << "    strides = " << a._strides[0] << "\n";
 
                 return a;
             }
@@ -663,7 +692,7 @@ operator()(const slice & s_)
 
                 index_t stride = 1;
 
-                if(!_strides.empty()) stride = _strides[1];
+//~                if(!_strides.empty()) stride = _strides[1];
 
                 a._offset = _offset + start * stride * _shape[1];
 
@@ -686,7 +715,7 @@ operator()(const slice & s_)
 
                 index_t stride = 1;
 
-                if(!_strides.empty()) stride = _strides[1];
+//~                if(!_strides.empty()) stride = _strides[1];
 
                 a._offset = _offset + start * stride;
 
@@ -748,19 +777,6 @@ operator()(const slice & s0_, const slice & s1_)
             uint64 count0 = a0.size();
             uint64 count1 = a1.size();
 
-            index_t stride0 = 1;
-            index_t stride1 = 1;
-
-            if(step0 > 0 and start0 < stop0)
-            {
-                if(!_strides.empty()) stride0 = _strides[1];
-            }
-
-            if(step1 > 0 and start1 < stop1)
-            {
-                if(!_strides.empty()) stride0 = _strides[1];
-            }
-
             //-----------------------------------------------------------------
             // special case size = 1
 
@@ -771,8 +787,45 @@ operator()(const slice & s0_, const slice & s1_)
                 out._size = 1;
                 out._array = _array;
                 out._shape = {1};
-                out._offset = _offset + start0 * stride0 + start1;
-                out._strides = {step0 + stride0 - 1};
+                out._offset = _offset + start0 * _strides[0] + start1;
+                out._strides = {_strides[0]};
+
+                std::cout << "-------------------------------------------1\n"
+                    << "    start0 = " << start0 << "\n"
+                    << "    start1 = " << start1 << "\n"
+                    << "        _strides[0] = " << _strides[0] << "\n"
+                    << "    offset = " << out._offset << "\n";
+
+                if(out._offset >= _size)
+                {
+                    M_THROW_RT_ERROR("offset >= size (" << out._offset << " >= " << _size << ")");
+                }
+
+                return out;
+            }
+
+            //-----------------------------------------------------------------
+            // special case size > 1 in both
+            if(count0 > 1 && count1 > 1)
+            {
+                array<R> out;
+
+                out._size = 1;
+                out._array = _array;
+                out._shape = {1};
+                out._offset = _offset + start0 * _strides[0] + start1;
+                out._strides = {_strides[0]};
+
+                std::cout << "-------------------------------------------2d\n"
+                    << "    start0 = " << start0 << "\n"
+                    << "    start1 = " << start1 << "\n"
+                    << "        _strides[0] = " << _strides[0] << "\n"
+                    << "    offset = " << out._offset << "\n";
+
+                if(out._offset >= _size)
+                {
+                    M_THROW_RT_ERROR("offset >= size (" << out._offset << " >= " << _size << ")");
+                }
 
                 return out;
             }
@@ -980,6 +1033,7 @@ print(const std::string & fmt_in) const
 
         for(index_t i = 0; i < _size; ++i)
         {
+            // FIXME: invalid read
             out << detail::_format<R>(fmt_, (*_array)[_offset + i]);
             if(_size != 1 && i + 1 < a._size) out << ", ";
         }

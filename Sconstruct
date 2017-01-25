@@ -22,7 +22,7 @@ default_cfg = dict(
 
 
 #-----------------------------------------------------------------------------
-# site configurestion
+# detect site config
 
 site_cfg = File("site.cfg").path
 
@@ -47,12 +47,18 @@ if not os.path.isfile(site_cfg):
         cfg_out.write(fd)
         print("Wrote %s" % site_config.path)
 
+
+#-----------------------------------------------------------------------------
 # read in site configuration
+
+print("Reading site configuration")
+print("    in: %s" % site_cfg)
 
 site_config = RawConfigParser()
 
 with open(site_cfg, 'r') as fd:
     site_config.readfp(fd)
+
 
 #-----------------------------------------------------------------------------
 # create build environments
@@ -70,8 +76,9 @@ for k,v in site_config.items('unittest_env'):
 
     unittest_env[k] = v
 
+
 #-----------------------------------------------------------------------------
-# build unit tests
+# Does the c++ compiler work?
 
 conf = Configure(unittest_env)
 
@@ -99,8 +106,11 @@ else:
     print(" no")
     raise RuntimeError("c++14 support is required")
 
-
 conf.Finish()
+
+
+#-----------------------------------------------------------------------------
+# building unittests
 
 src = Glob('src/numcpp/tests/*.cpp')
 src.append('src/executables/unittests.cpp')
