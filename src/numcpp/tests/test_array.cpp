@@ -249,7 +249,7 @@ TEST_CASE( "numcpp::array::slicing 2D -> 2D", "[slicing]" )
         }
     ).reshape({4,5});
 
-    INFO(" slice along rows ");
+    SECTION(" slice along rows ")
     {
         auto gold = array<int>(
             {
@@ -264,7 +264,7 @@ TEST_CASE( "numcpp::array::slicing 2D -> 2D", "[slicing]" )
         CHECK( all(b == gold ) );
     }
 
-    INFO(" slice along rows ");
+    SECTION(" slice along rows ")
     {
         auto b = a( 1_s | -1);
 
@@ -278,9 +278,7 @@ TEST_CASE( "numcpp::array::slicing 2D -> 2D", "[slicing]" )
         CHECK( all(b == gold ) );
     }
 
-    // slice along columns
-
-    INFO(" slice along columns ");
+    SECTION(" slice along columns ")
     {
         auto b = a(_, 1_s | -1);
 
@@ -296,25 +294,17 @@ TEST_CASE( "numcpp::array::slicing 2D -> 2D", "[slicing]" )
         CHECK( all(b == gold ) );
     }
 
-//~    INFO(" slice along columns ");
-//~    {
-//~        auto b = a(_, 1_s | -1);
+    SECTION(" slice along both dimensions ")
+    {
+        auto b = a(1_s | -1, 1_s | -1);
 
-//~        auto gold = array<int>(
-//~            {
-//~                 1,  2,  3,
-//~                 6,  7,  8,
-//~                11, 12, 13,
-//~                16, 17, 18
-//~            }
-//~        ).reshape({4,3});
+        auto gold = array<int>(
+            {
+                 6,  7,  8,
+                11, 12, 13,
+            }
+        ).reshape({2,3});
 
-//~        auto c = b == gold;
-
-//~        CHECK( all(b == gold ) );
-//~    }
-
-
-    // slice both dimentions
-
+        CHECK( all(b == gold ) );
+    }
 }
