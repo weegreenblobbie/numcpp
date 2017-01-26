@@ -193,10 +193,6 @@ TEST_CASE( "numcpp::array::slicing 2D -> 1D", "[slicing]" )
 
     auto b = a(2);
 
-    auto gold = array<int>({8,9,10,11});
-
-    auto c = b == gold;
-
     CHECK( all(b == array<int>({8,9,10,11})) );
 
     b = a(-2);
