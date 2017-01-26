@@ -16,6 +16,15 @@ bool any(const array<bool> & a);
 bool all(const array<bool> & a);
 
 
+template <class R>
+array<R> arange(index_t start, index_t stop, index_t step);
+
+template <class R>
+array<R> arange(index_t stop)                    { return arange<R>(0, stop, 1); }
+
+template <class R>
+array<R> arange(index_t start, index_t stop)     { return arange<R>(start, stop, 1); }
+
 
 //-----------------------------------------------------------------------------
 // inline implementation
@@ -94,10 +103,55 @@ all(const array<bool> & a)
 }
 
 
+namespace detail
+{
+    template <typename T>
+    T sign(T val)
+    {
+        return (T(0) < val) - (val < T(0));
+    }
 
+} // namespace
+
+
+template <class R>
+array<R>
+arange(index_t start, index_t stop, index_t step)
+{
+    if(step == 0) M_THROW_RT_ERROR("step cannot be 0");
+
+    // compute size directly
+
+    index_t s = (stop - start);
+
+    if(s % step) s += step;
+
+    s /= step;
+
+    if(s == 0)
+    {
+        return array<R>({});
+    }
+
+    std::vector<R> v(s, R(0));
+
+    uint32 i = 0;
+
+    index_t t = start;
+
+    while((step > 0 and t < stop) or (step < 0 and t > stop))
+    {
+        v[i++] = static_cast<R>(t);
+        t += step;
+    }
+
+    return array<R>(v);
+}
 
 
 } // namespace
 
+
+// :noTabs=true:
 
 #endif // _NUMCPP_CORE_HPP_

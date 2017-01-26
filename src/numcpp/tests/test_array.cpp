@@ -39,19 +39,23 @@ TEST_CASE("numcpp::array basics")
 
     shape = {3, 5};
 
-    b = array<float32>(shape, 1.0f);
+    b = arange<float32>(15).reshape(shape);
 
     CHECK( b.size() == 15 );
     CHECK( b.ndim() == 2 );
     CHECK( b.shape() == shape );
 
-//~    for(uint64 i = 0; i < a.shape()[0]; ++i)
-//~    {
-//~        for(uint64 j = 0; j < a.shape()[0]; ++j)
-//~        {
-//~            CHECK( b(i,j) == Approx(1.0f) );
-//~        }
-//~    }
+    float32 f = 0.0f;
+
+    for(uint64 i = 0; i < b.shape()[0]; ++i)
+    {
+        for(uint64 j = 0; j < b.shape()[1]; ++j)
+        {
+            CHECK( b(i,j) == Approx(f) );
+
+            f += 1.0f;
+        }
+    }
 
     CHECK_THROWS( array<float32>({0},   0.0f) );
     CHECK_THROWS( array<float32>({0,5}, 0.0f) );
@@ -93,11 +97,11 @@ TEST_CASE( "numcpp::array::reshape")
     CHECK( a.shape()[0] == 3 );
     CHECK( a.shape()[1] == 4 );
     CHECK( a.shape() == s );
-//~    CHECK( a(0,0) == 1 );
-//~    CHECK( a(1,1) == 6 );
-//~    CHECK( a(2,2) == 11 );
+    CHECK( a(0,0) == 1 );
+    CHECK( a(1,1) == 6 );
+    CHECK( a(2,2) == 11 );
 
-//~    CHECK_THROWS( a.reshape({4,4}) );
+    CHECK_THROWS( a.reshape({4,4}) );
 
     s = {1,12};
 
@@ -107,10 +111,10 @@ TEST_CASE( "numcpp::array::reshape")
     CHECK( a.shape()[0] == 1 );
     CHECK( a.shape()[1] == 12 );
     CHECK( a.shape() == s );
-//~    CHECK( a(0,0) == 1 );
-//~    CHECK( a(0,2) == 3 );
-//~    CHECK_THROWS( a(1,1) );
-//~    CHECK_THROWS( a(2,2) );
+    CHECK( a(0,0) == 1 );
+    CHECK( a(0,2) == 3 );
+    CHECK_THROWS( a(1,1) );
+    CHECK_THROWS( a(2,2) );
 
     s = {12};
     a = a.reshape(s);
@@ -120,8 +124,8 @@ TEST_CASE( "numcpp::array::reshape")
     CHECK( a.shape() == s );
     CHECK( a(0) == 1 );
     CHECK( a(2) == 3 );
-//~    CHECK_THROWS( a(1,1) );
-//~    CHECK_THROWS( a(2,2) );
+    CHECK_THROWS( a(1,1) );
+    CHECK_THROWS( a(2,2) );
 
     auto y = nick(a);
 
@@ -316,3 +320,5 @@ TEST_CASE( "numcpp::array::slicing 2D -> 2D", "[slicing]" )
         CHECK( all(b == gold ) );
     }
 }
+
+// :noTabs=true:
