@@ -1,27 +1,118 @@
 # :mode=python:
 
+
+from ConfigParser import RawConfigParser
+import os.path
+import sys
+
+
 EnsureSConsVersion(2,5,0)
 
-env = Environment(
-    CXX = "g++-5",
-    CPPPATH = ['external', 'src'],
-    CXXFLAGS = ['-std=c++14', '-Wall'],
+
+#-----------------------------------------------------------------------------
+# default configureation
+
+default_cfg = dict(
+    unittest_env = dict(
+        CXX = 'g++-5',
+        CPPPATH = ['external', 'src'],
+        CXXFLAGS = ['-std=c++14', '-Wall', '-ggdb'],
+    )
 )
 
-cfg = Configure(env)
 
-have_gcc5 = cfg.CheckCXX()
+#-----------------------------------------------------------------------------
+# detect site config
 
-cfg.Finish()
+site_cfg = File("site.cfg").path
 
-if not have_gcc5:
+if not os.path.isfile(site_cfg):
+
+    cfg_out = RawConfigParser()
+
+    for s in default_cfg.keys():
+
+        cfg_out.add_section(s)
+
+        data = default_cfg[s]
+
+        for k,v in data.iteritems():
+
+            cfg_out.set(s, k, repr(v))
+
+    with open(site_cfg, 'w') as fd:
+        cfg_out.write(fd)
+        print("Wrote default site configuration")
+        print("    out: %s" % site_cfg)
+
+
+#-----------------------------------------------------------------------------
+# read in site configuration
+
+print("Reading site configuration")
+print("    in: %s" % site_cfg)
+
+site_config = RawConfigParser()
+
+with open(site_cfg, 'r') as fd:
+    site_config.readfp(fd)
+
+
+#-----------------------------------------------------------------------------
+# create build environments
+
+print("Creating unittest build environment")
+
+unittest_env = Environment()
+
+for k,v in site_config.items('unittest_env'):
+
+    k = k.upper()
+    v = eval(v)
+
+    print('    %10s = %s' % (k, repr(v)))
+
+    unittest_env[k] = v
+
+
+#-----------------------------------------------------------------------------
+# Does the c++ compiler work?
+
+conf = Configure(unittest_env)
+
+# c++ compiler
+
+if not conf.CheckCXX():
     import sys
-    raise RuntimeError('numcpp requires c++14 support')
+    raise RuntimeError('numcpp requires a working c++ compiler')
 
+# c++14 support
+
+sys.stdout.write("Checking for c++14 support ...")
+
+tmp = conf.TryCompile(
+    """
+    int x = 0b0010;
+    """,
+    '.cpp'
+)
+
+if tmp:
+    print(" yes")
+
+else:
+    print(" no")
+    raise RuntimeError("c++14 support is required")
+
+conf.Finish()
+
+
+#-----------------------------------------------------------------------------
+# building unittests
 
 src = Glob('src/numcpp/tests/*.cpp')
 src.append('src/executables/unittests.cpp')
 
-ut = env.Program('src/executables/unittests', src)
+ut = unittest_env.Program('src/executables/unittests', src)
 
-env.Default(ut)
+unittest_env.Default(ut)
