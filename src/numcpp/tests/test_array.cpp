@@ -11,22 +11,26 @@ TEST_CASE("numcpp::array basics")
 {
     auto a = array<int32>({1,2,3,4});
 
+    std::vector<uint64> shape = {4};
+
     CHECK( a.size() == 4 );
     CHECK( a.ndim() == 1 );
-    CHECK( a.shape() == std::vector<uint64>({4}) );
+    CHECK( a.shape() == shape );
     CHECK( a(0) == 1 );
     CHECK( a(1) == 2 );
     CHECK( a(2) == 3 );
     CHECK( a(3) == 4 );
 
-    auto b = array<float32>({1}, 0.0f);
+    shape = {1};
+
+    auto b = array<float32>(shape, 0.0f);
 
     CHECK( b.size() == 1 );
     CHECK( b.ndim() == 1 );
-    CHECK( b.shape()[0] == 1 );
+    CHECK( b.shape() == shape );
     CHECK( b(0) == Approx(0.0f) );
 
-    std::vector<uint64> shape = {3};
+    shape = {3};
 
     b = array<float32>(shape, 3.14f);
 
@@ -47,11 +51,11 @@ TEST_CASE("numcpp::array basics")
 
     float32 f = 0.0f;
 
-    for(uint64 i = 0; i < b.shape()[0]; ++i)
+    for(uint64 m = 0; m < b.shape()[0]; ++m)
     {
-        for(uint64 j = 0; j < b.shape()[1]; ++j)
+        for(uint64 n = 0; n < b.shape()[1]; ++n)
         {
-            CHECK( b(i,j) == Approx(f) );
+            CHECK( b(m,n) == Approx(f) );
 
             f += 1.0f;
         }
@@ -75,15 +79,13 @@ TEST_CASE( "numcpp::array::operator==" )
 }
 
 
-const int & nick(const array<int> & a)
+const int & foobar(const array<int> & a)
 {
     int x = a(0);
 
     CHECK( x == 1 );
 
-    const int & y = a(5);
-
-    return y;
+    return a(5);
 }
 
 
@@ -127,7 +129,7 @@ TEST_CASE( "numcpp::array::reshape")
     CHECK_THROWS( a(1,1) );
     CHECK_THROWS( a(2,2) );
 
-    auto y = nick(a);
+    auto y = foobar(a);
 
     CHECK( y == 6 );
 }
@@ -191,18 +193,9 @@ TEST_CASE( "numcpp::array::slicing 2D -> 1D", "[slicing]" )
 
     auto b = a(2);
 
-    INFO("a = " << a.debug_print() );
-    INFO("b = " << b.debug_print() );
-
     auto gold = array<int>({8,9,10,11});
 
     auto c = b == gold;
-
-    INFO( "c = " << c.debug_print() );
-
-    INFO( "b = " << b );
-
-    INFO( "c = " << c );
 
     CHECK( all(b == array<int>({8,9,10,11})) );
 
@@ -214,8 +207,6 @@ TEST_CASE( "numcpp::array::slicing 2D -> 1D", "[slicing]" )
 
 TEST_CASE( "numcpp::array bool operators")
 {
-    missing _;
-
     auto a = array<int>({0,1,2,3,4,5,6,7,8,9,10,11}).reshape({3,4});
 
     auto b = a(2);
@@ -249,17 +240,6 @@ TEST_CASE( "numcpp::array bool operators")
     c = !c;
 
     CHECK( all(c == array<bool>({1,1,0,1})) );
-}
-
-
-template <class T>
-std::ostream & operator<< (std::ostream & out, const std::vector<T> & vec)
-{
-    out << "[";
-
-    for(const auto & x : vec) out << x << ", ";
-
-    return out << "\b\b ]";
 }
 
 
@@ -375,5 +355,100 @@ TEST_CASE( "numcpp::array::slicing a slice 2D -> 2D", "[slicing]" )
     CHECK( d(-2,-2) == 66 );
     CHECK( d(-1,-1) == 88 );
 }
+
+
+TEST_CASE( "numcpp::array 1D element access" )
+{
+    auto a = arange<int>(10);
+
+    a(1) = 99;
+
+    CHECK( all(a == array<int>({0,99,2,3,4,5,6,7,8,9})) );
+
+    a(-2) = 99;
+
+    CHECK( all(a == array<int>({0,99,2,3,4,5,6,7,99,9})) );
+
+    missing _;
+
+    auto b = a(1|_|2);
+
+    CHECK( all(b == array<int>({99,3,5,7,9})) );
+
+    b(3) = 99;
+
+    CHECK( all(b == array<int>({99,3,5,99,9})) );
+
+    b = b(_|_|-1);
+
+    b(1) = 88;
+
+    CHECK( all(b == array<int>({9,88,5,3,99})) );
+
+    b = b(_|_|2);
+
+    b(1) = 77;
+
+    CHECK( all(b == array<int>({9,77,99})) );
+
+    a = arange<int>(10);
+
+    a(_|_|2) = 99;
+
+    CHECK( all(a == array<int>({99,1,99,3,99,5,99,7,99,9})) );
+
+    a(_|_|-2) = 88;
+
+    CHECK( all(a == array<int>({99,88,99,88,99,88,99,88,99,88})) );
+}
+
+
+TEST_CASE( "numcpp::array 2D element access" )
+{
+    missing _;
+
+    auto a = arange<int>(20).reshape({4,5});
+
+    a(1) = 99;
+    a(_,1) = 88;
+
+    auto gold = array<int>(
+        {
+              0, 88,  2,  3,  4,
+             99, 88, 99, 99, 99,
+             10, 88, 12, 13, 14,
+             15, 88, 17, 18, 19
+        }
+    ).reshape({4,5});
+
+    CHECK( all(a == gold) );
+
+    a(2, 2_s | 4) = 77;
+
+    gold = array<int>(
+        {
+              0, 88,  2,  3,  4,
+             99, 88, 99, 99, 99,
+             10, 88, 77, 77, 14,
+             15, 88, 17, 18, 19
+        }
+    ).reshape({4,5});
+
+    CHECK( all(a == gold) );
+
+    a(1 | _, 3) = 22;
+
+    gold = array<int>(
+        {
+              0, 88,  2,  3,  4,
+             99, 88, 99, 22, 99,
+             10, 88, 77, 22, 14,
+             15, 88, 17, 22, 19
+        }
+    ).reshape({4,5});
+
+    CHECK( all(a == gold) );
+}
+
 
 // :noTabs=true:

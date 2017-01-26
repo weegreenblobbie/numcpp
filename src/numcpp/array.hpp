@@ -335,20 +335,7 @@ array<R>::operator array<R>::value_type () const
         M_THROW_RT_ERROR("converting to single reference from array!");
     }
 
-    switch(ndim())
-    {
-        case 1:
-        {
-            return (*this)(0);
-        }
-
-        case 2:
-        {
-            return (*this)(0,0);
-        }
-    }
-
-    M_THROW_RT_ERROR("unhandled case");
+    return (*_array)[_offsets[0]];
 }
 
 
@@ -367,20 +354,7 @@ array<R>::operator array<R>::reference ()
         M_THROW_RT_ERROR("converting to single reference from array!");
     }
 
-    switch(ndim())
-    {
-        case 1:
-        {
-            return (*_array)[_offsets[0]];
-        }
-
-        case 2:
-        {
-            return (*_array)[_offsets[0] + 0 * _strides[0] + _offsets[1]];
-        }
-    }
-
-    M_THROW_RT_ERROR("unhandled case");
+    return (*_array)[_offsets[0]];
 }
 
 
@@ -477,8 +451,6 @@ operator==(const R & rhs) const
 
     if(ndim() == 1)
     {
-        index_t stride;
-
         switch(_strides.size())
         {
             case 0:
@@ -521,10 +493,6 @@ operator==(const R & rhs) const
 
         return out;
     }
-    else
-    if(ndim() == 3)
-    {
-    }
 
     throw std::runtime_error(
         fmt::format("{}({}): unhandled case", __FILE__, __LINE__)
@@ -546,21 +514,21 @@ operator==(const array<R> & rhs) const
 
     if(ndim() == 1)
     {
-        array<bool> nick(std::vector<bool>(_size, false));
+        array<bool> out(std::vector<bool>(_size, false));
 
         index_t size_ = static_cast<index_t>(_size);
 
         for(index_t i = 0; i < size_; ++i)
         {
-            (*nick._array)[i] = bool{(*this)(i) == rhs(i)};
+            (*out._array)[i] = bool{(*this)(i) == rhs(i)};
         }
 
-        return nick;
+        return out;
     }
     else
     if(ndim() == 2)
     {
-        auto nick = array<bool>(std::vector<bool>(_size, false)).reshape(_shape);
+        auto out = array<bool>(std::vector<bool>(_size, false)).reshape(_shape);
 
         const index_t M = _shape[0];
         const index_t N = _shape[1];
@@ -570,13 +538,12 @@ operator==(const array<R> & rhs) const
         {
             for(index_t n = 0; n < N; ++n)
             {
-                (*nick._array)[m * N + n] = bool{(*this)(m,n) == rhs(m,n)};
+                (*out._array)[m * N + n] = bool{(*this)(m,n) == rhs(m,n)};
             }
         }
 
-        return nick;
+        return out;
     }
-
 
     throw std::runtime_error(
         fmt::format("{}({}): unhandled case", __FILE__, __LINE__)
@@ -597,9 +564,27 @@ operator=(const R & rhs)
 
     if(ndim() == 1)
     {
-        for(index_t i = 0; i < size_; ++i)
+        switch(_strides.size())
         {
-            (*_array)[_offsets[0] + i] = rhs;
+            case 0:
+            {
+                for(uint64 i = 0; i < _size; ++i)
+                {
+                    (*_array)[_offsets[0] + i] = rhs;
+                }
+
+                return *this;
+            }
+
+            case 1:
+            {
+                for(uint64 i = 0; i < _size; ++i)
+                {
+                    (*_array)[_offsets[0] + i * _strides[0]] = rhs;
+                }
+
+                return *this;
+            }
         }
 
         return *this;
@@ -607,10 +592,47 @@ operator=(const R & rhs)
     else
     if(ndim() == 2)
     {
-    }
-    else
-    if(ndim() == 3)
-    {
+        switch(_strides.size())
+        {
+            case 0:
+            {
+                for(uint64 m = 0; m < _shape[0]; ++m)
+                {
+                    for(uint64 n = 0; n < _shape[1]; ++n)
+                    {
+                        (*_array)[_offsets[0] + m * _shape[1] + n] = rhs;
+                    }
+                }
+
+                return *this;
+            }
+
+            case 1:
+            {
+                for(uint64 m = 0; m < _shape[0]; ++m)
+                {
+                    for(uint64 n = 0; n < _shape[1]; ++n)
+                    {
+                        (*_array)[_offsets[0] + m * _strides[0] + n] = rhs;
+                    }
+                }
+
+                return *this;
+            }
+
+            case 2:
+            {
+                for(uint64 m = 0; m < _shape[0]; ++m)
+                {
+                    for(uint64 n = 0; n < _shape[1]; ++n)
+                    {
+                        (*_array)[_offsets[0] + m * _strides[0] + n * _strides[1]] = rhs;
+                    }
+                }
+
+                return *this;
+            }
+        }
     }
 
     throw std::runtime_error(
