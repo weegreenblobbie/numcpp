@@ -102,7 +102,7 @@ public:
     array<R> operator()(const slice &);
     array<R> operator()(const slice & s0, const slice & s1);
     array<R> operator()(const missing & , const slice & s1);
-    array<R> operator()(const slice & s0, const missing &)     { return (*this)(s0); }
+    array<R> operator()(const slice & s0, const missing &);
 
     const_array<R> operator()(const slice &) const;
     const_array<R> operator()(const slice &, const slice &) const;
@@ -391,6 +391,8 @@ array<R> &
 array<R>::
 reshape(const std::vector<uint64> & shape)
 {
+    DOUT << __PRETTY_FUNCTION__ << std::endl;
+
     auto s = detail::_compute_size(shape);
 
     if(_size != s) M_THROW_RT_ERROR("total size of new array must be unchanged");
@@ -435,7 +437,6 @@ operator!() const
 {
     DOUT << __PRETTY_FUNCTION__ << std::endl;
 
-//~    std::vector<bool> v(_size, false);
     array<bool> nick(std::vector<bool>(_size, false));
 
     index_t size_ = static_cast<index_t>(_size);
@@ -474,8 +475,7 @@ operator==(const R & rhs) const
 {
     DOUT << __PRETTY_FUNCTION__ << std::endl;
 
-//~    std::vector<bool> v(_size, false);
-    array<bool> nick(std::vector<bool>(_size, false));
+    auto out = array<bool>(std::vector<bool>(_size, false)).reshape(_shape);
 
     index_t size_ = static_cast<index_t>(_size);
 
@@ -483,15 +483,25 @@ operator==(const R & rhs) const
     {
         for(index_t i = 0; i < size_; ++i)
         {
-            // FIXME: invalid read
-            (*nick._array)[i] = (*_array)[_offsets[0] + i] == rhs;
+            (*out._array)[i] = (*_array)[_offsets[0] + i * _strides[0]] == rhs;
         }
 
-        return nick;
+        return out;
     }
     else
     if(ndim() == 2)
     {
+        for(index_t m = 0; m < _shape[0]; ++m)
+        {
+            for(index_t n = 0; n < _shape[1]; ++n)
+            {
+                const R & lhs = (*_array)[_offsets[0] + m * _strides[0] + n];
+
+                (*out._array)[m * _shape[1] + n] = lhs == rhs;
+            }
+        }
+
+        return out;
     }
     else
     if(ndim() == 3)
@@ -502,7 +512,7 @@ operator==(const R & rhs) const
         fmt::format("{}({}): unhandled case", __FILE__, __LINE__)
     );
 
-    return nick;
+    return out;
 }
 
 
@@ -632,7 +642,7 @@ operator=(const array<R> & rhs)
 template <class R>
 array<R>
 array<R>::
-operator()(const slice & s_)
+operator()(const slice & s0)
 {
     DOUT << __PRETTY_FUNCTION__ << std::endl;
 
@@ -642,21 +652,14 @@ operator()(const slice & s_)
 
     switch(ndim())
     {
-        // 1D -> 1D
         case 1:
         {
-            axis_iterator ai(_shape[0], s_);
+            axis_iterator ai(_shape[0], s0);
             auto s = ai.final();
 
             index_t start = s.start();
             index_t stop = s.stop();
             index_t step = s.step();
-
-            DOUT
-                << "\n    -------------------------------------------\n"
-                <<   "    start = " << start << "\n"
-                <<   "    stop  = " << stop << "\n"
-                <<   "    step  = " << step << "\n";
 
             if(step > 0)
             {
@@ -675,9 +678,13 @@ operator()(const slice & s_)
 
                 a._strides = {step * stride};
 
-                DOUT
-                    << "\n    offsets = " << a._offsets[0] << "\n"
-                    <<   "    strides = " << a._strides[0] << "\n";
+                DOUT << "\n"
+                    << "-------------------------------------------\n"
+                    << "    shape  = (";
+                for(auto x : a._shape) if(_debug_out) std::cout << x << ", ";
+                if(_debug_out) std::cout << ")\n"
+                    << "    m = " << start << "\n"
+                    << "    offset = " << a._offsets[0] << "\n";
 
                 return a;
             }
@@ -698,80 +705,22 @@ operator()(const slice & s_)
 
                 a._strides = {step * stride};
 
-                DOUT
-                    << "    offsets = " << a._offsets[0] << "\n"
-                    << "    strides = " << a._strides[0] << "\n";
+                DOUT << "\n"
+                    << "-------------------------------------------\n"
+                    << "    shape  = (";
+                for(auto x : a._shape) if(_debug_out) std::cout << x << ", ";
+                if(_debug_out) std::cout << ")\n"
+                    << "    m = " << start << "\n"
+                    << "    offset = " << a._offsets[0] << "\n";
 
                 return a;
             }
         }
 
-        // 2D -> 1D
+        // 2D -> 2D
         case 2:
         {
-            axis_iterator ai(_shape[0], s_);
-            auto s = ai.final();
-
-            index_t start = s.start();
-            index_t stop = s.stop();
-            index_t step = s.step();
-
-            DOUT
-                << "\n    -------------------------------------------\n"
-                <<   "    start = " << start << "\n"
-                <<   "    stop  = " << stop << "\n"
-                <<   "    step  = " << step << "\n";
-
-            if(step > 0)
-            {
-                if(start >= stop) return a;
-
-                a._array = _array;
-
-                uint64 count = ai.size();
-
-                if(count > 1) a._shape = {count, _shape[1]};
-                else          a._shape = {_shape[1]};
-
-                a._size = count * _shape[1];
-
-                a._offsets[0] = _offsets[0] + start * _strides[0];
-
-                a._strides = _strides;
-
-                a._strides[0] += (step - 1);
-
-                DOUT
-                    << "\n    offsets = " << a._offsets[0] << "\n"
-                    <<   "    strides = " << a._strides[0] << "\n";
-
-                return a;
-            }
-            else
-            {
-                if(stop >= start) return a;
-
-                a._array = _array;
-
-                uint64 count = ai.size();
-
-                if(count > 1) a._shape = {count, _shape[1]};
-                else          a._shape = {_shape[1]};
-
-                a._size = count * _shape[1];
-
-                a._offsets[0] = _offsets[0] + start * _strides[0];
-
-                a._strides = _strides;
-
-                DOUT
-                    << "\n    offset  = " << a._offsets[0] << "\n"
-                    <<   "    strides = " << a._strides[0] << "\n";
-
-                return a;
-            }
-
-            break;
+            return (*this)(s0, missing());
         }
 
         // 3D -> 2D
@@ -792,9 +741,11 @@ operator()(const slice & s_)
 template <class R>
 array<R>
 array<R>::
-operator()(const slice & s0_, const slice & s1_)
+operator()(const slice & s0, const slice & s1)
 {
     DOUT << __PRETTY_FUNCTION__ << std::endl;
+
+    DOUT << "    s0 = " << s0 << ", " << "    s1 = " << s1 << "\n";
 
     if(_size == 0) throw std::runtime_error("can't slice an empty array");
 
@@ -802,24 +753,24 @@ operator()(const slice & s0_, const slice & s1_)
     {
         case 1:
         {
-            throw std::runtime_error("too many indicies for array");
+            M_THROW_RT_ERROR("too many indicies for array");
         }
 
         case 2:
         {
-            axis_iterator a0(_shape[0], s0_);
-            auto s0 = a0.final();
+            axis_iterator a0(_shape[0], s0);
+            auto s0_ = a0.final();
 
-            axis_iterator a1(_shape[1], s1_);
-            auto s1 = a1.final();
+            axis_iterator a1(_shape[1], s1);
+            auto s1_ = a1.final();
 
-            index_t start0 = s0.start();
-            index_t stop0  = s0.stop();
-            index_t step0  = s0.step();
+            index_t start0 = s0_.start();
+            index_t stop0  = s0_.stop();
+            index_t step0  = s0_.step();
 
-            index_t start1 = s1.start();
-            index_t stop1  = s1.stop();
-            index_t step1  = s1.step();
+            index_t start1 = s1_.start();
+            index_t stop1  = s1_.stop();
+            index_t step1  = s1_.step();
 
             uint64 count0 = a0.size();
             uint64 count1 = a1.size();
@@ -829,6 +780,7 @@ operator()(const slice & s0_, const slice & s1_)
 
             if(count0 == 1 && count1 == 1)
             {
+                DOUT << "array<R> out;";
                 array<R> out;
 
                 out._size = count0 * count1;
@@ -838,6 +790,8 @@ operator()(const slice & s0_, const slice & s1_)
                 out._strides = {_strides[0]};
 
                 DOUT << "\n"
+                    << _offsets[0] << " + " << start0 << " * " << _strides[0]
+                    << " + " << start1 << "\n"
                     << "-------------------------------------------\n"
                     << "    shape  = (";
                 for(auto x : out._shape) if(_debug_out) std::cout << x << ", ";
@@ -850,110 +804,18 @@ operator()(const slice & s0_, const slice & s1_)
 
             //-----------------------------------------------------------------
             // special case size > 1 in both
-            if(count0 > 1 && count1 > 1)
+            if(count0 >= 1 && count1 >= 1)
             {
+                DOUT << "array<R> out;";
                 array<R> out;
 
                 out._size = count0 * count1;
                 out._array = _array;
                 out._shape = {count0, count1};
-                out._offsets[0] = _offsets[0] + start0 * _strides[0] + start1;
-                out._strides = {_strides[0]};
 
-                DOUT << "\n"
-                    << "-------------------------------------------\n"
-                    << "    shape  = (";
-                for(auto x : out._shape) if(_debug_out) std::cout << x << ", ";
-                if(_debug_out) std::cout << ")\n"
-                    << "    m,n = " << start0 << ", " << start1 << "\n"
-                    << "    offset = " << out._offsets[0] << "\n";
+                if(count0 == 1) out._shape = {count1};
+                if(count1 == 1) out._shape = {count0};
 
-                return out;
-            }
-
-            break;
-        }
-
-        // 3D -> 2D
-        case 3:
-        {
-            break;
-        }
-    }
-
-    throw std::runtime_error(
-        fmt::format("{}({}): unhandled case", __FILE__, __LINE__)
-    );
-
-    return array<R>();
-}
-
-
-template <class R>
-array<R>
-array<R>::
-operator()(const missing & , const slice & s1_)
-{
-    DOUT << __PRETTY_FUNCTION__ << std::endl;
-
-    if(_size == 0) throw std::runtime_error("can't slice an empty array");
-
-    switch(ndim())
-    {
-        case 1:
-        {
-            throw std::runtime_error("too many indicies for array");
-        }
-
-        case 2:
-        {
-            axis_iterator a1(_shape[1], s1_);
-            auto s1 = a1.final();
-
-            index_t start0 = 0;
-            index_t stop0  = _shape[0];
-            index_t step0  = 1;
-
-            index_t start1 = s1.start();
-            index_t stop1  = s1.stop();
-            index_t step1  = s1.step();
-
-            uint64 count0 = _shape[0];
-            uint64 count1 = a1.size();
-
-            //-----------------------------------------------------------------
-            // special case size = 1
-
-            if(count0 == 1 && count1 == 1)
-            {
-                array<R> out;
-
-                out._size = count0 * count1;
-                out._array = _array;
-                out._shape = {count0, count1};
-                out._offsets[0] = _offsets[0] + start0 * _strides[0] + start1 * _shape[0];
-                out._strides = {_strides[0]};
-
-                DOUT << "\n"
-                    << "-------------------------------------------\n"
-                    << "    shape  = (";
-                for(auto x : out._shape) if(_debug_out) std::cout << x << ", ";
-                if(_debug_out) std::cout << ")\n"
-                    << "    m,n = " << start0 << ", " << start1 << "\n"
-                    << "    offset = " << out._offsets[0] << "\n";
-
-                return out;
-            }
-
-            //-----------------------------------------------------------------
-            // special case size > 1 in both
-            if(count0 > 1 && count1 > 1)
-            {
-                array<R> out;
-
-                out._size = count0 * count1;
-                out._array = _array;
-                out._shape = {count0, count1};
                 out._offsets[0] = _offsets[0] + start0 * _strides[0] + start1;
                 out._strides = {_strides[0]};
 
@@ -969,6 +831,9 @@ operator()(const missing & , const slice & s1_)
                 return out;
             }
 
+            DOUT << "count0 = " << count0 << "\n";
+            DOUT << "count1 = " << count1 << "\n";
+
             break;
         }
 
@@ -985,6 +850,127 @@ operator()(const missing & , const slice & s1_)
 
     return array<R>();
 }
+
+
+//~template <class R>
+//~array<R>
+//~array<R>::
+//~operator()(const missing & , const slice & s1_)
+//~{
+//~    DOUT << __PRETTY_FUNCTION__ << std::endl;
+
+//~    if(_size == 0) throw std::runtime_error("can't slice an empty array");
+
+//~    switch(ndim())
+//~    {
+//~        case 1:
+//~        {
+//~            throw std::runtime_error("too many indicies for array");
+//~        }
+
+//~        case 2:
+//~        {
+//~            axis_iterator a1(_shape[1], s1_);
+//~            auto s1 = a1.final();
+
+//~            index_t start0 = 0;
+//~            index_t stop0  = _shape[0];
+//~            index_t step0  = 1;
+
+//~            index_t start1 = s1.start();
+//~            index_t stop1  = s1.stop();
+//~            index_t step1  = s1.step();
+
+//~            uint64 count0 = _shape[0];
+//~            uint64 count1 = a1.size();
+
+//~            //-----------------------------------------------------------------
+//~            // special case size = 1
+
+//~            if(count0 == 1 && count1 == 1)
+//~            {
+//~                array<R> out;
+
+//~                out._size = count0 * count1;
+//~                out._array = _array;
+//~                out._shape = {count0, count1};
+//~                out._offsets[0] = _offsets[0] + start0 * _strides[0] + start1 * _shape[0];
+//~                out._strides = {_strides[0]};
+
+//~                DOUT << "\n"
+//~                    << "-------------------------------------------\n"
+//~                    << "    shape  = (";
+//~                for(auto x : out._shape) if(_debug_out) std::cout << x << ", ";
+//~                if(_debug_out) std::cout << ")\n"
+//~                    << "    m,n = " << start0 << ", " << start1 << "\n"
+//~                    << "    offset = " << out._offsets[0] << "\n";
+
+//~                return out;
+//~            }
+
+//~            //-----------------------------------------------------------------
+//~            // special case size > 1 in both
+//~            if(count0 > 1 && count1 > 1)
+//~            {
+//~                array<R> out;
+
+//~                out._size = count0 * count1;
+//~                out._array = _array;
+//~                out._shape = {count0, count1};
+//~                out._offsets[0] = _offsets[0] + start0 * _strides[0] + start1;
+//~                out._strides = {_strides[0]};
+
+//~                DOUT << "\n"
+//~                    << "-------------------------------------------\n"
+//~                    << "    shape  = (";
+//~                for(auto x : out._shape) if(_debug_out) std::cout << x << ", ";
+//~                if(_debug_out) std::cout << ")\n"
+//~                    << "    m = " << start0 << ":" << stop0 << ":" << step0 << "\n"
+//~                    << "    n = " << start1 << ":" << stop1 << ":" << step1 << "\n"
+//~                    << "    offset = " << out._offsets[0] << "\n";
+
+//~                return out;
+//~            }
+
+//~            break;
+//~        }
+
+//~        // 3D -> 2D
+//~        case 3:
+//~        {
+//~            break;
+//~        }
+//~    }
+
+//~    throw std::runtime_error(
+//~        fmt::format("{}({}): unhandled case", __FILE__, __LINE__)
+//~    );
+
+//~    return array<R>();
+//~}
+
+
+template <class R>
+array<R>
+array<R>::
+operator()(const missing &, const slice & s1)
+{
+    DOUT << __PRETTY_FUNCTION__ << std::endl;
+    if(ndim() == 1) M_THROW_RT_ERROR("too many indicies for array");
+    return (*this)(slice(0, _shape[0], 1), s1);
+}
+
+
+template <class R>
+array<R>
+array<R>::
+operator()(const slice & s0, const missing &)
+{
+    DOUT << __PRETTY_FUNCTION__ << std::endl;
+    if(ndim() == 1) M_THROW_RT_ERROR("too many indicies for array");
+    return (*this)(s0, slice(0, _shape[1], 1));
+}
+
 
 
 template <class R>
@@ -1007,93 +993,17 @@ operator()(const slice & s0, const slice & s1) const
 {
     DOUT << __PRETTY_FUNCTION__ << std::endl;
 
-    array<R> & r = const_cast<array<R>&>(*this);
+    array<R> & r = const_cast<array<R> &>(*this);
 
     return const_array<R>(r(s0, s1));
 }
-
-
-//~template <class R>
-//~array<R>
-//~array<R>::
-//~operator()(slice s) const
-//~{
-//~    array<R> a;
-
-//~    a._size = 1;
-//~    a._array = _array; // increase reference count
-//~    a._data = _data + s.start();
-
-//~    return a;
-//~}
-
-
-
-//~template <class R>
-//~const R &
-//~array<R>::
-//~operator()(index_t i) const
-//~{
-//~    return _data[i];
-//~}
-
-
-//~template <class R>
-//~array<R>
-//~array<R>::
-//~operator()(const slice & s)
-//~{
-//~    array<R> out;
-
-
-//~}
-
-
-//~#ifndef NUMPCPP_NO_NDIM_CHECKS
-//~    #define _NUMCPP_ASSERT_DIM_ 0
-//~#else
-//~    #define _NUMCPP_ASSERT_DIM_ 1
-//~#endif
-
-//~namspace detail
-//~{
-//~    template <int i>
-//~    void assert_ndim_matches(uint64 expcted, uint64 actual){};
-
-//~    inline
-//~    template <>
-//~    void assert_ndim_matches<1>(uint64 expected, uint64 actual)
-//~    {
-//~        if(expected != actual) throw std::runtime_exception("
-//~    }
-//~}
-
-
-
-//~template <class R>
-//~R &
-//~array<R>::
-//~operator()(index_t i, index_t j)
-//~{
-
-
-//~    return _data[i * _shape[1] + j];
-//~}
-
-
-//~template <class R>
-//~const R &
-//~array<R>::
-//~operator()(index_t i, index_t j) const
-//~{
-//~    return _data[i * _shape[1] + j];
-//~}
 
 
 template <class R>
 std::ostream &
 operator<<(std::ostream & out, const array<R> & a)
 {
+    DOUT << __PRETTY_FUNCTION__ << std::endl;
     return out << a.print();
 }
 
@@ -1101,29 +1011,29 @@ operator<<(std::ostream & out, const array<R> & a)
 namespace detail
 {
     // defaults for POD values
-    template <class T> std::string _array_R_to_fmt() { return "{:g}"; }
+    template <class T> std::string _array_R_to_fmt() { return "%g"; }
 
-    template <> std::string _array_R_to_fmt<bool>()  { return "{}"; }
-    template <> std::string _array_R_to_fmt<int8 >() { return "{:d}"; }
-    template <> std::string _array_R_to_fmt<int16>() { return "{:d}"; }
-    template <> std::string _array_R_to_fmt<int32>() { return "{:d}"; }
-    template <> std::string _array_R_to_fmt<int64>() { return "{:d}"; }
+    template <> std::string _array_R_to_fmt<bool>()  { return "%d"; }
+    template <> std::string _array_R_to_fmt<int8 >() { return "%d"; }
+    template <> std::string _array_R_to_fmt<int16>() { return "%d"; }
+    template <> std::string _array_R_to_fmt<int32>() { return "%d"; }
+    template <> std::string _array_R_to_fmt<int64>() { return "%d"; }
 
-    template <> std::string _array_R_to_fmt<uint8 >() { return "{:d}"; }
-    template <> std::string _array_R_to_fmt<uint16>() { return "{:d}"; }
-    template <> std::string _array_R_to_fmt<uint32>() { return "{:d}"; }
-    template <> std::string _array_R_to_fmt<uint64>() { return "{:d}"; }
+    template <> std::string _array_R_to_fmt<uint8 >() { return "%d"; }
+    template <> std::string _array_R_to_fmt<uint16>() { return "%d"; }
+    template <> std::string _array_R_to_fmt<uint32>() { return "%d"; }
+    template <> std::string _array_R_to_fmt<uint64>() { return "%d"; }
 
-    template <> std::string _array_R_to_fmt<float32>() { return "{:11.8f}"; }
+    template <> std::string _array_R_to_fmt<float32>() { return "%11.8f"; }
 
-    template <> std::string _array_R_to_fmt<complex64>() { return "{:11.8f}+{:.8f}j"; }
+    template <> std::string _array_R_to_fmt<complex64>() { return "%11.8f+%.8fj"; }
 
-    template <> std::string _array_R_to_fmt<complex128>() { return "{:14.11f}+{:.11f}j"; }
+    template <> std::string _array_R_to_fmt<complex128>() { return "%14.11f+%.11fj"; }
 
-    template <class T> std::string _format(const std::string & fmt_, const T & v) { return fmt::format(fmt_, v); }
+    template <class T> std::string _format(const std::string & fmt_, const T & v) { return fmt::sprintf(fmt_, v); }
 
-    template <> std::string _format<complex64>(const std::string & fmt_, const complex64 & v)  { return fmt::format(fmt_, v.real(), v.imag()); }
-    template <> std::string _format<complex128>(const std::string & fmt_, const complex128 & v) { return fmt::format(fmt_, v.real(), v.imag()); }
+    template <> std::string _format<complex64>(const std::string & fmt_, const complex64 & v)  { return fmt::sprintf(fmt_, v.real(), v.imag()); }
+    template <> std::string _format<complex128>(const std::string & fmt_, const complex128 & v) { return fmt::sprintf(fmt_, v.real(), v.imag()); }
 
     template <class T> std::string type_name() { return "unknown"; }
 
@@ -1176,8 +1086,7 @@ print(const std::string & fmt_in) const
 
             for(index_t i = 0; i < _size; ++i)
             {
-                // FIXME: invalid read
-                out << detail::_format<R>(fmt_, (*_array)[_offsets[0] + i]);
+                out << detail::_format<R>(fmt_, a(i));
                 if(_size != 1 && i + 1 < a._size) out << ", ";
             }
 
@@ -1196,7 +1105,8 @@ print(const std::string & fmt_in) const
 
                 for(auto j = 0u; j < _shape[1]; ++j)
                 {
-                    out << detail::_format(fmt_, a(i, j));
+                    const R r = a(i,j);
+                    out << detail::_format(fmt_, r); //a(i, j));
                     if(_size != 1 && j + 1 < _shape[1]) out << ", ";
                 }
 
