@@ -135,32 +135,45 @@ TEST_CASE( "numcpp::array::reshape")
 
 TEST_CASE( "numcpp::array::slicing 1D")
 {
-    auto a = array<int>({0,1,2,3,4,5,6,7,8,9,10,11});
+    auto a = arange<int>(10);
 
     auto b = a(0_s | 10 | 2);
 
     CHECK( b.ndim() == 1 );
-    CHECK( b.shape()[0] == 5 );
-    CHECK( b(0) == 0 );
-    CHECK( b(1) == 2 );
-    CHECK( b(2) == 4 );
-    CHECK( b(3) == 6 );
-    CHECK( b(4) == 8 );
+    CHECK( b.size() == 5 );
+
+    CHECK( all(b == array<int>({0,2,4,6,8})) );
 
     auto c = b(1_s | -1);
 
     CHECK( c.ndim() == 1 );
-    CHECK( c.shape()[0] == 3 );
-    CHECK( c(0) == 2 );
-    CHECK( c(1) == 4 );
-    CHECK( c(2) == 6 );
+    CHECK( c.size() == 3 );
+    CHECK( all(c == array<int>({2,4,6})) );
 
     auto d = a(6_s|3|-2);
 
     CHECK( d.ndim() == 1 );
-    CHECK( d.shape()[0] == 2 );
-    CHECK( d(0) == 6 );
-    CHECK( d(1) == 4 );
+    CHECK( d.size() == 2 );
+    CHECK( all(d == array<int>({6,4})) );
+
+    missing _;
+
+    auto e = a(_|_|-1);
+
+    CHECK( e.ndim() == 1 );
+    CHECK( e.size() == 10 );
+    CHECK( all(e == array<int>({9,8,7,6,5,4,3,2,1,0})) );
+
+    e = a(_|_|-2);
+
+    CHECK( e.ndim() == 1 );
+    CHECK( e.size() == 5 );
+    CHECK( all(e == array<int>({9,7,5,3,1})) );
+
+    auto f = e(1_s | -1 | 2);
+
+    CHECK( f.size() == 2 );
+    CHECK( all(f == array<int>({7,3})) );
 }
 
 
@@ -186,6 +199,8 @@ TEST_CASE( "numcpp::array::slicing 2D -> 1D", "[slicing]" )
     auto c = b == gold;
 
     INFO( "c = " << c.debug_print() );
+
+    INFO( "b = " << b );
 
     INFO( "c = " << c );
 
@@ -350,9 +365,7 @@ TEST_CASE( "numcpp::array::slicing a slice 2D -> 2D", "[slicing]" )
     CHECK( c(-2,-2) == 77 );
     CHECK( c(-1,-1) == 88 );
 
-//~    _debug_out = true;
     auto d = c( _ | _ | 2, _ | _ | 2);
-//~    _debug_out = false;
 
     shape = {4,4};
 

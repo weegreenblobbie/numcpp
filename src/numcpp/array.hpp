@@ -259,7 +259,7 @@ array()
     _size(0),
     _array(nullptr),
     _shape(),
-    _strides({1}),
+    _strides(),
     _offsets({0})
 {
     DOUT << __PRETTY_FUNCTION__ << std::endl;
@@ -273,7 +273,7 @@ array(const std::initializer_list<R> & il)
     _size(il.size()),
     _array(std::make_shared<std::vector<R>>(il)),
     _shape({_size}),
-    _strides({1}),
+    _strides(),
     _offsets({0})
 {
     DOUT << __PRETTY_FUNCTION__ << std::endl;
@@ -287,7 +287,7 @@ array(const std::vector<R> & v)
     _size(v.size()),
     _array(std::make_shared<std::vector<R>>(v)),
     _shape({_size}),
-    _strides({1}),
+    _strides(),
     _offsets({0})
 {
     DOUT << __PRETTY_FUNCTION__ << std::endl;
@@ -301,7 +301,7 @@ array(const std::vector<uint64> & shape, const R & value)
     _size(detail::_compute_size(shape)),
     _array(std::make_shared<std::vector<R>>(std::vector<R>(_size, value))),
     _shape(shape),
-    _strides({1}),
+    _strides(),
     _offsets({0})
 {
     DOUT << __PRETTY_FUNCTION__ << std::endl;
@@ -317,8 +317,6 @@ array(const array<R> & other)
     DOUT << __PRETTY_FUNCTION__ << std::endl;
 
     *this = other;
-
-    DOUT << __PRETTY_FUNCTION__ << std::endl;
 }
 
 
@@ -408,7 +406,7 @@ reshape(const std::vector<uint64> & shape)
     {
         case 1:
         {
-            _strides = {1};
+            _strides = {};
             _offsets = {0};
             break;
         }
@@ -479,16 +477,38 @@ operator==(const R & rhs) const
 
     if(ndim() == 1)
     {
-        for(uint64 i = 0; i < _size; ++i)
+        index_t stride;
+
+        switch(_strides.size())
         {
-            (*out._array)[i] = (*_array)[_offsets[0] + i * _strides[0]] == rhs;
+            case 0:
+            {
+                for(uint64 i = 0; i < _size; ++i)
+                {
+                    (*out._array)[i] = (*_array)[_offsets[0] + i] == rhs;
+                }
+
+                return out;
+            }
+
+            case 1:
+            {
+                for(uint64 i = 0; i < _size; ++i)
+                {
+                    (*out._array)[i] = (*_array)[_offsets[0] + i * _strides[0]] == rhs;
+                }
+
+                return out;
+            }
         }
 
-        return out;
+        M_THROW_RT_ERROR("unhandeled case");
     }
     else
     if(ndim() == 2)
     {
+        if(_strides.size() != 1) M_THROW_RT_ERROR("expeting strides to contain 1 element");
+
         for(uint64 m = 0; m < _shape[0]; ++m)
         {
             for(uint64 n = 0; n < _shape[1]; ++n)
@@ -532,7 +552,7 @@ operator==(const array<R> & rhs) const
 
         for(index_t i = 0; i < size_; ++i)
         {
-            (*nick._array)[i] = (*_array)[_offsets[0] + i] == (*rhs._array)[rhs._offsets[0] + i];
+            (*nick._array)[i] = bool{(*this)(i) == rhs(i)};
         }
 
         return nick;
@@ -550,10 +570,7 @@ operator==(const array<R> & rhs) const
         {
             for(index_t n = 0; n < N; ++n)
             {
-                auto l = (*this->_array)[_offsets[0] + m * stride + n];
-                auto r = (*rhs._array)[rhs._offsets[0] + m * rhs._strides[0] + n];
-
-                (*nick._array)[m * N + n] = l == r;
+                (*nick._array)[m * N + n] = bool{(*this)(m,n) == rhs(m,n)};
             }
         }
 
@@ -646,7 +663,7 @@ operator()(const slice & s0)
 
     if(_size == 0) throw std::runtime_error("can't slice an empty array");
 
-    array<R> a;
+    array<R> out;
 
     switch(ndim())
     {
@@ -659,60 +676,62 @@ operator()(const slice & s0)
             index_t stop = s.stop();
             index_t step = s.step();
 
-            if(step > 0)
+            if(step > 0 and start >= stop) return out;
+            if(step < 0 and stop >= start) return out;
+
+            out._array = _array;
+
+            uint64 count = ai.size();
+
+            out._shape = {count};
+            out._size = count;
+
+            DOUT << "\n"
+                << "-------------------------------------------\n"
+                << "    shape  = (";
+            for(auto x : out._shape) if(_debug_out) std::cout << x << ", ";
+            if(_debug_out) std::cout << ")\n"
+                << "    index = " << start << "\n";
+
+            switch(_strides.size())
             {
-                if(start >= stop) return a;
+                case 0:
+                {
+                    out._offsets[0] = _offsets[0] + start;
 
-                a._array = _array;
+                    if(step > 1 or step < 0) out._strides = {step};
 
-                uint64 count = ai.size();
+                    if(_debug_out) std::cout
+                        << "    offset = " << _offsets[0] << " + "
+                        << start << "\n";
 
-                a._shape = {count};
-                a._size = count;
+                    break;
+                }
 
-                index_t stride = _strides[0];
+                case 1:
+                {
+                    out._offsets[0] = _offsets[0] + start * _strides[0];
+                    out._strides = {_strides[0] * step};
 
-                a._offsets[0] = _offsets[0] + start * stride;
+                    if(_debug_out) std::cout
+                        << "    offset = " << _offsets[0] << " + "
+                        << start << " * " << _strides[0] << "\n";
+                    break;
+                }
 
-                a._strides = {step * stride};
-
-                DOUT << "\n"
-                    << "-------------------------------------------\n"
-                    << "    shape  = (";
-                for(auto x : a._shape) if(_debug_out) std::cout << x << ", ";
-                if(_debug_out) std::cout << ")\n"
-                    << "    m = " << start << "\n"
-                    << "    offset = " << a._offsets[0] << "\n";
-
-                return a;
+                default:
+                {
+                    M_THROW_RT_ERROR("unhandled case");
+                }
             }
-            else
-            {
-                if(stop >= start) return a;
 
-                a._array = _array;
+            if(_debug_out) std::cout
+                << "    offset = " << out._offsets[0] << "\n"
+                << "    strides = (";
+            for(auto x : out._strides) if(_debug_out) std::cout << x << ", ";
+            if(_debug_out) std::cout << ")\n";
 
-                uint64 count = ai.size();
-
-                a._shape = {count};
-                a._size = count;
-
-                index_t stride = _strides[0];
-
-                a._offsets[0] = _offsets[0] + start * stride;
-
-                a._strides = {step * stride};
-
-                DOUT << "\n"
-                    << "-------------------------------------------\n"
-                    << "    shape  = (";
-                for(auto x : a._shape) if(_debug_out) std::cout << x << ", ";
-                if(_debug_out) std::cout << ")\n"
-                    << "    m = " << start << "\n"
-                    << "    offset = " << a._offsets[0] << "\n";
-
-                return a;
-            }
+            return out;
         }
 
         // 2D -> 2D
@@ -732,7 +751,7 @@ operator()(const slice & s0)
         fmt::format("{}({}): unhandled case", __FILE__, __LINE__)
     );
 
-    return a;
+    return out;
 }
 
 
@@ -752,6 +771,7 @@ operator()(const slice & s0, const slice & s1)
         case 1:
         {
             M_THROW_RT_ERROR("too many indicies for array");
+            break;
         }
 
         case 2:
@@ -786,24 +806,127 @@ operator()(const slice & s0, const slice & s1)
                 out._size = count0 * count1;
                 out._array = _array;
                 out._shape = {1};
-                out._offsets[0] = _offsets[0] + start0 * _strides[0] + start1 * step1;
-                out._strides = {_strides[0]};
 
                 DOUT << "\n"
-                    << _offsets[0] << " + " << start0 << " * " << _strides[0]
-                    << " + " << start1 << "\n"
                     << "-------------------------------------------\n"
                     << "    shape  = (";
                 for(auto x : out._shape) if(_debug_out) std::cout << x << ", ";
                 if(_debug_out) std::cout << ")\n"
-                    << "    m,n = " << start0 << ", " << start1 << "\n"
-                    << "    offset = " << out._offsets[0] << "\n";
+                    << "    m,n = " << start0 << ", " << start1 << "\n";
+
+                switch(_strides.size())
+                {
+                    case 0:
+                    {
+                        out._offsets[0] = _offsets[0] + start0 + start1 * step1;
+                        out._strides = {_strides[0]};
+
+                        if(_debug_out) std::cout
+                            << "    offset = " << _offsets[0] << " + "
+                            << start0 << " + "
+                            << start1 << " * " << step1 << "\n";
+
+                        break;
+                    }
+
+                    case 1:
+                    {
+                        out._offsets[0] = _offsets[0] + start0 * _strides[0] + start1 * step1;
+                        out._strides = {_strides[0]};
+
+                        if(_debug_out) std::cout
+                            << "    offset = " << _offsets[0] << " + "
+                            << start0 << " * " << _strides[0] << " + "
+                            << start1 << " * " << step1 << "\n";
+
+                        break;
+                    }
+
+                    default:
+                    {
+                        M_THROW_RT_ERROR("unhandled case");
+                    }
+                }
+
+                if(_debug_out) std::cout
+                    << "    offset = " << out._offsets[0] << "\n"
+                    << "    strides = (";
+                for(auto x : out._strides) if(_debug_out) std::cout << x << ", ";
+                if(_debug_out) std::cout << ")\n";
+
+                return out;
+            }
+
+            //-----------------------------------------------------------------
+            // special case count0 == 1
+
+            else
+            if(count0 == 1)
+            {
+                step0 = 0;
+
+                DOUT << "array<R> out;";
+                array<R> out;
+
+                out._size = count1;
+                out._array = _array;
+                out._shape = {count1};
+
+                DOUT << "\n"
+                    << "-------------------------------------------\n"
+                    << "    shape  = (";
+                for(auto x : out._shape) if(_debug_out) std::cout << x << ", ";
+                if(_debug_out) std::cout << ")\n"
+                    << "    m = " << start0 << "\n"
+                    << "    n = " << start1 << ":" << stop1 << ":" << step1 << "\n";
+
+                switch(_strides.size())
+                {
+                    case 0:
+                    {
+                        out._offsets[0] = _offsets[0] + start0 + start1 * step1;
+                        out._strides = {};
+
+                        if(_debug_out) std::cout
+                            << "    (" << __LINE__ << ") offset = " << _offsets[0] << " + "
+                            << start0 << " + "
+                            << start1 << " * " << step1 << "\n";
+
+                        break;
+                    }
+
+                    case 1:
+                    {
+                        out._offsets[0] = _offsets[0] + start0 * _strides[0] + start1;
+                        out._strides = {};
+
+                        if(_debug_out) std::cout
+                            << "    (" << __LINE__ << ") offset = " << _offsets[0] << " + "
+                            << start0 << " * " << _strides[0] << " + "
+                            << start1 << " * " << step1 << "\n";
+
+                        break;
+                    }
+
+                    default:
+                    {
+                        M_THROW_RT_ERROR("unhandled case");
+                    }
+                }
+
+                if(_debug_out) std::cout
+                    << "    offset = " << out._offsets[0] << "\n"
+                    << "    strides = (";
+                for(auto x : out._strides) if(_debug_out) std::cout << x << ", ";
+                if(_debug_out) std::cout << ")\n";
 
                 return out;
             }
 
             //-----------------------------------------------------------------
             // special case size > 1 in both
+
+            else
             if(count0 >= 1 && count1 >= 1)
             {
                 DOUT << "array<R> out;";
@@ -816,17 +939,22 @@ operator()(const slice & s0, const slice & s1)
                 if(count0 == 1) out._shape = {count1};
                 if(count1 == 1) out._shape = {count0};
 
-                out._offsets[0] = _offsets[0] + start0 * _strides[0] + start1 * step1;
-                out._strides = {_strides[0] * step0};
-
                 DOUT << "\n"
                     << "-------------------------------------------\n"
                     << "    shape  = (";
                 for(auto x : out._shape) if(_debug_out) std::cout << x << ", ";
                 if(_debug_out) std::cout << ")\n"
                     << "    m = " << start0 << ":" << stop0 << ":" << step0 << "\n"
-                    << "    n = " << start1 << ":" << stop1 << ":" << step1 << "\n"
-                    << "    offset = " << out._offsets[0] << "\n";
+                    << "    n = " << start1 << ":" << stop1 << ":" << step1 << "\n";
+
+                out._offsets[0] = _offsets[0] + start0 * _strides[0] + start1 * step1;
+                out._strides = {_strides[0] * step0};
+
+                if(_debug_out) std::cout
+                    << "    offset = " << out._offsets[0] << "\n"
+                    << "    strides = (";
+                for(auto x : out._strides) if(_debug_out) std::cout << x << ", ";
+                if(_debug_out) std::cout << ")\n";
 
                 return out;
             }
