@@ -68,14 +68,40 @@ axis_iterator(int64 axis_length, const slice & s)
 {
     // Reference: https://github.com/python/cpython/blob/c30098c8c6014f3340a369a31df9c74bdbacc269/Lib/test/test_slice.py
 
-    index_t start = 0;
-    index_t stop  = 0;
-    index_t step  = 1;
+    if(axis_length == 0) throw std::runtime_error("axis_length can not be 0");
+
+    index_t step = 1;
 
     if(s.step_valid()) step = s.step();
 
-    if(axis_length == 0) throw std::runtime_error("axis_length can not be 0");
-    if(step == 0)        throw std::runtime_error("step can not be 0");
+    if(step == 0) throw std::runtime_error("step can not be 0");
+
+    //-------------------------------------------------------------------------
+    // special case for slice(-5)
+
+    if(s.get_valid_bits() == 0b110)
+    {
+        index_t start = s.start();
+        index_t stop  = s.stop();
+
+        if(start < 0 and stop - start == 1)
+        {
+            start += axis_length;
+
+            // out of bounds still
+            if(start < 0) return;
+
+            _start = start;
+            _stop = _start + 1;
+            _step = 1;
+
+            _begin = slice_iterator(_start, _stop, _step);
+
+            return;
+        }
+    }
+
+
 
     index_t lower = 0;
     index_t upper = axis_length;
@@ -86,7 +112,10 @@ axis_iterator(int64 axis_length, const slice & s)
         upper = axis_length - 1;
     }
 
+    //-------------------------------------------------------------------------
     // compute start
+
+    index_t start = 0;
 
     if(s.start_valid())
     {
@@ -101,7 +130,10 @@ axis_iterator(int64 axis_length, const slice & s)
         else         start = lower;
     }
 
+    //-------------------------------------------------------------------------
     // compute stop
+
+    index_t stop  = 0;
 
     if(s.stop_valid())
     {

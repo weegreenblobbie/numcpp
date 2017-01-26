@@ -786,7 +786,7 @@ operator()(const slice & s0, const slice & s1)
                 out._size = count0 * count1;
                 out._array = _array;
                 out._shape = {1};
-                out._offsets[0] = _offsets[0] + start0 * _strides[0] + start1;
+                out._offsets[0] = _offsets[0] + start0 * _strides[0] + start1 * step1;
                 out._strides = {_strides[0]};
 
                 DOUT << "\n"
@@ -816,8 +816,8 @@ operator()(const slice & s0, const slice & s1)
                 if(count0 == 1) out._shape = {count1};
                 if(count1 == 1) out._shape = {count0};
 
-                out._offsets[0] = _offsets[0] + start0 * _strides[0] + start1;
-                out._strides = {_strides[0]};
+                out._offsets[0] = _offsets[0] + start0 * _strides[0] + start1 * step1;
+                out._strides = {_strides[0] * step0};
 
                 DOUT << "\n"
                     << "-------------------------------------------\n"

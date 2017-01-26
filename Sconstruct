@@ -26,9 +26,6 @@ default_cfg = dict(
 
 site_cfg = File("site.cfg").path
 
-print("Looking for site configuration")
-print("    in: %s" % site_cfg)
-
 if not os.path.isfile(site_cfg):
 
     cfg_out = RawConfigParser()
@@ -45,7 +42,8 @@ if not os.path.isfile(site_cfg):
 
     with open(site_cfg, 'w') as fd:
         cfg_out.write(fd)
-        print("Wrote %s" % site_cfg)
+        print("Wrote default site configuration")
+        print("    out: %s" % site_cfg)
 
 
 #-----------------------------------------------------------------------------

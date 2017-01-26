@@ -149,7 +149,11 @@ detail::slice_0b_11 operator|(const detail::slice_0b_1_ &, index_t);   //  :b:c
 inline slice::slice(index_t start_)
     :
     _start(start_), _stop(start_+1), _step(), _valid(0b110)
-{}
+{
+    // initializing stop here provides a way to distinguish:
+    //
+    //      slice(5)    vs    5 | _
+}
 
 
 inline slice::slice(index_t start_, index_t stop_)
@@ -202,157 +206,6 @@ operator<<(std::ostream & out, const slice & s)
     else               out << "None";
 
     return out << ")";
-}
-
-
-inline uint64 slice::get_size(uint64 axis_length) const
-{
-    switch(_valid.to_ulong())
-    {
-        // :b
-        case 0b010:
-        {
-            index_t start_ = 0;
-            index_t stop_ = _stop;
-
-            if(stop_ < 0) stop_ += axis_length;
-
-            if(start_ >= stop_) return 0;
-
-            return stop_ - start_;
-        }
-
-        // 1_s
-        case 0b100:
-        {
-            index_t start_ = _start;
-            index_t stop_ = axis_length;
-
-            if(start_ < 0) start_ += axis_length;
-
-            if(start_ >= stop_) return 0;
-
-            return stop_ - start_;
-        }
-
-        // a:b
-        case 0b110:
-        {
-            index_t start_ = _start;
-            index_t stop_ = _stop;
-
-            if(start_ < 0) start_ += axis_length;
-            if(stop_ < 0) stop_ += axis_length;
-
-            if(static_cast<uint64>(start_) >= axis_length) return 0;
-
-            if(static_cast<uint64>(stop_) >= axis_length) stop_ = axis_length;
-
-            if(start_ >= stop_) return 0;
-
-            return stop_ - start_;
-        }
-
-        // a:b:c
-        case 0b111:
-        {
-//~            std::cout
-//~                << "-------------------------------------------------------\n"
-//~                << "start = " << _start << "\n"
-//~                << "stop  = " << _stop << "\n"
-//~                << "step  = " << _step << std::endl;
-
-            index_t start_ = _start;
-            index_t stop_ = _stop;
-
-            if(start_ < 0) start_ += axis_length;
-            if(stop_ < 0) stop_ += axis_length;
-
-            if(_step > 0)
-            {
-
-                if(static_cast<uint64>(start_) >= axis_length) return 0;
-
-                if(static_cast<uint64>(stop_) >= axis_length) stop_ = axis_length;
-
-                if(start_ >= stop_) return 0;
-            }
-
-//~            std::cout
-//~                << "    start = " << start_ << "\n"
-//~                << "    stop  = " << stop_ << std::endl;
-
-            uint64 d = 0;
-            index_t i = start_;
-
-            if(_step > 0)
-            {
-                while(i < stop_)
-                {
-                    ++d;
-                    i += _step;
-                }
-            }
-            else
-            if(_step < 0)
-            {
-                while(i > stop_)
-                {
-                    ++d;
-                    i += _step;
-                }
-            }
-
-            return d;
-        }
-
-        // ::2
-        case 0b001:
-        {
-            return axis_length / std::abs(_step);
-        }
-
-        // 6::2
-        case 0b101:
-        {
-            index_t start_ = _start;
-            index_t stop_ = axis_length;
-
-            if(start_ < 0) start_ += axis_length;
-
-            if(_step < 0)
-            {
-                stop_ = -1;
-            }
-
-            index_t i = start_;
-            uint64 d = 0;
-
-            if(_step > 0)
-            {
-                while(i < stop_)
-                {
-                    i += _step;
-                    ++d;
-                }
-            }
-            else
-            if(_step < 0)
-            {
-                while(i > stop_)
-                {
-                    i += _step;
-                    ++d;
-                }
-            }
-
-            return d;
-        }
-    }
-
-    throw std::runtime_error("oops, missed case");
-
-    return 0;
 }
 
 

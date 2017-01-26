@@ -337,10 +337,34 @@ TEST_CASE( "numcpp::array::slicing a slice 2D -> 2D", "[slicing]" )
     CHECK( b.shape() == shape );
     CHECK( b(0,0) == 11 );
     CHECK( b(1,1) == 22 );
-    CHECK( b(2,2) == 33 );
+    CHECK( b(-2,-2) == 88 );
+    CHECK( b(-1,-1) == 99 );
+
+    auto c = b( 1_s | -1, 1_s | -1);
+
+    shape = {7,7};
+
+    CHECK( c.shape() == shape );
+    CHECK( c(0,0) == 22 );
+    CHECK( c(1,1) == 33 );
+    CHECK( c(-2,-2) == 77 );
+    CHECK( c(-1,-1) == 88 );
 
 //~    _debug_out = true;
-//~    CHECK( b(-1,-1) == 99 );
+    auto d = c( _ | _ | 2, _ | _ | 2);
+//~    _debug_out = false;
+
+    shape = {4,4};
+
+    INFO( "c = " << c.print("%2d") );
+    INFO( "d = " << d.print("%2d") );
+
+    CHECK( d.shape() == shape );
+    CHECK( d(0,0) == 22 );
+    CHECK( d(1,1) == 44 );
+    CHECK( d(-2,-2) == 66 );
+    CHECK( d(-1,-1) == 88 );
+
 }
 
 // :noTabs=true:
