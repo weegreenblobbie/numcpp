@@ -339,12 +339,12 @@ array<R>::operator array<R>::value_type () const
     {
         case 1:
         {
-            return (*_array)[_offsets[0]];
+            return (*this)(0);
         }
 
         case 2:
         {
-            return (*_array)[_offsets[0] + 0 * _strides[0] + _offsets[1]];
+            return (*this)(0,0);
         }
     }
 
@@ -819,7 +819,7 @@ operator()(const slice & s0, const slice & s1)
                     case 0:
                     {
                         out._offsets[0] = _offsets[0] + start0 + start1 * step1;
-                        out._strides = {_strides[0]};
+                        out._strides = {};
 
                         if(_debug_out) std::cout
                             << "    offset = " << _offsets[0] << " + "
@@ -832,12 +832,25 @@ operator()(const slice & s0, const slice & s1)
                     case 1:
                     {
                         out._offsets[0] = _offsets[0] + start0 * _strides[0] + start1 * step1;
-                        out._strides = {_strides[0]};
+                        out._strides = {};
 
                         if(_debug_out) std::cout
                             << "    offset = " << _offsets[0] << " + "
                             << start0 << " * " << _strides[0] << " + "
                             << start1 << " * " << step1 << "\n";
+
+                        break;
+                    }
+
+                    case 2:
+                    {
+                        out._offsets[0] = _offsets[0] + start0 * _strides[0] + start1 * _strides[1];
+                        out._strides = {};
+
+                        if(_debug_out) std::cout
+                            << "    offset = " << _offsets[0] << " + "
+                            << start0 << " * " << _strides[0] << " + "
+                            << start1 << " * " << _strides[1] << "\n";
 
                         break;
                     }
@@ -936,9 +949,6 @@ operator()(const slice & s0, const slice & s1)
                 out._array = _array;
                 out._shape = {count0, count1};
 
-                if(count0 == 1) out._shape = {count1};
-                if(count1 == 1) out._shape = {count0};
-
                 DOUT << "\n"
                     << "-------------------------------------------\n"
                     << "    shape  = (";
@@ -947,14 +957,67 @@ operator()(const slice & s0, const slice & s1)
                     << "    m = " << start0 << ":" << stop0 << ":" << step0 << "\n"
                     << "    n = " << start1 << ":" << stop1 << ":" << step1 << "\n";
 
-                out._offsets[0] = _offsets[0] + start0 * _strides[0] + start1 * step1;
-                out._strides = {_strides[0] * step0};
+                switch(_strides.size())
+                {
+                    case 0:
+                    {
+                        out._offsets[0] = _offsets[0] + start0 + start1 * step1;
+                        out._strides = {0, step1};
+
+                        if(_debug_out) std::cout
+                            << "    (" << __LINE__ << ") offset = " << _offsets[0] << " + "
+                            << start0 << " + "
+                            << start1 << " * " << step1 << "\n";
+
+                        break;
+                    }
+
+                    case 1:
+                    {
+                        out._offsets[0] = _offsets[0] + start0 * _strides[0] + start1;
+
+                        if(step1 > 1 or step1 < 0)
+                        {
+                            out._strides = {_strides[0] * step0, step1};
+                        }
+                        else
+                        {
+                            out._strides = {_strides[0] * step0};
+                        }
+
+                        if(_debug_out) std::cout
+                            << "    (" << __LINE__ << ") offset = " << _offsets[0] << " + "
+                            << start0 << " * " << _strides[0] << " + "
+                            << start1 << " * " << step1 << "\n";
+
+                        break;
+                    }
+
+                    case 2:
+                    {
+                        out._offsets[0] = _offsets[0] + start0 * _strides[0] + start1 * _strides[1];
+                        out._strides = {_strides[0] * step0, _strides[1] * step1};
+
+                        if(_debug_out) std::cout
+                            << "    (" << __LINE__ << ") offset = " << _offsets[0] << " + "
+                            << start0 << " * " << _strides[0] << " + "
+                            << start1 << " * " << _strides[1] << "\n";
+
+                        break;
+                    }
+
+                    default:
+                    {
+                        M_THROW_RT_ERROR("unhandled case");
+                    }
+                }
 
                 if(_debug_out) std::cout
                     << "    offset = " << out._offsets[0] << "\n"
                     << "    strides = (";
                 for(auto x : out._strides) if(_debug_out) std::cout << x << ", ";
                 if(_debug_out) std::cout << ")\n";
+
 
                 return out;
             }

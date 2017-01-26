@@ -369,15 +369,11 @@ TEST_CASE( "numcpp::array::slicing a slice 2D -> 2D", "[slicing]" )
 
     shape = {4,4};
 
-    INFO( "c = " << c.print("%2d") );
-    INFO( "d = " << d.print("%2d") );
-
     CHECK( d.shape() == shape );
     CHECK( d(0,0) == 22 );
     CHECK( d(1,1) == 44 );
     CHECK( d(-2,-2) == 66 );
     CHECK( d(-1,-1) == 88 );
-
 }
 
 // :noTabs=true:
