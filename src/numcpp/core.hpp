@@ -34,7 +34,7 @@ any(const array<bool> & a)
 {
     if(a.ndim() == 1)
     {
-        for(index_t i = 0; i < a.size(); ++i)
+        for(uint64 i = 0; i < a.size(); ++i)
         {
             bool b = a(i);
 
@@ -45,9 +45,9 @@ any(const array<bool> & a)
     }
     if(a.ndim() == 2)
     {
-        for(index_t m = 0; m < a.shape()[0]; ++m)
+        for(uint64 m = 0; m < a.shape()[0]; ++m)
         {
-            for(index_t n = 0; n < a.shape()[1]; ++n)
+            for(uint64 n = 0; n < a.shape()[1]; ++n)
             {
                 bool b = a(m,n);
 
@@ -71,7 +71,7 @@ all(const array<bool> & a)
 {
     if(a.ndim() == 1)
     {
-        for(index_t i = 0; i < a.size(); ++i)
+        for(uint64 i = 0; i < a.size(); ++i)
         {
             bool b = a(i);
 
@@ -82,9 +82,9 @@ all(const array<bool> & a)
     }
     if(a.ndim() == 2)
     {
-        for(index_t m = 0; m < a.shape()[0]; ++m)
+        for(uint64 m = 0; m < a.shape()[0]; ++m)
         {
-            for(index_t n = 0; n < a.shape()[1]; ++n)
+            for(uint64 n = 0; n < a.shape()[1]; ++n)
             {
                 bool b = a(m,n);
 

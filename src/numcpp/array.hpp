@@ -477,11 +477,9 @@ operator==(const R & rhs) const
 
     auto out = array<bool>(std::vector<bool>(_size, false)).reshape(_shape);
 
-    index_t size_ = static_cast<index_t>(_size);
-
     if(ndim() == 1)
     {
-        for(index_t i = 0; i < size_; ++i)
+        for(uint64 i = 0; i < _size; ++i)
         {
             (*out._array)[i] = (*_array)[_offsets[0] + i * _strides[0]] == rhs;
         }
@@ -491,9 +489,9 @@ operator==(const R & rhs) const
     else
     if(ndim() == 2)
     {
-        for(index_t m = 0; m < _shape[0]; ++m)
+        for(uint64 m = 0; m < _shape[0]; ++m)
         {
-            for(index_t n = 0; n < _shape[1]; ++n)
+            for(uint64 n = 0; n < _shape[1]; ++n)
             {
                 const R & lhs = (*_array)[_offsets[0] + m * _strides[0] + n];
 
@@ -763,6 +761,8 @@ operator()(const slice & s0, const slice & s1)
 
             axis_iterator a1(_shape[1], s1);
             auto s1_ = a1.final();
+
+            DOUT << "    s0_ = " << s0_ << ", " << "    s1_ = " << s1_ << "\n";
 
             index_t start0 = s0_.start();
             index_t stop0  = s0_.stop();
@@ -1084,7 +1084,7 @@ print(const std::string & fmt_in) const
         {
             if(_size != 1) out << "array([ ";
 
-            for(index_t i = 0; i < _size; ++i)
+            for(uint64 i = 0; i < _size; ++i)
             {
                 out << detail::_format<R>(fmt_, a(i));
                 if(_size != 1 && i + 1 < a._size) out << ", ";

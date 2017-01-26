@@ -45,7 +45,7 @@ if not os.path.isfile(site_cfg):
 
     with open(site_cfg, 'w') as fd:
         cfg_out.write(fd)
-        print("Wrote %s" % site_config.path)
+        print("Wrote %s" % site_cfg)
 
 
 #-----------------------------------------------------------------------------

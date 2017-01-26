@@ -321,4 +321,26 @@ TEST_CASE( "numcpp::array::slicing 2D -> 2D", "[slicing]" )
     }
 }
 
+
+TEST_CASE( "numcpp::array::slicing a slice 2D -> 2D", "[slicing]" )
+{
+    missing _;
+
+    auto a = arange<int>(100).reshape({10,10});
+
+    auto b = a(1 | _, 1 | _);
+
+    auto shape = b.shape();
+
+    shape = {9,9};
+
+    CHECK( b.shape() == shape );
+    CHECK( b(0,0) == 11 );
+    CHECK( b(1,1) == 22 );
+    CHECK( b(2,2) == 33 );
+
+//~    _debug_out = true;
+//~    CHECK( b(-1,-1) == 99 );
+}
+
 // :noTabs=true:
