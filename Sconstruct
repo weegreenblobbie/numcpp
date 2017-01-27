@@ -137,11 +137,28 @@ conf.Finish()
 # building unittests
 
 src = Glob('src/numcpp/tests/*.cpp')
-src.append('src/executables/unittests.cpp')
+src.append(File('src/executables/unittests.cpp'))
 
 ut = unittest_env.Program('src/executables/unittests', src)[0]
 
 unittest_env.Default(ut)
+
+#-----------------------------------------------------------------------------
+# extra cleaning
+
+if GetOption("clean"):
+
+    for f in src:
+
+        base = os.path.splitext(f.path)[0]
+
+        unittest_env.Clean(ut, base + ".gcda")
+        unittest_env.Clean(ut, base + ".gcno")
+        unittest_env.Clean(ut, 'tmp1.info')
+        unittest_env.Clean(ut, 'tmp2.info')
+        unittest_env.Clean(ut, 'coverage.info')
+        unittest_env.Clean(ut, 'coverage')
+
 
 #-----------------------------------------------------------------------------
 # produce unitest coverage
