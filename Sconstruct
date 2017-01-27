@@ -11,7 +11,19 @@ EnsureSConsVersion(2,5,0)
 #-----------------------------------------------------------------------------
 # scons switches
 
-AddOption("--coverage", action = "store_true", default = False)
+AddOption(
+    "--coverage",
+    action = "store_true",
+    default = False,
+    help = "Execute unittests and produce html coverage report"
+)
+
+AddOption(
+    "--test",
+    action = "store_true",
+    default = False,
+    help = "Build and execute unittests"
+)
 
 
 #-----------------------------------------------------------------------------
@@ -159,6 +171,17 @@ if GetOption("clean"):
         unittest_env.Clean(ut, 'tmp3.info')
         unittest_env.Clean(ut, 'coverage.info')
         unittest_env.Clean(ut, 'coverage')
+
+#-----------------------------------------------------------------------------
+# execute unittest
+
+if GetOption("test"):
+
+    run_ut = Command(".bogus", None, ut.path)
+
+    Default(run_ut)
+    Depends(run_ut, ut)
+    AlwaysBuild(run_ut)
 
 
 #-----------------------------------------------------------------------------
