@@ -8,6 +8,11 @@ import sys
 
 EnsureSConsVersion(2,5,0)
 
+#-----------------------------------------------------------------------------
+# scons switches
+
+AddOption("--coverage", action = "store_true", default = False)
+
 
 #-----------------------------------------------------------------------------
 # default configureation
@@ -16,7 +21,7 @@ default_cfg = dict(
     unittest_env = dict(
         CXX = 'g++-5',
         CPPPATH = ['external', 'src'],
-        CXXFLAGS = ['-std=c++14', '-Wall', '-ggdb'],
+        CXXFLAGS = ['-std=c++14', '-Wall', '-g'],
     )
 )
 
@@ -76,6 +81,27 @@ for k,v in site_config.items('unittest_env'):
 
 
 #-----------------------------------------------------------------------------
+# handle coverage
+
+do_coverage = GetOption("coverage")
+
+if do_coverage:
+
+    assert "g++" in unittest_env['CXX'], "coverage only suported for g++ compilers"
+
+    print("Adding coverage flags")
+
+    unittest_env.AppendUnique(
+        CXXFLAGS = ['-g', '-O0', '--coverage'],
+        LINKFLAGS = ['--coverage'],
+        PATH = os.environ['PATH'],
+    )
+
+    for k in ['CXXFLAGS', 'LINKFLAGS']:
+        v = unittest_env[k]
+        print('    %10s = %s' % (k, repr(v)))
+
+#-----------------------------------------------------------------------------
 # Does the c++ compiler work?
 
 conf = Configure(unittest_env)
@@ -113,6 +139,41 @@ conf.Finish()
 src = Glob('src/numcpp/tests/*.cpp')
 src.append('src/executables/unittests.cpp')
 
-ut = unittest_env.Program('src/executables/unittests', src)
+ut = unittest_env.Program('src/executables/unittests', src)[0]
 
 unittest_env.Default(ut)
+
+#-----------------------------------------------------------------------------
+# produce unitest coverage
+
+if do_coverage:
+
+    base = os.path.splitext(ut.path)[0]
+
+    targets = [
+        base + '.gcda',
+    ]
+
+    # execution sequence
+    actions = [
+        'lcov --base-directory . --directory . --zerocounters -q',
+        ut.path,
+        'lcov --base-directory . --directory . -c -o tmp1.info',
+        'lcov --remove tmp1.info "/usr*" -o tmp2.info',
+        'lcov --remove tmp2.info "external/*" -o coverage.info',
+        'rm -rf coverage',
+        'genhtml -o coverage -t "unittest coverage" --num-spaces 4 coverage.info',
+        'echo Open coverage/index.html',
+    ]
+
+    run_ut = Command(
+        target = targets,
+        source = ut.path,
+        action = actions,
+    )
+
+    Default(run_ut)
+
+    Depends(run_ut, ut)
+
+    AlwaysBuild(run_ut)
