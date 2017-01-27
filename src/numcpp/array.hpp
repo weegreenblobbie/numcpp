@@ -223,6 +223,7 @@ protected:
 #define M_THROW_RT_ERROR( msg_expr ) \
     {std::stringstream ss; ss << __FILE__ << "(" << __LINE__ << ") " << msg_expr; throw std::runtime_error(ss.str());}
 
+
 namespace detail
 {
     inline std::size_t _compute_size(const std::vector<uint64> & shape)
@@ -621,6 +622,21 @@ operator=(const R & rhs)
 
                 return *this;
             }
+
+            case 2:
+            {
+                for(uint64 i = 0; i < _size; ++i)
+                {
+                    (*_array)[_offsets[0] + i * _strides[1]] = rhs;
+                }
+
+                return *this;
+            }
+
+            default:
+            {
+                M_THROW_RT_ERROR("unhandled case"); // LCOV_EXCL_LINE
+            }
         }
     }
     else
@@ -653,12 +669,15 @@ operator=(const R & rhs)
 
                 return *this;
             }
+
+            default:
+            {
+                M_THROW_RT_ERROR("unhandled case"); // LCOV_EXCL_LINE
+            }
         }
     }
 
-    M_THROW_RT_ERROR("unhandled case"); // LCOV_EXCL_LINE
-
-    return *this;
+    return *this; // LCOV_EXCL_LINE
 }
 
 
@@ -727,12 +746,14 @@ operator()(const slice & s0)
             out._shape = {count};
             out._size = count;
 
+            // LCOV_EXCL_START
             DOUT << "\n"
                 << "-------------------------------------------\n"
                 << "    shape  = (";
             for(auto x : out._shape) if(_debug_out) std::cout << x << ", ";
             if(_debug_out) std::cout << ")\n"
                 << "    index = " << start << "\n";
+            // LCOV_EXCL_STOP
 
             switch(_strides.size())
             {
@@ -742,9 +763,11 @@ operator()(const slice & s0)
 
                     if(step > 1 or step < 0) out._strides = {step};
 
+                    // LCOV_EXCL_START
                     if(_debug_out) std::cout
                         << "    offset = " << _offsets[0] << " + "
                         << start << "\n";
+                    // LCOV_EXCL_STOP
 
                     break;
                 }
@@ -754,9 +777,12 @@ operator()(const slice & s0)
                     out._offsets[0] = _offsets[0] + start * _strides[0];
                     out._strides = {_strides[0] * step};
 
+                    // LCOV_EXCL_START
                     if(_debug_out) std::cout
                         << "    offset = " << _offsets[0] << " + "
                         << start << " * " << _strides[0] << "\n";
+                    // LCOV_EXCL_STOP
+
                     break;
                 }
 
@@ -766,11 +792,13 @@ operator()(const slice & s0)
                 }
             }
 
+            // LCOV_EXCL_START
             if(_debug_out) std::cout
                 << "    offset = " << out._offsets[0] << "\n"
                 << "    strides = (";
             for(auto x : out._strides) if(_debug_out) std::cout << x << ", ";
             if(_debug_out) std::cout << ")\n";
+            // LCOV_EXCL_STOP
 
             return out;
         }
@@ -779,12 +807,6 @@ operator()(const slice & s0)
         case 2:
         {
             return (*this)(s0, missing());
-        }
-
-        // 3D -> 2D
-        case 3:
-        {
-            break;
         }
     }
 
@@ -846,12 +868,14 @@ operator()(const slice & s0, const slice & s1)
                 out._array = _array;
                 out._shape = {1};
 
+                // LCOV_EXCL_START
                 DOUT << "\n"
                     << "-------------------------------------------\n"
                     << "    shape  = (";
                 for(auto x : out._shape) if(_debug_out) std::cout << x << ", ";
                 if(_debug_out) std::cout << ")\n"
                     << "    m,n = " << start0 << ", " << start1 << "\n";
+                // LCOV_EXCL_STOP
 
                 switch(_strides.size())
                 {
@@ -860,10 +884,12 @@ operator()(const slice & s0, const slice & s1)
                         out._offsets[0] = _offsets[0] + start0 * _strides[0] + start1 * step1;
                         out._strides = {};
 
+                        // LCOV_EXCL_START
                         if(_debug_out) std::cout
                             << "    offset = " << _offsets[0] << " + "
                             << start0 << " * " << _strides[0] << " + "
                             << start1 << " * " << step1 << "\n";
+                        // LCOV_EXCL_STOP
 
                         break;
                     }
@@ -873,10 +899,12 @@ operator()(const slice & s0, const slice & s1)
                         out._offsets[0] = _offsets[0] + start0 * _strides[0] + start1 * _strides[1];
                         out._strides = {};
 
+                        // LCOV_EXCL_START
                         if(_debug_out) std::cout
                             << "    offset = " << _offsets[0] << " + "
                             << start0 << " * " << _strides[0] << " + "
                             << start1 << " * " << _strides[1] << "\n";
+                        // LCOV_EXCL_STOP
 
                         break;
                     }
@@ -887,11 +915,13 @@ operator()(const slice & s0, const slice & s1)
                     }
                 }
 
+                // LCOV_EXCL_START
                 if(_debug_out) std::cout
                     << "    offset = " << out._offsets[0] << "\n"
                     << "    strides = (";
                 for(auto x : out._strides) if(_debug_out) std::cout << x << ", ";
                 if(_debug_out) std::cout << ")\n";
+                // LCOV_EXCL_STOP
 
                 return out;
             }
@@ -911,6 +941,7 @@ operator()(const slice & s0, const slice & s1)
                 out._array = _array;
                 out._shape = {count1};
 
+                // LCOV_EXCL_START
                 DOUT << "\n"
                     << "-------------------------------------------\n"
                     << "    shape  = (";
@@ -918,31 +949,23 @@ operator()(const slice & s0, const slice & s1)
                 if(_debug_out) std::cout << ")\n"
                     << "    m = " << start0 << "\n"
                     << "    n = " << start1 << ":" << stop1 << ":" << step1 << "\n";
+                // LCOV_EXCL_STOP
 
                 switch(_strides.size())
                 {
-//~                    case 0:
-//~                    {
-//~                        out._offsets[0] = _offsets[0] + start0 + start1 * step1;
-//~                        out._strides = {};
-
-//~                        if(_debug_out) std::cout
-//~                            << "    (" << __LINE__ << ") offset = " << _offsets[0] << " + "
-//~                            << start0 << " + "
-//~                            << start1 << " * " << step1 << "\n";
-
-//~                        break;
-//~                    }
-
                     case 1:
                     {
                         out._offsets[0] = _offsets[0] + start0 * _strides[0] + start1;
                         out._strides = {};
 
+                        if(step1 > 1 or step1 < 0) out._strides = {0, step1};
+
+                        // LCOV_EXCL_START
                         if(_debug_out) std::cout
                             << "    (" << __LINE__ << ") offset = " << _offsets[0] << " + "
                             << start0 << " * " << _strides[0] << " + "
                             << start1 << " * " << step1 << "\n";
+                        // LCOV_EXCL_STOP
 
                         break;
                     }
@@ -953,11 +976,13 @@ operator()(const slice & s0, const slice & s1)
                     }
                 }
 
+                // LCOV_EXCL_START
                 if(_debug_out) std::cout
                     << "    offset = " << out._offsets[0] << "\n"
                     << "    strides = (";
                 for(auto x : out._strides) if(_debug_out) std::cout << x << ", ";
                 if(_debug_out) std::cout << ")\n";
+                // LCOV_EXCL_STOP
 
                 return out;
             }
@@ -975,6 +1000,7 @@ operator()(const slice & s0, const slice & s1)
                 out._array = _array;
                 out._shape = {count0, count1};
 
+                // LCOV_EXCL_START
                 DOUT << "\n"
                     << "-------------------------------------------\n"
                     << "    shape  = (";
@@ -982,22 +1008,10 @@ operator()(const slice & s0, const slice & s1)
                 if(_debug_out) std::cout << ")\n"
                     << "    m = " << start0 << ":" << stop0 << ":" << step0 << "\n"
                     << "    n = " << start1 << ":" << stop1 << ":" << step1 << "\n";
+                // LCOV_EXCL_STOP
 
                 switch(_strides.size())
                 {
-//~                    case 0:
-//~                    {
-//~                        out._offsets[0] = _offsets[0] + start0 + start1 * step1;
-//~                        out._strides = {0, step1};
-
-//~                        if(_debug_out) std::cout
-//~                            << "    (" << __LINE__ << ") offset = " << _offsets[0] << " + "
-//~                            << start0 << " + "
-//~                            << start1 << " * " << step1 << "\n";
-
-//~                        break;
-//~                    }
-
                     case 1:
                     {
                         out._offsets[0] = _offsets[0] + start0 * _strides[0] + start1;
@@ -1011,10 +1025,12 @@ operator()(const slice & s0, const slice & s1)
                             out._strides = {_strides[0] * step0};
                         }
 
+                        // LCOV_EXCL_START
                         if(_debug_out) std::cout
                             << "    (" << __LINE__ << ") offset = " << _offsets[0] << " + "
                             << start0 << " * " << _strides[0] << " + "
                             << start1 << " * " << step1 << "\n";
+                        // LCOV_EXCL_STOP
 
                         break;
                     }
@@ -1024,10 +1040,12 @@ operator()(const slice & s0, const slice & s1)
                         out._offsets[0] = _offsets[0] + start0 * _strides[0] + start1 * _strides[1];
                         out._strides = {_strides[0] * step0, _strides[1] * step1};
 
+                        // LCOV_EXCL_START
                         if(_debug_out) std::cout
                             << "    (" << __LINE__ << ") offset = " << _offsets[0] << " + "
                             << start0 << " * " << _strides[0] << " + "
                             << start1 << " * " << _strides[1] << "\n";
+                        // LCOV_EXCL_STOP
 
                         break;
                     }
@@ -1038,12 +1056,13 @@ operator()(const slice & s0, const slice & s1)
                     }
                 }
 
+                // LCOV_EXCL_START
                 if(_debug_out) std::cout
                     << "    offset = " << out._offsets[0] << "\n"
                     << "    strides = (";
                 for(auto x : out._strides) if(_debug_out) std::cout << x << ", ";
                 if(_debug_out) std::cout << ")\n";
-
+                // LCOV_EXCL_STOP
 
                 return out;
             }
@@ -1051,12 +1070,6 @@ operator()(const slice & s0, const slice & s1)
             DOUT << "count0 = " << count0 << "\n";
             DOUT << "count1 = " << count1 << "\n";
 
-            break;
-        }
-
-        // 3D -> 2D
-        case 3:
-        {
             break;
         }
     }

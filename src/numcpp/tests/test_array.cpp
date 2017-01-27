@@ -45,6 +45,7 @@ TEST_CASE("numcpp::array basics")
 
     b = arange<float32>(15).reshape(shape);
 
+    INFO( "b = " << b.print("%.2f") );
     CHECK( b.size() == 15 );
     CHECK( b.ndim() == 2 );
     CHECK( b.shape() == shape );
@@ -482,6 +483,22 @@ TEST_CASE( "numcpp::array 2D element access" )
 
     INFO( "b = " << b );
     CHECK( all(b == g) );
+
+    a = arange<int>(16).reshape({4,4});
+
+    a(_|_|2, _|_|-2) = 99;
+
+    gold = array<int>(
+        {
+            0, 99,  2, 99,
+            4,  5,  6,  7,
+            8, 99, 10, 99,
+           12, 13, 14, 15
+        }
+    ).reshape({4,4});
+
+    INFO( "a = " << a.print("%2d") );
+    CHECK( all(a == gold) );
 }
 
 
