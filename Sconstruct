@@ -156,6 +156,7 @@ if GetOption("clean"):
         unittest_env.Clean(ut, base + ".gcno")
         unittest_env.Clean(ut, 'tmp1.info')
         unittest_env.Clean(ut, 'tmp2.info')
+        unittest_env.Clean(ut, 'tmp3.info')
         unittest_env.Clean(ut, 'coverage.info')
         unittest_env.Clean(ut, 'coverage')
 
@@ -177,7 +178,8 @@ if do_coverage:
         ut.path,
         'lcov --base-directory . --directory . -c -o tmp1.info',
         'lcov --remove tmp1.info "/usr*" -o tmp2.info',
-        'lcov --remove tmp2.info "external/*" -o coverage.info',
+        'lcov --remove tmp2.info "external/*" -o tmp3.info',
+        'lcov --remove tmp3.info "numcpp/tests/*" -o coverage.info',
         'rm -rf coverage',
         'genhtml -o coverage -t "unittest coverage" --num-spaces 4 coverage.info',
         'echo Open coverage/index.html',

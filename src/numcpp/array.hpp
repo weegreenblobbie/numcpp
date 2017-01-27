@@ -225,7 +225,7 @@ protected:
 
 namespace detail
 {
-    std::size_t _compute_size(const std::vector<uint64> & shape)
+    inline std::size_t _compute_size(const std::vector<uint64> & shape)
     {
         std::size_t s = ! shape.empty();
         for(auto x : shape)
@@ -237,7 +237,7 @@ namespace detail
         return s;
     }
 
-    uint64 _flat_index(
+    inline uint64 _flat_index(
         const std::vector<uint64> & index,
         const std::vector<int64> & strides,
         uint64 offset)
@@ -394,7 +394,7 @@ reshape(const std::vector<uint64> & shape)
 
         default:
         {
-            M_THROW_RT_ERROR("unhandled case");
+            M_THROW_RT_ERROR("unhandled case"); // LCOV_EXCL_LINE
         }
     }
 
@@ -409,33 +409,73 @@ operator!() const
 {
     DOUT << __PRETTY_FUNCTION__ << std::endl;
 
-    array<bool> nick(std::vector<bool>(_size, false));
-
-    index_t size_ = static_cast<index_t>(_size);
+    array<bool> out(std::vector<bool>(_size, false));
 
     if(ndim() == 1)
     {
-        for(index_t i = 0; i < size_; ++i)
+        switch(_strides.size())
         {
-            (*nick._array)[i] = !(*_array)[_offsets[0] + i];
-        }
+            case 0:
+            {
+                for(uint64 i = 0; i < _size; ++i)
+                {
+                    (*out._array)[i] = !(*_array)[_offsets[0] + i];
+                }
 
-        return nick;
+                return out;
+            }
+
+            case 1:
+            {
+                for(uint64 i = 0; i < _size; ++i)
+                {
+                    (*out._array)[i] = !(*_array)[_offsets[0] + i * _strides[0]];
+                }
+
+                return out;
+            }
+        }
     }
     else
     if(ndim() == 2)
     {
-    }
-    else
-    if(ndim() == 3)
-    {
+        out.reshape(_shape);
+
+        switch(_strides.size())
+        {
+            case 1:
+            {
+                for(uint64 m = 0; m < _shape[0]; ++m)
+                {
+                    for(uint64 n = 0; n < _shape[1]; ++n)
+                    {
+                        (*out._array)[m * _shape[1] + n] =
+                            !(*_array)[_offsets[0] + m * _strides[0] + n];
+                    }
+                }
+
+                return out;
+            }
+
+            case 2:
+            {
+                for(uint64 m = 0; m < _shape[0]; ++m)
+                {
+                    for(uint64 n = 0; n < _shape[1]; ++n)
+                    {
+                        (*out._array)[m * _shape[1] + n] =
+                            !(*_array)[_offsets[0] + m * _strides[0] + n * _strides[1]];
+                    }
+                }
+
+                return out;
+            }
+        }
     }
 
-    throw std::runtime_error(
-        fmt::format("{}({}): unhandled case", __FILE__, __LINE__)
-    );
+    M_THROW_RT_ERROR("unhandled case"); // LCOV_EXCL_LINE
 
-    return nick;
+    return out;
 }
 
 
@@ -474,7 +514,7 @@ operator==(const R & rhs) const
             }
         }
 
-        M_THROW_RT_ERROR("unhandeled case");
+        M_THROW_RT_ERROR("unhandled case"); // LCOV_EXCL_LINE
     }
     else
     if(ndim() == 2)
@@ -494,9 +534,7 @@ operator==(const R & rhs) const
         return out;
     }
 
-    throw std::runtime_error(
-        fmt::format("{}({}): unhandled case", __FILE__, __LINE__)
-    );
+    M_THROW_RT_ERROR("unhandled case"); // LCOV_EXCL_LINE
 
     return out;
 }
@@ -545,9 +583,7 @@ operator==(const array<R> & rhs) const
         return out;
     }
 
-    throw std::runtime_error(
-        fmt::format("{}({}): unhandled case", __FILE__, __LINE__)
-    );
+    M_THROW_RT_ERROR("unhandled case"); // LCOV_EXCL_LINE
 
     return array<bool>();
 }
@@ -586,27 +622,12 @@ operator=(const R & rhs)
                 return *this;
             }
         }
-
-        return *this;
     }
     else
     if(ndim() == 2)
     {
         switch(_strides.size())
         {
-            case 0:
-            {
-                for(uint64 m = 0; m < _shape[0]; ++m)
-                {
-                    for(uint64 n = 0; n < _shape[1]; ++n)
-                    {
-                        (*_array)[_offsets[0] + m * _shape[1] + n] = rhs;
-                    }
-                }
-
-                return *this;
-            }
-
             case 1:
             {
                 for(uint64 m = 0; m < _shape[0]; ++m)
@@ -635,9 +656,7 @@ operator=(const R & rhs)
         }
     }
 
-    throw std::runtime_error(
-        fmt::format("{}({}): unhandled case", __FILE__, __LINE__)
-    );
+    M_THROW_RT_ERROR("unhandled case"); // LCOV_EXCL_LINE
 
     return *this;
 }
@@ -743,7 +762,7 @@ operator()(const slice & s0)
 
                 default:
                 {
-                    M_THROW_RT_ERROR("unhandled case");
+                    M_THROW_RT_ERROR("unhandled case"); // LCOV_EXCL_LINE
                 }
             }
 
@@ -769,9 +788,7 @@ operator()(const slice & s0)
         }
     }
 
-    throw std::runtime_error(
-        fmt::format("{}({}): unhandled case", __FILE__, __LINE__)
-    );
+    M_THROW_RT_ERROR("unhandled case"); // LCOV_EXCL_LINE
 
     return out;
 }
@@ -838,19 +855,6 @@ operator()(const slice & s0, const slice & s1)
 
                 switch(_strides.size())
                 {
-                    case 0:
-                    {
-                        out._offsets[0] = _offsets[0] + start0 + start1 * step1;
-                        out._strides = {};
-
-                        if(_debug_out) std::cout
-                            << "    offset = " << _offsets[0] << " + "
-                            << start0 << " + "
-                            << start1 << " * " << step1 << "\n";
-
-                        break;
-                    }
-
                     case 1:
                     {
                         out._offsets[0] = _offsets[0] + start0 * _strides[0] + start1 * step1;
@@ -879,7 +883,7 @@ operator()(const slice & s0, const slice & s1)
 
                     default:
                     {
-                        M_THROW_RT_ERROR("unhandled case");
+                        M_THROW_RT_ERROR("unhandled case"); // LCOV_EXCL_LINE
                     }
                 }
 
@@ -917,18 +921,18 @@ operator()(const slice & s0, const slice & s1)
 
                 switch(_strides.size())
                 {
-                    case 0:
-                    {
-                        out._offsets[0] = _offsets[0] + start0 + start1 * step1;
-                        out._strides = {};
+//~                    case 0:
+//~                    {
+//~                        out._offsets[0] = _offsets[0] + start0 + start1 * step1;
+//~                        out._strides = {};
 
-                        if(_debug_out) std::cout
-                            << "    (" << __LINE__ << ") offset = " << _offsets[0] << " + "
-                            << start0 << " + "
-                            << start1 << " * " << step1 << "\n";
+//~                        if(_debug_out) std::cout
+//~                            << "    (" << __LINE__ << ") offset = " << _offsets[0] << " + "
+//~                            << start0 << " + "
+//~                            << start1 << " * " << step1 << "\n";
 
-                        break;
-                    }
+//~                        break;
+//~                    }
 
                     case 1:
                     {
@@ -945,7 +949,7 @@ operator()(const slice & s0, const slice & s1)
 
                     default:
                     {
-                        M_THROW_RT_ERROR("unhandled case");
+                        M_THROW_RT_ERROR("unhandled case"); // LCOV_EXCL_LINE
                     }
                 }
 
@@ -981,18 +985,18 @@ operator()(const slice & s0, const slice & s1)
 
                 switch(_strides.size())
                 {
-                    case 0:
-                    {
-                        out._offsets[0] = _offsets[0] + start0 + start1 * step1;
-                        out._strides = {0, step1};
+//~                    case 0:
+//~                    {
+//~                        out._offsets[0] = _offsets[0] + start0 + start1 * step1;
+//~                        out._strides = {0, step1};
 
-                        if(_debug_out) std::cout
-                            << "    (" << __LINE__ << ") offset = " << _offsets[0] << " + "
-                            << start0 << " + "
-                            << start1 << " * " << step1 << "\n";
+//~                        if(_debug_out) std::cout
+//~                            << "    (" << __LINE__ << ") offset = " << _offsets[0] << " + "
+//~                            << start0 << " + "
+//~                            << start1 << " * " << step1 << "\n";
 
-                        break;
-                    }
+//~                        break;
+//~                    }
 
                     case 1:
                     {
@@ -1030,7 +1034,7 @@ operator()(const slice & s0, const slice & s1)
 
                     default:
                     {
-                        M_THROW_RT_ERROR("unhandled case");
+                        M_THROW_RT_ERROR("unhandled case"); // LCOV_EXCL_LINE
                     }
                 }
 
@@ -1057,110 +1061,10 @@ operator()(const slice & s0, const slice & s1)
         }
     }
 
-    throw std::runtime_error(
-        fmt::format("{}({}): unhandled case", __FILE__, __LINE__)
-    );
+    M_THROW_RT_ERROR("unhandled case"); // LCOV_EXCL_LINE
 
     return array<R>();
 }
-
-
-//~template <class R>
-//~array<R>
-//~array<R>::
-//~operator()(const missing & , const slice & s1_)
-//~{
-//~    DOUT << __PRETTY_FUNCTION__ << std::endl;
-
-//~    if(_size == 0) throw std::runtime_error("can't slice an empty array");
-
-//~    switch(ndim())
-//~    {
-//~        case 1:
-//~        {
-//~            throw std::runtime_error("too many indicies for array");
-//~        }
-
-//~        case 2:
-//~        {
-//~            axis_iterator a1(_shape[1], s1_);
-//~            auto s1 = a1.final();
-
-//~            index_t start0 = 0;
-//~            index_t stop0  = _shape[0];
-//~            index_t step0  = 1;
-
-//~            index_t start1 = s1.start();
-//~            index_t stop1  = s1.stop();
-//~            index_t step1  = s1.step();
-
-//~            uint64 count0 = _shape[0];
-//~            uint64 count1 = a1.size();
-
-//~            //-----------------------------------------------------------------
-//~            // special case size = 1
-
-//~            if(count0 == 1 && count1 == 1)
-//~            {
-//~                array<R> out;
-
-//~                out._size = count0 * count1;
-//~                out._array = _array;
-//~                out._shape = {count0, count1};
-//~                out._offsets[0] = _offsets[0] + start0 * _strides[0] + start1 * _shape[0];
-//~                out._strides = {_strides[0]};
-
-//~                DOUT << "\n"
-//~                    << "-------------------------------------------\n"
-//~                    << "    shape  = (";
-//~                for(auto x : out._shape) if(_debug_out) std::cout << x << ", ";
-//~                if(_debug_out) std::cout << ")\n"
-//~                    << "    m,n = " << start0 << ", " << start1 << "\n"
-//~                    << "    offset = " << out._offsets[0] << "\n";
-
-//~                return out;
-//~            }
-
-//~            //-----------------------------------------------------------------
-//~            // special case size > 1 in both
-//~            if(count0 > 1 && count1 > 1)
-//~            {
-//~                array<R> out;
-
-//~                out._size = count0 * count1;
-//~                out._array = _array;
-//~                out._shape = {count0, count1};
-//~                out._offsets[0] = _offsets[0] + start0 * _strides[0] + start1;
-//~                out._strides = {_strides[0]};
-
-//~                DOUT << "\n"
-//~                    << "-------------------------------------------\n"
-//~                    << "    shape  = (";
-//~                for(auto x : out._shape) if(_debug_out) std::cout << x << ", ";
-//~                if(_debug_out) std::cout << ")\n"
-//~                    << "    m = " << start0 << ":" << stop0 << ":" << step0 << "\n"
-//~                    << "    n = " << start1 << ":" << stop1 << ":" << step1 << "\n"
-//~                    << "    offset = " << out._offsets[0] << "\n";
-
-//~                return out;
-//~            }
-
-//~            break;
-//~        }
-
-//~        // 3D -> 2D
-//~        case 3:
-//~        {
-//~            break;
-//~        }
-//~    }
-
-//~    throw std::runtime_error(
-//~        fmt::format("{}({}): unhandled case", __FILE__, __LINE__)
-//~    );
-
-//~    return array<R>();
-//~}
 
 
 template <class R>
@@ -1226,47 +1130,47 @@ namespace detail
     // defaults for POD values
     template <class T> std::string _array_R_to_fmt() { return "%g"; }
 
-    template <> std::string _array_R_to_fmt<bool>()  { return "%d"; }
-    template <> std::string _array_R_to_fmt<int8 >() { return "%d"; }
-    template <> std::string _array_R_to_fmt<int16>() { return "%d"; }
-    template <> std::string _array_R_to_fmt<int32>() { return "%d"; }
-    template <> std::string _array_R_to_fmt<int64>() { return "%d"; }
+    template <> inline std::string _array_R_to_fmt<bool>()  { return "%d"; }
+    template <> inline std::string _array_R_to_fmt<int8 >() { return "%d"; }
+    template <> inline std::string _array_R_to_fmt<int16>() { return "%d"; }
+    template <> inline std::string _array_R_to_fmt<int32>() { return "%d"; }
+    template <> inline std::string _array_R_to_fmt<int64>() { return "%d"; }
 
-    template <> std::string _array_R_to_fmt<uint8 >() { return "%d"; }
-    template <> std::string _array_R_to_fmt<uint16>() { return "%d"; }
-    template <> std::string _array_R_to_fmt<uint32>() { return "%d"; }
-    template <> std::string _array_R_to_fmt<uint64>() { return "%d"; }
+    template <> inline std::string _array_R_to_fmt<uint8 >() { return "%d"; }
+    template <> inline std::string _array_R_to_fmt<uint16>() { return "%d"; }
+    template <> inline std::string _array_R_to_fmt<uint32>() { return "%d"; }
+    template <> inline std::string _array_R_to_fmt<uint64>() { return "%d"; }
 
-    template <> std::string _array_R_to_fmt<float32>() { return "%11.8f"; }
+    template <> inline std::string _array_R_to_fmt<float32>() { return "%11.8f"; }
 
-    template <> std::string _array_R_to_fmt<complex64>() { return "%11.8f+%.8fj"; }
+    template <> inline std::string _array_R_to_fmt<complex64>() { return "%11.8f+%.8fj"; }
 
-    template <> std::string _array_R_to_fmt<complex128>() { return "%14.11f+%.11fj"; }
+    template <> inline std::string _array_R_to_fmt<complex128>() { return "%14.11f+%.11fj"; }
 
     template <class T> std::string _format(const std::string & fmt_, const T & v) { return fmt::sprintf(fmt_, v); }
 
-    template <> std::string _format<complex64>(const std::string & fmt_, const complex64 & v)  { return fmt::sprintf(fmt_, v.real(), v.imag()); }
-    template <> std::string _format<complex128>(const std::string & fmt_, const complex128 & v) { return fmt::sprintf(fmt_, v.real(), v.imag()); }
+    template <> inline std::string _format<complex64>(const std::string & fmt_, const complex64 & v)  { return fmt::sprintf(fmt_, v.real(), v.imag()); }
+    template <> inline std::string _format<complex128>(const std::string & fmt_, const complex128 & v) { return fmt::sprintf(fmt_, v.real(), v.imag()); }
 
     template <class T> std::string type_name() { return "unknown"; }
 
-    template <> std::string type_name<bool>() { return "bool"; }
+    template <> inline std::string type_name<bool>() { return "bool"; }
 
-    template <> std::string type_name<int8 >() { return "int8"; }
-    template <> std::string type_name<int16>() { return "int16"; }
-    template <> std::string type_name<int32>() { return "int32"; }
-    template <> std::string type_name<int64>() { return "int64"; }
+    template <> inline std::string type_name<int8 >() { return "int8"; }
+    template <> inline std::string type_name<int16>() { return "int16"; }
+    template <> inline std::string type_name<int32>() { return "int32"; }
+    template <> inline std::string type_name<int64>() { return "int64"; }
 
-    template <> std::string type_name<uint8 >() { return "uint8"; }
-    template <> std::string type_name<uint16>() { return "uint16"; }
-    template <> std::string type_name<uint32>() { return "uint32"; }
-    template <> std::string type_name<uint64>() { return "uint64"; }
+    template <> inline std::string type_name<uint8 >() { return "uint8"; }
+    template <> inline std::string type_name<uint16>() { return "uint16"; }
+    template <> inline std::string type_name<uint32>() { return "uint32"; }
+    template <> inline std::string type_name<uint64>() { return "uint64"; }
 
-    template <> std::string type_name<float32>() { return "float32"; }
+    template <> inline std::string type_name<float32>() { return "float32"; }
 
-    template <> std::string type_name<complex64>() { return "complex64"; }
+    template <> inline std::string type_name<complex64>() { return "complex64"; }
 
-    template <> std::string type_name<complex128>() { return "complex128"; }
+    template <> inline std::string type_name<complex128>() { return "complex128"; }
 }
 
 
@@ -1333,7 +1237,7 @@ print(const std::string & fmt_in) const
 
         default:
         {
-            M_THROW_RT_ERROR("unhandled case");
+            M_THROW_RT_ERROR("unhandled case"); // LCOV_EXCL_LINE
         }
     }
 
@@ -1411,7 +1315,7 @@ const_array<R>::operator const_reference () const
         }
     }
 
-    M_THROW_RT_ERROR("unhandled case");
+    M_THROW_RT_ERROR("unhandled case"); // LCOV_EXCL_LINE
 }
 
 

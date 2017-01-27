@@ -58,9 +58,9 @@ any(const array<bool> & a)
         return false;
     }
 
-    throw std::runtime_error(
-        fmt::format("{}({}): unhandled case", __FILE__, __LINE__)
-    );
+    throw std::runtime_error(                                       // LCOV_EXCL_LINE
+        fmt::format("{}({}): unhandled case", __FILE__, __LINE__)   // LCOV_EXCL_LINE
+    );                                                              // LCOV_EXCL_LINE
 
     return false;
 }
@@ -95,9 +95,9 @@ all(const array<bool> & a)
         return true;
     }
 
-    throw std::runtime_error(
-        fmt::format("{}({}): unhandled case", __FILE__, __LINE__)
-    );
+    throw std::runtime_error(                                      // LCOV_EXCL_LINE
+        fmt::format("{}({}): unhandled case", __FILE__, __LINE__)  // LCOV_EXCL_LINE
+    );                                                             // LCOV_EXCL_LINE
 
     return false;
 }

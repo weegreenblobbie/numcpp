@@ -350,6 +350,16 @@ TEST_CASE( "numcpp::array::slicing a slice 2D -> 2D", "[slicing]" )
     CHECK( d(1,1) == 44 );
     CHECK( d(-2,-2) == 66 );
     CHECK( d(-1,-1) == 88 );
+
+    auto e = d(_|_|-2, _|_|-2);
+
+    INFO( "d = " << d );
+    INFO( "e = " << e );
+
+    shape = {2,2};
+
+    CHECK( e.shape() == shape );
+    CHECK( all(e == array<int>({88,84,48,44}).reshape(shape)) );
 }
 
 
@@ -444,7 +454,98 @@ TEST_CASE( "numcpp::array 2D element access" )
     ).reshape({4,5});
 
     CHECK( all(a == gold) );
+
+    a(2, _|_|2) = 44;
+
+    gold = array<int>(
+        {
+              0, 88,  2,  3,  4,
+             99, 88, 99, 22, 99,
+             44, 88, 44, 22, 44,
+             15, 88, 17, 22, 19
+        }
+    ).reshape({4,5});
+
+    INFO( "a = " << a.print("%2d") );
+    CHECK( all(a == gold) );
+
+    auto b = a == 88;
+
+    auto g = array<bool>(
+        {
+             0, 1, 0, 0, 0,
+             0, 1, 0, 0, 0,
+             0, 1, 0, 0, 0,
+             0, 1, 0, 0, 0
+        }
+    ).reshape({4,5});
+
+    INFO( "b = " << b );
+    CHECK( all(b == g) );
 }
+
+
+TEST_CASE( "numcpp::array truth value throws" )
+{
+    auto a = array<bool>({1,0,1,0});
+
+    CHECK_THROWS( bool b = a );
+
+    auto b = array<int>({1,0,1,0});
+
+    CHECK_THROWS( int c = b );
+
+    CHECK_THROWS( const int & c = b );
+}
+
+
+TEST_CASE( "numcpp::array::operator!" )
+{
+    missing _;
+
+    auto a = array<bool>(
+        {
+            0, 1, 1, 1, 1,
+            1, 0, 1, 1, 1,
+            1, 1, 0, 1, 0,
+            1, 1, 1, 0, 1,
+        }
+    ).reshape({4,5});
+
+    auto gold = array<bool>(
+        {
+            1, 0, 0, 0, 0,
+            0, 1, 0, 0, 0,
+            0, 0, 1, 0, 1,
+            0, 0, 0, 1, 0,
+        }
+    ).reshape({4,5});
+
+    CHECK( all(gold == !a) );
+
+    a = a(1_s|-1, _|_|2);
+
+    gold = array<bool>(
+        {
+            0, 0, 0,
+            0, 1, 1,
+        }
+    ).reshape({2,3});
+
+    CHECK( all(gold == !a) );
+
+    a = array<bool>({0,1,0,0,1,1,0,0,0});
+
+    a = a(_|_|2);
+
+    gold = array<bool>({1,1,0,1,1});
+
+    CHECK( all(gold == !a) );
+}
+
+
+
+
 
 
 // :noTabs=true:
