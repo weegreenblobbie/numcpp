@@ -32,3 +32,7 @@ src/executables/unittests
 .sconsign.dblite
 .sconf_temp
 config.log
+
+
+*.gcda
+*.gcno
