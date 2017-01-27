@@ -25,6 +25,16 @@ AddOption(
     help = "Build and execute unittests"
 )
 
+if GetOption("test"):
+
+    AddOption(
+        "-a",
+        "--abort",
+        action = "store_true",
+        default = False,
+        help = "abort at first failure",
+    )
+
 
 #-----------------------------------------------------------------------------
 # default configureation
@@ -177,7 +187,14 @@ if GetOption("clean"):
 
 if GetOption("test"):
 
-    run_ut = Command(".bogus", None, ut.path)
+    options = ""
+
+    if GetOption("abort"):
+        options += " --abort"
+
+    cmd = "%s %s" % (ut.path, options)
+
+    run_ut = Command(".bogus", None, cmd)
 
     Default(run_ut)
     Depends(run_ut, ut)

@@ -558,6 +558,50 @@ TEST_CASE( "numcpp::array::operator!" )
     gold = array<bool>({1,1,0,1,1});
 
     CHECK( all(gold == !a) );
+
+
+    SECTION( "!a with 2 strides, sliced to a single row" )
+    {
+        a = array<bool>(
+            {
+                0, 1, 1, 1, 1,
+                1, 0, 1, 1, 1,
+                1, 1, 0, 1, 0,
+                1, 1, 1, 0, 1
+            }
+        ).reshape({4,5});
+
+        auto b = a(_|_|2, _|_|2);
+
+        gold = array<bool>(
+            {
+                0, 1, 1,
+                1, 0, 0,
+            }
+        ).reshape({2,3});
+
+        CHECK( all(b == gold) );
+
+        INFO( "b = " << b );
+
+        b = b(1);
+
+        INFO( "b(1) = " << b );
+
+        gold = array<bool>({1,0,0});
+
+        CHECK( all(b == gold) );
+
+        INFO( "!b(1) = " << !b );
+
+        gold = array<bool>(
+            {
+                0, 1, 1,
+            }
+        ).reshape({3});
+
+        CHECK( all(gold == !b) );
+    }
 }
 
 

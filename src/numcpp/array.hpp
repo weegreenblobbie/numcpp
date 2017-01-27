@@ -435,6 +435,21 @@ operator!() const
 
                 return out;
             }
+
+            case 2:
+            {
+                for(uint64 i = 0; i < _size; ++i)
+                {
+                    (*out._array)[i] = !(*_array)[_offsets[0] + i * _strides[1]];
+                }
+
+                return out;
+            }
+
+            default:
+            {
+                M_THROW_RT_ERROR("unhandled case (" << _strides.size() << ")"); // LCOV_EXCL_LINE
+            }
         }
     }
     else
@@ -471,12 +486,17 @@ operator!() const
 
                 return out;
             }
+
+            default:
+            {
+                M_THROW_RT_ERROR("unhandled case"); // LCOV_EXCL_LINE
+            }
         }
     }
 
     M_THROW_RT_ERROR("unhandled case"); // LCOV_EXCL_LINE
 
-    return out;
+    return out; // LCOV_EXCL_LINE
 }
 
 
@@ -513,9 +533,19 @@ operator==(const R & rhs) const
 
                 return out;
             }
+
+            case 2:
+            {
+                for(uint64 i = 0; i < _size; ++i)
+                {
+                    (*out._array)[i] = (*_array)[_offsets[0] + i * _strides[1]] == rhs;
+                }
+
+                return out;
+            }
         }
 
-        M_THROW_RT_ERROR("unhandled case"); // LCOV_EXCL_LINE
+        M_THROW_RT_ERROR("unhandled case (" << _strides.size() << ")"); // LCOV_EXCL_LINE
     }
     else
     if(ndim() == 2)
@@ -786,9 +816,24 @@ operator()(const slice & s0)
                     break;
                 }
 
+                case 2:
+                {
+                    out._offsets[0] = _offsets[0] + start * _strides[1];
+                    out._strides = {0, _strides[1] * step};
+
+                    // LCOV_EXCL_START
+                    if(_debug_out) std::cout
+                        << "    offset = " << _offsets[0] << " + "
+                        << start << " * " << _strides[0] << "\n";
+                    // LCOV_EXCL_STOP
+
+                    break;
+                }
+
+
                 default:
                 {
-                    M_THROW_RT_ERROR("unhandled case"); // LCOV_EXCL_LINE
+                    M_THROW_RT_ERROR("unhandled case (" << _strides.size() << ")"); // LCOV_EXCL_LINE
                 }
             }
 
@@ -970,9 +1015,28 @@ operator()(const slice & s0, const slice & s1)
                         break;
                     }
 
+                    case 2:
+                    {
+                        out._offsets[0] = _offsets[0] + start0 * _strides[0] + start1;
+                        out._strides = _strides;
+
+                        if(step1 > 1 or step1 < 0) out._strides = {0, _strides[1] * step1};
+
+                        // LCOV_EXCL_START
+                        if(_debug_out) std::cout
+                            << "    (" << __LINE__ << ") offset = " << _offsets[0] << " + "
+                            << start0 << " * " << _strides[0] << " + "
+                            << start1 << " * " << step1 << "\n";
+                        // LCOV_EXCL_STOP
+
+                        break;
+                    }
+
+
+
                     default:
                     {
-                        M_THROW_RT_ERROR("unhandled case"); // LCOV_EXCL_LINE
+                        M_THROW_RT_ERROR("unhandled case (" << _strides.size() << ")"); // LCOV_EXCL_LINE
                     }
                 }
 
