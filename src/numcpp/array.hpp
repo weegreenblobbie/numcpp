@@ -26,6 +26,8 @@ namespace numcpp
 template <class R> class array;
 template <class R> class const_array;
 
+// for printing shape
+                   std::ostream & operator<<(std::ostream &, const std::vector<uint64> &);
 template <class R> std::ostream & operator<<(std::ostream &, const array<R> &);
 template <class R> std::ostream & operator<<(std::ostream &, const const_array<R> &);
 
@@ -1144,6 +1146,15 @@ operator<<(std::ostream & out, const array<R> & a)
 {
     DOUT << __PRETTY_FUNCTION__ << std::endl;
     return out << a.print();
+}
+
+
+inline
+std::ostream &
+operator<<(std::ostream & out, const std::vector<uint64> & v)
+{
+    out << "("; for(auto x : v) out << x << ", ";
+    return out << ")";
 }
 
 
