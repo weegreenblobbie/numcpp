@@ -67,7 +67,6 @@ shape = (3, 5, )
 ndim  = 2
 size  = 15
 
-
     -->
         <pre lang="c++">
 #include &lt;iostream&gt;
@@ -90,7 +89,7 @@ array([
     [  0,  1,  2,  3,  4 ],
     [  5,  6,  7,  8,  9 ],
     [ 10, 11, 12, 13, 14 ],
-], int32)
+], int64)
 a.shape = (3, 5, )
         </pre>
     </td>
@@ -100,14 +99,10 @@ a.shape = (3, 5, )
     <tr>
     <td align="left" valign="top">
          <pre lang="python">
->>> import numpy as np
->>> a = np.arange(15).reshape(3, 5)
->>> a
-array([[ 0,  1,  2,  3,  4],
-       [ 5,  6,  7,  8,  9],
-       [10, 11, 12, 13, 14]])
->>> a.shape
-(3, 5)
+>>> c = np.array( [ [1,2], [3,4] ], dtype=complex )
+>>> c
+array([[ 1.+0.j,  2.+0.j],
+       [ 3.+0.j,  4.+0.j]])
          </pre>
     </td>
     <td align="left" valign="top">
@@ -120,37 +115,40 @@ using namespace numcpp; // bring in some iostream operators
 
 namespace np = numcpp;
 
-auto a = np::arange<int>(15).reshape({3,5});
+auto c1 = np::array<np::complex64>({1,2,3,4}).reshape({2,2});
 
-cout << a.print("%2d") << "\n" << "a.shape = " << a.shape() << "\n";
+auto c2 = np::array<np::complex64>({ {1,2}, {3,4} });
 
-array([
-    [  0,  1,  2,  3,  4 ],
-    [  5,  6,  7,  8,  9 ],
-    [ 10, 11, 12, 13, 14 ],
-], int32)
-a.shape = (3, 5, )
+cout
+    << c1.print("%.1f") << "\n"
+    << "\n"
+    << c2.print("%.1f") << "\n";
+
+//    array([
+//        [ 1.0+0.0j, 2.0+0.0j ],
+//        [ 3.0+0.0j, 4.0+0.0j ],
+//    ], complex64)
+//
+//    array([ 1.0+2.0j, 3.0+4.0j ], complex64)
 
     -->
         <pre lang="c++">
-#include &lt;iostream&gt;
-#include &lt;numcpp/numcpp.hpp&gt;
+auto c1 = np::array&lt;np::complex64&gt;({1,2,3,4}).reshape({2,2});
 
-using std::cout;
-using namespace numcpp; // bring in some iostream operators
+auto c2 = np::array&lt;np::complex64&gt;({ {1,2}, {3,4} });
 
-namespace np = numcpp;
+cout
+    &lt;&lt; c1.print(&quot;%.1f&quot;) &lt;&lt; &quot;\n&quot;
+    &lt;&lt; &quot;\n&quot;
+    &lt;&lt; c2.print(&quot;%.1f&quot;) &lt;&lt; &quot;\n&quot;;
 
-auto a = np::arange&lt;int&gt;(15).reshape({3,5});
+//    array([
+//        [ 1.0+0.0j, 2.0+0.0j ],
+//        [ 3.0+0.0j, 4.0+0.0j ],
+//    ], complex64)
+//
+//    array([ 1.0+2.0j, 3.0+4.0j ], complex64)
 
-cout &lt;&lt; a.print(&quot;%2d&quot;) &lt;&lt; &quot;\n&quot; &lt;&lt; &quot;a.shape = &quot; &lt;&lt; a.shape() &lt;&lt; &quot;\n&quot;;
-
-array([
-    [  0,  1,  2,  3,  4 ],
-    [  5,  6,  7,  8,  9 ],
-    [ 10, 11, 12, 13, 14 ],
-], int32)
-a.shape = (3, 5, )
         </pre>
     </td>
     </tr>

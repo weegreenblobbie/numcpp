@@ -1176,14 +1176,14 @@ namespace detail
 
     template <> inline std::string _array_R_to_fmt<float32>() { return "%11.8f"; }
 
-    template <> inline std::string _array_R_to_fmt<complex64>() { return "%11.8f+%.8fj"; }
+    template <> inline std::string _array_R_to_fmt<complex64>() { return "%11.8f"; }
 
-    template <> inline std::string _array_R_to_fmt<complex128>() { return "%14.11f+%.11fj"; }
+    template <> inline std::string _array_R_to_fmt<complex128>() { return "%14.11f"; }
 
     template <class T> std::string _format(const std::string & fmt_, const T & v) { return fmt::sprintf(fmt_, v); }
 
-    template <> inline std::string _format<complex64>(const std::string & fmt_, const complex64 & v)  { return fmt::sprintf(fmt_, v.real(), v.imag()); }
-    template <> inline std::string _format<complex128>(const std::string & fmt_, const complex128 & v) { return fmt::sprintf(fmt_, v.real(), v.imag()); }
+    template <> inline std::string _format<complex64>(const std::string & fmt_, const complex64 & v)  { return fmt::sprintf(fmt_ + "+" + fmt_ + "j", v.real(), v.imag()); }
+    template <> inline std::string _format<complex128>(const std::string & fmt_, const complex128 & v) { return fmt::sprintf(fmt_ + "+" + fmt_ + "j", v.real(), v.imag()); }
 
     template <class T> std::string type_name() { return "unknown"; }
 
