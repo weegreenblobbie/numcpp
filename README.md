@@ -10,10 +10,15 @@ Why another array library in C++?
 This project is meant to exercise my my template and operator overloading skills.  The goal
 is to achive expressions very close to Python + NumPy.
 
+<table>
+    <tr>
+        <th>Python + NumPy</th>
+        <th>C++ + numcpp</th>
+    </tr>
 
-Python + NumPy  | C++ + numcpp
---- | ---
-```python
+    <tr>
+    <td>
+         <pre lang="python">
 >>> import numpy as np
 >>> a = np.arange(15).reshape(3, 5)
 >>> a
@@ -22,19 +27,26 @@ array([[ 0,  1,  2,  3,  4],
        [10, 11, 12, 13, 14]])
 >>> a.shape
 (3, 5)
-``` | ```c++
+         </pre>
+    </td>
+    <td>
+        <pre lang="c++">
 #include <iostream>
 using std::cout;
 #include <numcpp/numcpp.hpp>
 namespace np = numcpp;
 auto a = np::arange<int>(15).reshape({3,5});
 cout << a.print("%2d") << "\n";
+        </pre><pre>
 array([
     [  0,  1,  2,  3,  4 ],
     [  5,  6,  7,  8,  9 ],
     [ 10, 11, 12, 13, 14 ],
 ], int32)
-```
+        </pre>
+    </td>
+</table>
+
 
 How to build unittests
 ======================
