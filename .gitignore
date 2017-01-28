@@ -29,3 +29,6 @@
 *.app
 
 src/executables/unittests
+.sconsign.dblite
+.sconf_temp
+config.log

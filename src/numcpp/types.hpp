@@ -1,4 +1,10 @@
+#ifndef _NUMCPP_TYPES_HPP_
+#define _NUMCPP_TYPES_HPP_
+
+
 #include <cstdint>
+#include <complex>
+
 
 namespace numcpp
 {
@@ -16,7 +22,16 @@ using uint64 = std::uint64_t;
 using float32 = float;
 using float64 = double;
 
+using complex64  = std::complex<float32>;
+using complex128 = std::complex<float64>;
+
+
+// I haven't settled on final index type so I'm using this
 
 using index_t = int64;
 
-}
+
+} // namespace
+
+
+#endif
