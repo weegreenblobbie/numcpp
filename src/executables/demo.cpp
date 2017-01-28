@@ -7,27 +7,29 @@ using namespace numcpp;
 
 int main()
 {
+    auto b = arange<int>(20).reshape({5,4});
 
-    auto a = arange<int>(10);
+    cout << b.print("%2d") << "\n";
 
-    cout << a << "\n";
+    cout << b(2,3) << "\n";
 
-    // array([ 0, 1, 2, 3, 4, 5, 6, 7, 8, 9 ], int32)
-
-    cout << a(2) << "\n";
-
-    cout << a(2_s|5) << "\n";
+    cout << b(0_s|5, 1) << "\n";
 
     missing _;
 
-    a(_|6|2) = -1000;
+    cout << b(_, 1) << "\n";
 
-    cout << a << "\n";
+    cout << b(1_s|3, 1) << "\n";
 
-    //
+    cout << b(-1) << "\n";
 
-    cout << a(_|_|-1) << "\n";
+    cout << b(_|_|-1, _|_|-2).print("%2d") << "\n";
 
+    auto c = b(1_s|-1, 1_s|-1);
+
+    c = -99;
+
+    cout << b.print("%3d") << "\n";
 
     return 0;
 
