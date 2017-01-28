@@ -8,12 +8,12 @@ Why another array library in C++?
 =================================
 
 This project is meant to exercise my my template and operator overloading skills.  The goal
-is to achive expressions very close to Python + NumPy.
+is to achive expressions very close to Python & NumPy.
 
 <table>
     <tr>
-        <th>Python + NumPy</th>
-        <th>C++ + numcpp</th>
+        <th>Python &amp; NumPy</th>
+        <th>C++ &amp; numcpp</th>
     </tr>
 
     <!---------------------------- ROW 1 ------------------------------------------>
@@ -54,12 +54,9 @@ array([[ 0,  1,  2,  3,  4],
 
 using std::cout;
 
-// bring in some iostream operators
 using namespace numcpp;
 
-namespace np = numcpp;
-
-auto a = np::arange<np::int64>(15).reshape({3,5});
+auto a = arange<int64>(15).reshape({3,5});
 
 {
 cout
@@ -85,12 +82,9 @@ size  = 15
 
 using std::cout;
 
-// bring in some iostream operators
 using namespace numcpp;
 
-namespace np = numcpp;
-
-auto a = np::arange&lt;np::int64&gt;(15).reshape({3,5});
+auto a = arange&lt;int64&gt;(15).reshape({3,5});
 
 cout
     &lt;&lt; a.print(&quot;%2d&quot;)          &lt;&lt; &quot;\n&quot;
@@ -131,58 +125,61 @@ array([[ 1.+0.j,  2.+0.j],
 #include <numcpp/numcpp.hpp>
 
 using std::cout;
+
 using namespace numcpp;
 
-namespace np = numcpp;
-
-auto c1 = np::array<np::complex64>(
+auto c1 = array<complex64>(
     {1,2,3,4}
 ).reshape({2,2});
 
-auto c2 = np::array<np::complex64>(
-    {
-        {1,2},
-        {3,4}
-    }
+auto c2 = array<complex64>(
+    { {1,2}, {3,4} }
 );
 
+{
 cout
     << c1.print("%.1f") << "\n"
     << "\n"
     << c2.print("%.1f") << "\n";
+}
 
-//    array([
-//        [ 1.0+0.0j, 2.0+0.0j ],
-//        [ 3.0+0.0j, 4.0+0.0j ],
-//    ], complex64)
-//
-//    array([ 1.0+2.0j, 3.0+4.0j ], complex64)
+/*
 
+array([
+    [ 1.0+0.0j, 2.0+0.0j ],
+    [ 3.0+0.0j, 4.0+0.0j ],
+], complex64)
+
+array([ 1.0+2.0j, 3.0+4.0j ], complex64)
+
+*/
     -->
         <pre lang="c++">
-auto c1 = np::array&lt;np::complex64&gt;(
+auto c1 = array&lt;complex64&gt;(
     {1,2,3,4}
 ).reshape({2,2});
 
-auto c2 = np::array&lt;np::complex64&gt;(
-    {
-        {1,2},
-        {3,4}
-    }
+auto c2 = array&lt;complex64&gt;(
+    { {1,2}, {3,4} }
 );
 
+{
 cout
     &lt;&lt; c1.print(&quot;%.1f&quot;) &lt;&lt; &quot;\n&quot;
     &lt;&lt; &quot;\n&quot;
     &lt;&lt; c2.print(&quot;%.1f&quot;) &lt;&lt; &quot;\n&quot;;
+}
 
-//    array([
-//        [ 1.0+0.0j, 2.0+0.0j ],
-//        [ 3.0+0.0j, 4.0+0.0j ],
-//    ], complex64)
-//
-//    array([ 1.0+2.0j, 3.0+4.0j ], complex64)
+/*
 
+array([
+    [ 1.0+0.0j, 2.0+0.0j ],
+    [ 3.0+0.0j, 4.0+0.0j ],
+], complex64)
+
+array([ 1.0+2.0j, 3.0+4.0j ], complex64)
+
+*/
         </pre>
     </td>
     </tr>
