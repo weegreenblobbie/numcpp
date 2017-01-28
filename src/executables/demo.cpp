@@ -27,9 +27,9 @@ int main()
 
     auto c = b(1_s|-1, 1_s|-1);
 
-    c = -99;
+    c = -1000;
 
-    cout << b.print("%3d") << "\n";
+    cout << b.print("%5d") << "\n";
 
     return 0;
 
