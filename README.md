@@ -21,6 +21,14 @@ is to achive expressions very close to Python + NumPy.
     <td align="left" valign="top">
          <pre lang="python">
 >>> import numpy as np
+
+
+
+
+
+
+
+
 >>> a = np.arange(15).reshape(3, 5)
 >>> a
 array([[ 0,  1,  2,  3,  4],
