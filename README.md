@@ -105,7 +105,8 @@ cout
     <tr>
     <td align="left" valign="top">
          <pre lang="python">
->>> c = np.array([ [1,2], [3,4] ], dtype = complex)
+>>> c = np.array(
+    [ [1,2], [3,4] ], dtype = complex)
 >>> c
 array([[ 1.+0.j,  2.+0.j],
        [ 3.+0.j,  4.+0.j]])
