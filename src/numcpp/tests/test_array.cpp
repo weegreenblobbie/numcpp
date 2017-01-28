@@ -265,7 +265,11 @@ TEST_CASE( "numcpp::array::slicing 2D -> 2D", "[slicing]" )
 
         auto b = a( 0_s | -1);
 
-        CHECK( all(b == gold ) );
+        CHECK( all(b == gold) );
+
+        auto c = b(_);
+
+        CHECK( all(c == gold) );
     }
 
     SECTION(" slice along rows ")
@@ -498,6 +502,20 @@ TEST_CASE( "numcpp::array 2D element access" )
     ).reshape({4,4});
 
     INFO( "a = " << a.print("%2d") );
+    CHECK( all(a == gold) );
+
+    a = 300;
+
+    gold = array<int>(
+        {
+           300, 300, 300, 300,
+           300, 300, 300, 300,
+           300, 300, 300, 300,
+           300, 300, 300, 300
+        }
+    ).reshape({4,4});
+
+    INFO( "a = " << a.debug_print() );
     CHECK( all(a == gold) );
 }
 
