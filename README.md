@@ -93,10 +93,20 @@ array([
 */
 
 // init both the real & imag parts
-auto c2 = array<complex64>( { {1,2}, {3,4} } );
+auto c2 = array<complex64>(
+    {
+        {1,2}, {3,4},
+        {5,6}, {7,8},
+    }
+).reshape({2,2});
 
 cout << c2.print("%.1f") << "\n"
-// array([ 1.0+2.0j, 3.0+4.0j ], complex64)
+/*
+array([
+    [ 1.0+2.0j, 3.0+4.0j ],
+    [ 5.0+6.0j, 7.0+8.0j ],
+], complex64)
+*/
 ```
 
 ```python
@@ -194,7 +204,7 @@ cout << a(2) << "\n";
 cout << a(2_s|5) << "\n";     // _s is a literal operator to start a slice
 // array([ 2, 3, 4 ], int32)
 
-missing _;  // a helper object that represent missing args to slice expressions
+missing _;  // a helper object that represents missing args to slice expressions
 
 a(_|6|2) = -1000;
 
