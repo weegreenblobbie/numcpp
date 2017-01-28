@@ -17,7 +17,7 @@ is to achive expressions very close to Python + NumPy.
     </tr>
 
     <tr>
-    <td>
+    <td align="left" valign="top">
          <pre lang="python">
 >>> import numpy as np
 >>> a = np.arange(15).reshape(3, 5)
@@ -29,15 +29,18 @@ array([[ 0,  1,  2,  3,  4],
 (3, 5)
          </pre>
     </td>
-    <td>
+    <td align="left" valign="top">
         <pre lang="c++">
 #include &lt;iostream&gt;
-using std::cout;
 #include &lt;numcpp/numcpp.hpp&gt;
+
+using std::cout;
 namespace np = numcpp;
+
 auto a = np::arange&lt;int&gt;(15).reshape({3,5});
+
 cout << a.print("%2d") << "\n";
-        </pre><pre>
+
 array([
     [  0,  1,  2,  3,  4 ],
     [  5,  6,  7,  8,  9 ],
