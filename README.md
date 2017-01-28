@@ -4,13 +4,6 @@ numcpp
 A C++ array object that tries to match the expressiveness of numpy.
 
 
-Why another array library in C++?
-=================================
-
-This project is meant to exercise my my template and operator overloading skills.  The goal
-is to achive expressions very close to Python & NumPy.
-
-
 How to build unittests
 ======================
 
@@ -189,6 +182,12 @@ array([  0,  1,  2,  3,  4,  5,  6,  7,  8,  9 ])
 >>> a[2:5]
 array([ 2, 3, 4])
 
+>>> a[:6:2] = -1000
+>>> a
+array([-1000,     1, -1000,     3, -1000,     5,     6,     7,     8,     9])
+
+>>> a[ : :-1]
+array([    9,     8,     7,     6,     5, -1000,     3, -1000,     1, -1000])
 ```
 
 ```c++
@@ -202,8 +201,19 @@ cout << a(2) << "\n";
 
 // 2
 
-cout << a(2_s|5) << "\n";
+cout << a(2_s|5) << "\n";     // _s is a literal operator to start a slice
 
 // array([ 2, 3, 4 ], int32)
 
+missing _;  // a helper object that represent missing args to slice expressions
+
+a(_|6|2) = -1000;
+
+cout << a << "\n";
+
+// array([ -1000, 1, -1000, 3, -1000, 5, 6, 7, 8, 9 ], int32)
+
+cout << a(_|_|-1) << "\n";
+
+// array([ 9, 8, 7, 6, 5, -1000, 3, -1000, 1, -1000 ], int32)
 ```

@@ -575,8 +575,6 @@ operator=(const R & rhs)
 {
     DOUT << __PRETTY_FUNCTION__ << std::endl;
 
-    index_t size_ = static_cast<index_t>(_size);
-
     if(ndim() == 1)
     {
         switch(_strides.size())

@@ -16,11 +16,19 @@ int main()
 
     cout << a(2) << "\n";
 
-    // 2
-
     cout << a(2_s|5) << "\n";
 
+    missing _;
+
+    a(_|6|2) = -1000;
+
+    cout << a << "\n";
+
     //
+
+    cout << a(_|_|-1) << "\n";
+
+
     return 0;
 
 }
