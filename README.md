@@ -238,6 +238,48 @@ array([
     </td>
     </tr>
 
+
+    <!---------------------------- ROW 4 ------------------------------------------>
+    <tr>
+    <td align="left" valign="top">
+         <pre lang="python">
+>>> np.arange( 10, 30, 5 )
+array([10, 15, 20, 25])
+>>> np.arange( 0, 2, 0.3 )
+array([ 0. ,  0.3,  0.6,  0.9,  1.2,  1.5,  1.8])
+         </pre>
+    </td>
+    <td align="left" valign="top">
+    <!--
+#include <iostream>
+#include <numcpp/numcpp.hpp>
+
+using std::cout;
+
+using namespace numcpp;
+
+cout << arange<int32>(10, 30, 5) << "\n";
+
+// array([ 10, 15, 20, 25 ], int32)
+
+cout << arange<float32>(0, 2, 0.3).print("%.1f") << "\n";
+
+// array([ 0.0, 0.3, 0.6, 0.9, 1.2, 1.5, 1.8 ], float32)
+
+    -->
+        <pre lang="c++">
+cout &lt;&lt; arange&lt;int32&gt;(10, 30, 5) &lt;&lt; &quot;\n&quot;;
+
+// array([ 10, 15, 20, 25 ], int32)
+
+cout &lt;&lt; arange&lt;float32&gt;(0, 2, 0.3).print(&quot;%.1f&quot;) &lt;&lt; &quot;\n&quot;;
+
+// array([ 0.0, 0.3, 0.6, 0.9, 1.2, 1.5, 1.8 ], float32)
+        </pre>
+    </td>
+    </tr>
+
+
 </table>
 
 

@@ -165,6 +165,14 @@ ut = unittest_env.Program('src/executables/unittests', src)[0]
 
 unittest_env.Default(ut)
 
+
+#-----------------------------------------------------------------------------
+# building demo program
+
+demo = unittest_env.Program("demo", "src/executables/demo.cpp")
+
+unittest_env.Default(demo)
+
 #-----------------------------------------------------------------------------
 # extra cleaning
 
