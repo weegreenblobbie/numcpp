@@ -3,9 +3,8 @@
 
 
 #include <numcpp/array.hpp>
-
-
-#include <fmt/fmt.hpp>  // https://github.com/fmtlib/fmt
+#include <numcpp/const_array.hpp>
+#include <numcpp/macros.hpp>
 
 
 namespace numcpp
@@ -58,9 +57,7 @@ any(const array<bool> & a)
         return false;
     }
 
-    throw std::runtime_error(                                       // LCOV_EXCL_LINE
-        fmt::format("{}({}): unhandled case", __FILE__, __LINE__)   // LCOV_EXCL_LINE
-    );                                                              // LCOV_EXCL_LINE
+    M_THROW_RT_ERROR("unhandled case"); // LCOV_EXCL_LINE
 
     return false;
 }
@@ -95,9 +92,7 @@ all(const array<bool> & a)
         return true;
     }
 
-    throw std::runtime_error(                                      // LCOV_EXCL_LINE
-        fmt::format("{}({}): unhandled case", __FILE__, __LINE__)  // LCOV_EXCL_LINE
-    );                                                             // LCOV_EXCL_LINE
+    M_THROW_RT_ERROR("unhandled case"); // LCOV_EXCL_LINE
 
     return false;
 }
