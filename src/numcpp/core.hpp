@@ -151,6 +151,24 @@ arange(index_t start, index_t stop, index_t step)
 }
 
 
+template <class R>
+array<R> ones(const std::vector<uint64> & shape)
+{
+    return array<R>(
+        std::vector<R>(detail::_compute_size(shape), static_cast<R>(1))
+    ).reshape(shape);
+}
+
+
+template <class R>
+array<R> zeros(const std::vector<uint64> & shape)
+{
+    return array<R>(
+        std::vector<R>(detail::_compute_size(shape), static_cast<R>(0))
+    ).reshape(shape);
+}
+
+
 } // namespace
 
 

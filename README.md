@@ -27,9 +27,8 @@ is to achive expressions very close to Python & NumPy.
 
 
 
-
-
 >>> import numpy as np
+
 >>> a = np.arange(15).reshape(3, 5)
 >>> a
 array([[ 0,  1,  2,  3,  4],
@@ -121,13 +120,6 @@ array([[ 1.+0.j,  2.+0.j],
     </td>
     <td align="left" valign="top">
     <!--
-#include <iostream>
-#include <numcpp/numcpp.hpp>
-
-using std::cout;
-
-using namespace numcpp;
-
 auto c1 = array<complex64>(
     {1,2,3,4}
 ).reshape({2,2});
@@ -163,12 +155,10 @@ auto c2 = array&lt;complex64&gt;(
     { {1,2}, {3,4} }
 );
 
-{
 cout
     &lt;&lt; c1.print(&quot;%.1f&quot;) &lt;&lt; &quot;\n&quot;
     &lt;&lt; &quot;\n&quot;
     &lt;&lt; c2.print(&quot;%.1f&quot;) &lt;&lt; &quot;\n&quot;;
-}
 
 /*
 
@@ -186,6 +176,67 @@ array([ 1.0+2.0j, 3.0+4.0j ], complex64)
 
 
 
+    <!---------------------------- ROW 3 ------------------------------------------>
+    <tr>
+    <td align="left" valign="top">
+         <pre lang="python">
+>>> np.zeros( (3,4) )
+array([[ 0.,  0.,  0.,  0.],
+       [ 0.,  0.,  0.,  0.],
+       [ 0.,  0.,  0.,  0.]])
+>>> np.ones( (2,3,4), dtype=np.int16 )
+array([[[ 1, 1, 1, 1],
+        [ 1, 1, 1, 1],
+        [ 1, 1, 1, 1]],
+       [[ 1, 1, 1, 1],
+        [ 1, 1, 1, 1],
+        [ 1, 1, 1, 1]]], dtype=int16)
+
+# uninitialized, output may vary
+>>> np.empty( (2,3) )
+         </pre>
+    </td>
+    <td align="left" valign="top">
+    <!--
+cout << zeros<float32>({3,4}).print("%.1f") << "\n";
+/*
+array([
+    [ 0.0, 0.0, 0.0, 0.0 ],
+    [ 0.0, 0.0, 0.0, 0.0 ],
+    [ 0.0, 0.0, 0.0, 0.0 ],
+], float32)
+*/
+// 3D not yet implemented (2017-01-27)
+cout << ones<int16>({2,3}) << "\n";
+/*
+array([
+    [ 1, 1, 1 ],
+    [ 1, 1, 1 ],
+], int16)
+*/
+// uninitialized array not supported (yet?)
+    -->
+        <pre lang="c++">
+cout &lt;&lt; zeros&lt;float32&gt;({3,4}).print(&quot;%.1f&quot;) &lt;&lt; &quot;\n&quot;;
+/*
+array([
+    [ 0.0, 0.0, 0.0, 0.0 ],
+    [ 0.0, 0.0, 0.0, 0.0 ],
+    [ 0.0, 0.0, 0.0, 0.0 ],
+], float32)
+*/
+// 3D not yet implemented (2017-01-27)
+cout &lt;&lt; ones&lt;int16&gt;({2,3}) &lt;&lt; &quot;\n&quot;;
+/*
+array([
+    [ 1, 1, 1 ],
+    [ 1, 1, 1 ],
+], int16)
+*/
+// uninitialized array not supported (yet?)
+        </pre>
+    </td>
+    </tr>
 
 </table>
 
