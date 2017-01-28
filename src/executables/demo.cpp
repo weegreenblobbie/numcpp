@@ -8,12 +8,19 @@ using namespace numcpp;
 int main()
 {
 
-    cout << arange<int32>(10, 30, 5) << "\n";
+    auto a = arange<int>(10);
 
-    // array([ 10, 15, 20, 25 ], int32)
+    cout << a << "\n";
 
-    cout << arange<float32>(0, 2, 0.3).print("%.1f") << "\n";
+    // array([ 0, 1, 2, 3, 4, 5, 6, 7, 8, 9 ], int32)
 
+    cout << a(2) << "\n";
+
+    // 2
+
+    cout << a(2_s|5) << "\n";
+
+    //
     return 0;
 
 }

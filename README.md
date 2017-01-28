@@ -10,8 +10,26 @@ Why another array library in C++?
 This project is meant to exercise my my template and operator overloading skills.  The goal
 is to achive expressions very close to Python & NumPy.
 
+
+How to build unittests
+======================
+
+`scons --test`
+
+
+How to get unittest code coverage
+=================================
+
+`scons --coverage`
+
+Then open the file `coverage/index.html` with a webrowser.
+
+
 Examples
 ========
+
+Creating arrays
+---------------
 
 ```python
 >>> import numpy as np
@@ -157,15 +175,35 @@ cout << arange<float32>(0, 2, 0.3).print("%.1f") << "\n";
 // array([ 0.0, 0.3, 0.6, 0.9, 1.2, 1.5, 1.8 ], float32)
 ```
 
-How to build unittests
-======================
+Slicing
+-------
 
-`scons --test`
+```python
+>>> a = np.arange(10)
+>>> a
+array([  0,  1,  2,  3,  4,  5,  6,  7,  8,  9 ])
 
+>>> a[2]
+2
 
-How to get unittest code coverage
-=================================
+>>> a[2:5]
+array([ 2, 3, 4])
 
-`scons --coverage`
+```
 
-Then open the file `coverage/index.html` with a webrowser.
+```c++
+auto a = arange<int>(10);
+
+cout << a << "\n";
+
+// array([ 0, 1, 2, 3, 4, 5, 6, 7, 8, 9 ], int32)
+
+cout << a(2) << "\n";
+
+// 2
+
+cout << a(2_s|5) << "\n";
+
+// array([ 2, 3, 4 ], int32)
+
+```
