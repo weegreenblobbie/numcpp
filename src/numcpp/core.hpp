@@ -3,9 +3,8 @@
 
 
 #include <numcpp/array.hpp>
-
-
-#include <fmt/fmt.hpp>  // https://github.com/fmtlib/fmt
+#include <numcpp/const_array.hpp>
+#include <numcpp/macros.hpp>
 
 
 namespace numcpp
@@ -16,14 +15,12 @@ bool any(const array<bool> & a);
 bool all(const array<bool> & a);
 
 
-template <class R>
-array<R> arange(index_t start, index_t stop, index_t step);
+template <class R> array<R> arange(R stop);
+template <class R> array<R> arange(R start, R stop);
+template <class R> array<R> arange(R start, R stop, R step);
 
-template <class R>
-array<R> arange(index_t stop)                    { return arange<R>(0, stop, 1); }
-
-template <class R>
-array<R> arange(index_t start, index_t stop)     { return arange<R>(start, stop, 1); }
+template <class R> array<R> ones(const std::vector<uint64> & shape);
+template <class R> array<R> zeros(const std::vector<uint64> & shape);
 
 
 //-----------------------------------------------------------------------------
@@ -58,9 +55,7 @@ any(const array<bool> & a)
         return false;
     }
 
-    throw std::runtime_error(
-        fmt::format("{}({}): unhandled case", __FILE__, __LINE__)
-    );
+    M_THROW_RT_ERROR("unhandled case"); // LCOV_EXCL_LINE
 
     return false;
 }
@@ -95,9 +90,7 @@ all(const array<bool> & a)
         return true;
     }
 
-    throw std::runtime_error(
-        fmt::format("{}({}): unhandled case", __FILE__, __LINE__)
-    );
+    M_THROW_RT_ERROR("unhandled case"); // LCOV_EXCL_LINE
 
     return false;
 }
@@ -114,30 +107,31 @@ namespace detail
 } // namespace
 
 
+namespace detail
+{
+
+
 template <class R>
-array<R>
-arange(index_t start, index_t stop, index_t step)
+typename std::enable_if<std::is_integral<R>::value, array<R>>::type
+arange(R start, R stop, R step)
 {
     if(step == 0) M_THROW_RT_ERROR("step cannot be 0");
 
     // compute size directly
 
-    index_t s = (stop - start);
+    R s = (stop - start);
 
     if(s % step) s += step;
 
     s /= step;
 
-    if(s == 0)
-    {
-        return array<R>({});
-    }
+    if(s == 0) return array<R>({});
 
     std::vector<R> v(s, R(0));
 
     uint32 i = 0;
 
-    index_t t = start;
+    R t = start;
 
     while((step > 0 and t < stop) or (step < 0 and t > stop))
     {
@@ -146,6 +140,73 @@ arange(index_t start, index_t stop, index_t step)
     }
 
     return array<R>(v);
+}
+
+
+template <class R>
+typename std::enable_if<std::is_floating_point<R>::value, array<R>>::type
+arange(R start, R stop, R step)
+{
+    if(step == 0) M_THROW_RT_ERROR("step cannot be 0");
+
+    std::vector<R> v;
+
+    R t = start;
+
+    while((step > 0 and t < stop) or (step < 0 and t > stop))
+    {
+        v.push_back(static_cast<R>(t));
+        t += step;
+    }
+
+    return array<R>(v);
+}
+
+
+} // namespace
+
+
+
+template <class R>
+array<R>
+arange(R stop)
+{
+    return detail::arange(static_cast<R>(0), stop, static_cast<R>(1));
+}
+
+
+template <class R>
+array<R>
+arange(R start, R stop)
+{
+    return detail::arange(start, stop, static_cast<R>(1));
+}
+
+
+template <class R>
+array<R>
+arange(R start, R stop, R step)
+{
+    return detail::arange(start, stop, step);
+}
+
+
+
+template <class R>
+array<R> ones(const std::vector<uint64> & shape)
+{
+    return array<R>(
+        std::vector<R>(detail::_compute_size(shape), static_cast<R>(1))
+    ).reshape(shape);
+}
+
+
+template <class R>
+array<R> zeros(const std::vector<uint64> & shape)
+{
+    return array<R>(
+        std::vector<R>(detail::_compute_size(shape), static_cast<R>(0))
+    ).reshape(shape);
 }
 
 

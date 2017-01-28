@@ -10,6 +10,8 @@ TEST_CASE( "numcpp::slice", "[constructor]" )
 {
     auto s = slice(16);
 
+    INFO( "s = " << s );
+
     CHECK( s.start() == 16 );
     CHECK( s.stop() == 17 );
     CHECK( s.start_valid() == true  );
@@ -17,6 +19,8 @@ TEST_CASE( "numcpp::slice", "[constructor]" )
     CHECK( s.step_valid()  == false );
 
     s = slice(16, 32);
+
+    INFO( "s = " << s );
 
     CHECK( s.start() == 16 );
     CHECK( s.stop()  == 32 );
@@ -80,9 +84,7 @@ TEST_CASE( "numcpp::slice", "[constructor]" )
     CHECK( s.start_valid() == true );
     CHECK( s.stop_valid()  == true );
     CHECK( s.step_valid()  == true );
-
 }
-
 
 
 TEST_CASE( "numcpp::slice::operators", "[positive slice expressions]" )
@@ -95,7 +97,6 @@ TEST_CASE( "numcpp::slice::operators", "[positive slice expressions]" )
     CHECK( s.stop_valid()  == true );
     CHECK( s.step_valid()  == false );
 
-
     s = 1_s | 5;
 
     CHECK( s.start() == 1 );
@@ -103,8 +104,6 @@ TEST_CASE( "numcpp::slice::operators", "[positive slice expressions]" )
     CHECK( s.start_valid() == true  );
     CHECK( s.stop_valid()  == true  );
     CHECK( s.step_valid()  == false );
-
-
 
     s = 2_s | 10 | 3;
 
@@ -115,8 +114,6 @@ TEST_CASE( "numcpp::slice::operators", "[positive slice expressions]" )
     CHECK( s.stop_valid()  == true );
     CHECK( s.step_valid()  == true );
 
-
-
     s = slice(5) | 10;
 
     CHECK( s.start() == 5 );
@@ -124,8 +121,6 @@ TEST_CASE( "numcpp::slice::operators", "[positive slice expressions]" )
     CHECK( s.start_valid() == true  );
     CHECK( s.stop_valid()  == true  );
     CHECK( s.step_valid()  == false );
-
-
 
     s = slice(25) | 50 | 3;
 
@@ -135,7 +130,6 @@ TEST_CASE( "numcpp::slice::operators", "[positive slice expressions]" )
     CHECK( s.start_valid() == true );
     CHECK( s.stop_valid()  == true );
     CHECK( s.step_valid()  == true );
-
 }
 
 
@@ -149,7 +143,6 @@ TEST_CASE( "numcpp::slice::operators 2", "[negative slice expressions]" )
     CHECK( s.stop_valid()  == true );
     CHECK( s.step_valid()  == false );
 
-
     s = -6_s | 5;
 
     CHECK( s.start() == -6 );
@@ -157,7 +150,6 @@ TEST_CASE( "numcpp::slice::operators 2", "[negative slice expressions]" )
     CHECK( s.start_valid() == true  );
     CHECK( s.stop_valid()  == true  );
     CHECK( s.step_valid()  == false );
-
 
     s = -6_s | -1;
 
@@ -167,7 +159,6 @@ TEST_CASE( "numcpp::slice::operators 2", "[negative slice expressions]" )
     CHECK( s.stop_valid()  == true  );
     CHECK( s.step_valid()  == false );
 
-
     s = slice(-6) | -1 | 3;
 
     CHECK( s.start() == -6 );
@@ -176,7 +167,6 @@ TEST_CASE( "numcpp::slice::operators 2", "[negative slice expressions]" )
     CHECK( s.start_valid() == true );
     CHECK( s.stop_valid()  == true );
     CHECK( s.step_valid()  == true );
-
 }
 
 
@@ -194,7 +184,6 @@ TEST_CASE( "numcpp::slice::operators 3", "[common numpy patterns]" )
     CHECK( s.stop_valid()  == true );
     CHECK( s.step_valid()  == false );
 
-
     s = x0 | x0 + 100;
 
     CHECK( s.start() == 50 );
@@ -202,7 +191,6 @@ TEST_CASE( "numcpp::slice::operators 3", "[common numpy patterns]" )
     CHECK( s.start_valid() == true  );
     CHECK( s.stop_valid()  == true  );
     CHECK( s.step_valid()  == false );
-
 
     s = x0 | x0 + 100 | 5;
 
@@ -212,7 +200,6 @@ TEST_CASE( "numcpp::slice::operators 3", "[common numpy patterns]" )
     CHECK( s.start_valid() == true );
     CHECK( s.stop_valid()  == true );
     CHECK( s.step_valid()  == true );
-
 }
 
 
@@ -234,6 +221,8 @@ TEST_CASE( "numcpp::slice::operators 4", "[using missing]" )
     {
         slice s = -5 | _;
 
+        INFO( "s = " << s );
+
         CHECK( s.start() == -5  );
         CHECK( s.start_valid() == true  );
         CHECK( s.stop_valid()  == false );
@@ -243,6 +232,8 @@ TEST_CASE( "numcpp::slice::operators 4", "[using missing]" )
     SECTION(" :5 ")
     {
         slice s = _ | 5;
+
+        INFO( "s = " << s );
 
         CHECK( s.stop() == 5  );
         CHECK( s.step() == 1  );
