@@ -25,6 +25,13 @@ template <class R>
 array<R> arange(index_t start, index_t stop)     { return arange<R>(start, stop, 1); }
 
 
+template <class R>
+array<R> ones(const std::vector<uint64> & shape);
+
+template <class R>
+array<R> zeros(const std::vector<uint64> & shape);
+
+
 //-----------------------------------------------------------------------------
 // inline implementation
 

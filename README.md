@@ -8,15 +8,43 @@ Why another array library in C++?
 =================================
 
 This project is meant to exercise my my template and operator overloading skills.  The goal
-is to achive expressions very close to Python+NumPy.
+is to achive expressions very close to Python + NumPy.
+
+
+Python + NumPy  | C++ + numcpp
+--- | ---
+```python
+>>> import numpy as np
+>>> a = np.arange(15).reshape(3, 5)
+>>> a
+array([[ 0,  1,  2,  3,  4],
+       [ 5,  6,  7,  8,  9],
+       [10, 11, 12, 13, 14]])
+>>> a.shape
+(3, 5)
+``` | ```c++
+#include <iostream>
+using std::cout;
+#include <numcpp/numcpp.hpp>
+namespace np = numcpp;
+auto a = np::arange<int>(15).reshape({3,5});
+cout << a.print("%2d") << "\n";
+array([
+    [  0,  1,  2,  3,  4 ],
+    [  5,  6,  7,  8,  9 ],
+    [ 10, 11, 12, 13, 14 ],
+], int32)
+```
+
+How to build unittests
+======================
+
+`scons --test`
 
 
 How to get unittest code coverage
 =================================
 
-To produced an html coverage report do:
+`scons --coverage`
 
-    scons --coverage
-    # ...
-    chrome coverage/index.html
-
+Then open the file `coverage/index.html` with a webrowser.
