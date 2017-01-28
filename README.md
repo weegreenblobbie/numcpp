@@ -44,7 +44,9 @@ array([[ 0,  1,  2,  3,  4],
 #include <numcpp/numcpp.hpp>
 
 using std::cout;
-using namespace numcpp; // bring in some iostream operators
+
+// bring in some iostream operators
+using namespace numcpp;
 
 namespace np = numcpp;
 
@@ -73,7 +75,9 @@ size  = 15
 #include &lt;numcpp/numcpp.hpp&gt;
 
 using std::cout;
-using namespace numcpp; // bring in some iostream operators
+
+// bring in some iostream operators
+using namespace numcpp;
 
 namespace np = numcpp;
 
@@ -85,12 +89,14 @@ cout
     &lt;&lt; &quot;ndim  = &quot; &lt;&lt; a.ndim()  &lt;&lt; &quot;\n&quot;
     &lt;&lt; &quot;size  = &quot; &lt;&lt; a.size()  &lt;&lt; &quot;\n&quot;;
 
-array([
-    [  0,  1,  2,  3,  4 ],
-    [  5,  6,  7,  8,  9 ],
-    [ 10, 11, 12, 13, 14 ],
-], int64)
-a.shape = (3, 5, )
+//    array([
+//        [  0,  1,  2,  3,  4 ],
+//        [  5,  6,  7,  8,  9 ],
+//        [ 10, 11, 12, 13, 14 ],
+//    ], int64)
+//    shape = (3, 5, )
+//    ndim  = 2
+//    size  = 15
         </pre>
     </td>
     </tr>
@@ -99,7 +105,7 @@ a.shape = (3, 5, )
     <tr>
     <td align="left" valign="top">
          <pre lang="python">
->>> c = np.array( [ [1,2], [3,4] ], dtype=complex )
+>>> c = np.array([ [1,2], [3,4] ], dtype = complex)
 >>> c
 array([[ 1.+0.j,  2.+0.j],
        [ 3.+0.j,  4.+0.j]])
@@ -111,13 +117,20 @@ array([[ 1.+0.j,  2.+0.j],
 #include <numcpp/numcpp.hpp>
 
 using std::cout;
-using namespace numcpp; // bring in some iostream operators
+using namespace numcpp;
 
 namespace np = numcpp;
 
-auto c1 = np::array<np::complex64>({1,2,3,4}).reshape({2,2});
+auto c1 = np::array<np::complex64>(
+    {1,2,3,4}
+).reshape({2,2});
 
-auto c2 = np::array<np::complex64>({ {1,2}, {3,4} });
+auto c2 = np::array<np::complex64>(
+    {
+        {1,2},
+        {3,4}
+    }
+);
 
 cout
     << c1.print("%.1f") << "\n"
@@ -133,9 +146,16 @@ cout
 
     -->
         <pre lang="c++">
-auto c1 = np::array&lt;np::complex64&gt;({1,2,3,4}).reshape({2,2});
+auto c1 = np::array&lt;np::complex64&gt;(
+    {1,2,3,4}
+).reshape({2,2});
 
-auto c2 = np::array&lt;np::complex64&gt;({ {1,2}, {3,4} });
+auto c2 = np::array&lt;np::complex64&gt;(
+    {
+        {1,2},
+        {3,4}
+    }
+);
 
 cout
     &lt;&lt; c1.print(&quot;%.1f&quot;) &lt;&lt; &quot;\n&quot;
