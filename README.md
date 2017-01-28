@@ -32,6 +32,7 @@ array([[ 0,  1,  2,  3,  4],
 >>> a.size
 15
 ```
+
 ```c++
 #include <iostream>
 #include <numcpp/numcpp.hpp>
@@ -57,6 +58,7 @@ shape = (3, 5, )
 ndim  = 2
 size  = 15
 */
+```
 
 ```python
 >>> c = np.array(
@@ -65,6 +67,7 @@ size  = 15
 array([[ 1.+0.j,  2.+0.j],
        [ 3.+0.j,  4.+0.j]])
 ```
+
 ```c++
 auto c1 = array<complex64>(
     {1,2,3,4}
@@ -90,6 +93,7 @@ array([ 1.0+2.0j, 3.0+4.0j ], complex64)
 
 */
 ```
+
 ```python
 >>> np.zeros( (3,4) )
 array([[ 0.,  0.,  0.,  0.],
@@ -109,6 +113,7 @@ array([[[ 1, 1, 1, 1],
 array([[  3.73603959e-262,   6.02658058e-154,   6.55490914e-260],
        [  5.30498948e-313,   3.14673309e-307,   1.00000000e+000]])
 ```
+
 ```c++
 cout << zeros<float32>({3,4}).print("%.1f") << "\n";
 
@@ -143,6 +148,7 @@ array([10, 15, 20, 25])
 array([ 0. ,  0.3,  0.6,
     0.9,  1.2,  1.5,  1.8])
 ```
+
 ```c++
 
 cout << arange<int32>(10, 30, 5) << "\n";
@@ -152,7 +158,7 @@ cout << arange<int32>(10, 30, 5) << "\n";
 cout << arange<float32>(0, 2, 0.3).print("%.1f") << "\n";
 
 // array([ 0.0, 0.3, 0.6, 0.9, 1.2, 1.5, 1.8 ], float32)
-
+```
 
 How to build unittests
 ======================
