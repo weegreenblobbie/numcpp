@@ -85,21 +85,17 @@ array([[ 1.+0.j,  2.+0.j],
 auto c = array<complex64>({1,2,3,4}).reshape({2,2});
 
 cout << c.print("%.1f") << "\n";
-
 /*
-
 array([
     [ 1.0+0.0j, 2.0+0.0j ],
     [ 3.0+0.0j, 4.0+0.0j ],
 ], complex64)
-
 */
 
 // init both the real & imag parts
 auto c2 = array<complex64>( { {1,2}, {3,4} } );
 
 cout << c2.print("%.1f") << "\n"
-
 // array([ 1.0+2.0j, 3.0+4.0j ], complex64)
 ```
 
@@ -125,7 +121,6 @@ array([[  3.73603959e-262,   6.02658058e-154,   6.55490914e-260],
 
 ```c++
 cout << zeros<float32>({3,4}).print("%.1f") << "\n";
-
 /*
 array([
     [ 0.0, 0.0, 0.0, 0.0 ],
@@ -136,7 +131,6 @@ array([
 
 // 3D not yet implemented (2017-01-27)
 cout << ones<int16>({2,3}) << "\n";
-
 /*
 array([
     [ 1, 1, 1 ],
@@ -160,11 +154,9 @@ array([ 0. ,  0.3,  0.6,  0.9,  1.2,  1.5,  1.8])
 ```c++
 
 cout << arange<int32>(10, 30, 5) << "\n";
-
 // array([ 10, 15, 20, 25 ], int32)
 
 cout << arange<float32>(0, 2, 0.3).print("%.1f") << "\n";
-
 // array([ 0.0, 0.3, 0.6, 0.9, 1.2, 1.5, 1.8 ], float32)
 ```
 
@@ -194,15 +186,12 @@ array([    9,     8,     7,     6,     5, -1000,     3, -1000,     1, -1000])
 auto a = arange<int>(10);
 
 cout << a << "\n";
-
 // array([ 0, 1, 2, 3, 4, 5, 6, 7, 8, 9 ], int32)
 
 cout << a(2) << "\n";
-
 // 2
 
 cout << a(2_s|5) << "\n";     // _s is a literal operator to start a slice
-
 // array([ 2, 3, 4 ], int32)
 
 missing _;  // a helper object that represent missing args to slice expressions
@@ -210,11 +199,9 @@ missing _;  // a helper object that represent missing args to slice expressions
 a(_|6|2) = -1000;
 
 cout << a << "\n";
-
 // array([ -1000, 1, -1000, 3, -1000, 5, 6, 7, 8, 9 ], int32)
 
 cout << a(_|_|-1) << "\n";
-
 // array([ 9, 8, 7, 6, 5, -1000, 3, -1000, 1, -1000 ], int32)
 ```
 
