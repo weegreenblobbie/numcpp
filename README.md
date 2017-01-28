@@ -20,15 +20,16 @@ is to achive expressions very close to Python + NumPy.
     <tr>
     <td align="left" valign="top">
          <pre lang="python">
+
+
+
+
+
+
+
+
+
 >>> import numpy as np
-
-
-
-
-
-
-
-
 >>> a = np.arange(15).reshape(3, 5)
 >>> a
 array([[ 0,  1,  2,  3,  4],
@@ -97,14 +98,18 @@ cout
     &lt;&lt; &quot;ndim  = &quot; &lt;&lt; a.ndim()  &lt;&lt; &quot;\n&quot;
     &lt;&lt; &quot;size  = &quot; &lt;&lt; a.size()  &lt;&lt; &quot;\n&quot;;
 
-//    array([
-//        [  0,  1,  2,  3,  4 ],
-//        [  5,  6,  7,  8,  9 ],
-//        [ 10, 11, 12, 13, 14 ],
-//    ], int64)
-//    shape = (3, 5, )
-//    ndim  = 2
-//    size  = 15
+/*
+
+array([
+    [  0,  1,  2,  3,  4 ],
+    [  5,  6,  7,  8,  9 ],
+    [ 10, 11, 12, 13, 14 ],
+], int64)
+shape = (3, 5, )
+ndim  = 2
+size  = 15
+
+*/
         </pre>
     </td>
     </tr>
