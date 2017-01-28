@@ -69,18 +69,11 @@ array([[ 1.+0.j,  2.+0.j],
 ```
 
 ```c++
-auto c1 = array<complex64>(
-    {1,2,3,4}
-).reshape({2,2});
 
-auto c2 = array<complex64>(
-    { {1,2}, {3,4} }
-);
+// init the real parts only
+auto c = array<complex64>({1,2,3,4}).reshape({2,2});
 
-cout
-    << c1.print("%.1f") << "\n"
-    << "\n"
-    << c2.print("%.1f") << "\n";
+cout << c.print("%.1f") << "\n";
 
 /*
 
@@ -89,9 +82,14 @@ array([
     [ 3.0+0.0j, 4.0+0.0j ],
 ], complex64)
 
-array([ 1.0+2.0j, 3.0+4.0j ], complex64)
-
 */
+
+// init both the real & imag parts
+auto c2 = array<complex64>( { {1,2}, {3,4} } );
+
+cout << c2.print("%.1f") << "\n"
+
+// array([ 1.0+2.0j, 3.0+4.0j ], complex64)
 ```
 
 ```python
