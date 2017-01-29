@@ -448,11 +448,18 @@ TEST_CASE( "numcpp::array 2D element access" )
         }
     ).reshape({4,5});
 
-    INFO( "a = " << a.print("%2d") );
-    INFO( "a = " << a.debug_print() );
-    INFO( "a = " << a(2,2_s|4).debug_print() );
-
     CHECK( all(a == gold) );
+
+    auto mask = a(1_s|-1, 1_s|-1) == 99;
+
+    auto gg = array<bool>(
+        {
+            0, 1, 1,
+            0, 0, 0,
+        }
+    ).reshape({2,3});
+
+    CHECK( all(mask == gg) );
 
     a(1 | _, 3) = 22;
 

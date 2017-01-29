@@ -613,11 +613,6 @@ operator()(const slice & s0)
 
     auto n_dim = ndim();
 
-    if(n_dim == 0)
-    {
-        return *this;
-    }
-    else
     if(n_dim == 1)
     {
         axis_iterator ai(_shape[0], s0);
@@ -706,19 +701,12 @@ operator()(const slice & s0, const slice & s1)
         if(_strides.empty())
         {
             out._offset = _offset + start0 * static_cast<index_t>(_shape[1]) + start1;
+            out._strides = {static_cast<index_t>(_shape[1]) * step0, step1};
         }
 
         else
         {
             out._offset = _offset + start0 * _strides[0] + start1 * _strides[1];
-        }
-
-        if(_strides.empty())
-        {
-            out._strides = {static_cast<index_t>(_shape[1]) * step0, step1};
-        }
-        else
-        {
             out._strides = {_strides[0] * step0, _strides[1] * step1};
         }
 
