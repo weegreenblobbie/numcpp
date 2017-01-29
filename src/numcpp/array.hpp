@@ -3,12 +3,10 @@
 
 
 #include <numcpp/axis_iterator.hpp>
+#include <numcpp/fmt.hpp>
 #include <numcpp/macros.hpp>
 #include <numcpp/slice.hpp>
 #include <numcpp/types.hpp>
-
-
-#include <fmt/fmt.hpp>  // https://github.com/fmtlib/fmt
 
 
 #include <memory>
@@ -101,10 +99,6 @@ public:
 
     array<R> operator()(const slice &);
     array<R> operator()(const slice & s0, const slice & s1);
-
-    array<R> operator()(const missing &);
-    array<R> operator()(const missing & , const slice & s1);
-    array<R> operator()(const slice & s0, const missing &);
 
     const_array<R> operator()(const slice &) const;
     const_array<R> operator()(const slice &, const slice &) const;
@@ -737,39 +731,6 @@ operator()(const slice & s0, const slice & s1)
     M_THROW_RT_ERROR("unhandled case"); // LCOV_EXCL_LINE
 
     return array<R>();
-}
-
-
-template <class R>
-array<R>
-array<R>::
-operator()(const missing &)
-{
-    DOUT << __PRETTY_FUNCTION__ << std::endl;
-
-    return (*this)(0|missing());
-}
-
-
-template <class R>
-array<R>
-array<R>::
-operator()(const missing &, const slice & s1)
-{
-    DOUT << __PRETTY_FUNCTION__ << std::endl;
-    if(ndim() == 1) M_THROW_RT_ERROR("too many indicies for array");
-    return (*this)(slice(0, _shape[0], 1), s1);
-}
-
-
-template <class R>
-array<R>
-array<R>::
-operator()(const slice & s0, const missing &)
-{
-    DOUT << __PRETTY_FUNCTION__ << std::endl;
-    if(ndim() == 1) M_THROW_RT_ERROR("too many indicies for array");
-    return (*this)(s0, slice(0, _shape[1], 1));
 }
 
 
