@@ -202,7 +202,7 @@ if GetOption("test"):
 
     cmd = "%s %s" % (ut.path, options)
 
-    run_ut = Command(".bogus", None, cmd)
+    run_ut = Command("test", None, cmd)
 
     Default(run_ut)
     Depends(run_ut, ut)

@@ -299,6 +299,9 @@ TEST_CASE( "numcpp::array::slicing 2D -> 2D", "[slicing]" )
             }
         ).reshape({4,3});
 
+        INFO( "b = " << b.debug_print() );
+        INFO( "b = " << b.print("%2d") );
+
         CHECK( all(b == gold ) );
     }
 
@@ -444,6 +447,10 @@ TEST_CASE( "numcpp::array 2D element access" )
              15, 88, 17, 18, 19
         }
     ).reshape({4,5});
+
+    INFO( "a = " << a.print("%2d") );
+    INFO( "a = " << a.debug_print() );
+    INFO( "a = " << a(2,2_s|4).debug_print() );
 
     CHECK( all(a == gold) );
 
