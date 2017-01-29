@@ -843,7 +843,7 @@ operator()(const slice & s0, const slice & s1)
 
             if(count0 == 1 && count1 == 1)
             {
-                out._size = count0 * count1;
+                out._size = 1;
                 out._shape = {1};
                 out._strides = {};
 
@@ -863,7 +863,7 @@ operator()(const slice & s0, const slice & s1)
 
                     default:
                     {
-                        M_THROW_RT_ERROR("unhandled case"); // LCOV_EXCL_LINE
+                        M_THROW_RT_ERROR("unhandled case (" << _strides.size() << ")"); // LCOV_EXCL_LINE
                     }
                 }
 
@@ -876,7 +876,6 @@ operator()(const slice & s0, const slice & s1)
             else
             if(count0 == 1)
             {
-                step0 = 0;
                 out._size = count1;
                 out._shape = {count1};
 
