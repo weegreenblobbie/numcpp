@@ -796,48 +796,49 @@ print(const std::string & fmt_in) const
 
     if(fmt_.length() == 0) fmt_ = detail::_array_R_to_fmt<R>();
 
-    std::stringstream out;
-
     const array<R> & a = *this;
+
+    if(_size == 1) return detail::_format<R>(fmt_, a(0));
+
+    std::stringstream out;
 
     switch(ndim())
     {
-
         case 0:  // fall through
         case 1:
         {
-            if(_size != 1) out << "array([ ";
+            out << "array([ ";
 
             for(uint64 i = 0; i < _size; ++i)
             {
                 out << detail::_format<R>(fmt_, a(i));
-                if(_size != 1 && i + 1 < a._size) out << ", ";
+                if(i + 1 < a._size) out << ", ";
             }
 
-            if(_size != 1) out << " ], " << detail::type_name<R>() << ")";
+            out << " ], " << detail::type_name<R>() << ")";
 
             break;
         }
 
         case 2:
         {
-            if(_size != 1) out << "array([\n";
+            out << "array([\n";
 
             for(auto i = 0u; i < _shape[0]; ++i)
             {
-                if(_size != 1) out << "    [ ";
+                out << "    [ ";
 
                 for(auto j = 0u; j < _shape[1]; ++j)
                 {
-                    const R r = a(i,j);
-                    out << detail::_format(fmt_, r); //a(i, j));
-                    if(_size != 1 && j + 1 < _shape[1]) out << ", ";
+                    const R & r = a(i,j);
+                    out << detail::_format(fmt_, r);
+                    if(j + 1 < _shape[1]) out << ", ";
                 }
 
-                if(_size != 1) out << " ],\n";
+                out << " ],\n";
             }
 
-            if(_size != 1) out << "], " << detail::type_name<R>() << ")";
+            out << "], " << detail::type_name<R>() << ")";
 
             break;
         }

@@ -168,7 +168,7 @@ unittest_env.Default(ut)
 
 #-----------------------------------------------------------------------------
 # building demo program
-if not do_coverage:
+if not do_coverage and not GetOption("test"):
 
     demo = unittest_env.Program("demo", "src/executables/demo.cpp")
 
