@@ -322,57 +322,42 @@ operator!() const
 
     if(ndim() == 1)
     {
-        if(_strides.empty())
-        {
-            for(uint64 i = 0; i < _size; ++i)
-            {
-                (*out._array)[i] = !(*_array)[_offset + i];
+        #define loop( idx )                                       \
+            for(uint64 i = 0; i < _size; ++i)                     \
+            {                                                     \
+                (*out._array)[i] = !(*_array)[_offset + idx ];    \
             }
 
-            return out;
-        }
+        if(_strides.empty()) loop( i )
+        else                 loop( i * _strides[0] )
 
-        else
-        {
-            for(uint64 i = 0; i < _size; ++i)
-            {
-                (*out._array)[i] = !(*_array)[_offset + i * _strides[0]];
-            }
+        #undef loop
 
-            return out;
-        }
+        return out;
     }
     else
     if(ndim() == 2)
     {
         out.reshape(_shape);
 
-        if(_strides.empty())
-        {
-            for(uint64 m = 0; m < _shape[0]; ++m)
-            {
-                for(uint64 n = 0; n < _shape[1]; ++n)
-                {
-                    (*out._array)[m * _shape[1] + n] =
-                        !(*_array)[_offset + m * _shape[1] + n];
-                }
-            }
-
-            return out;
+        #define loop( idx )                                            \
+        {                                                              \
+            index_t i = 0;                                             \
+            for(uint64 m = 0; m < _shape[0]; ++m)                      \
+            {                                                          \
+                for(uint64 n = 0; n < _shape[1]; ++n)                  \
+                {                                                      \
+                    (*out._array)[i++] = !(*_array)[_offset + idx];    \
+                }                                                      \
+            }                                                          \
         }
-        else
-        {
-            for(uint64 m = 0; m < _shape[0]; ++m)
-            {
-                for(uint64 n = 0; n < _shape[1]; ++n)
-                {
-                    (*out._array)[m * _shape[1] + n] =
-                        !(*_array)[_offset + m * _strides[0] + n * _strides[1]];
-                }
-            }
 
-            return out;
-        }
+        if(_strides.empty()) loop( m * _shape[1] + n )
+        else                 loop( m * _strides[0] + n * _strides[1] )
+
+        #undef loop
+
+        return out;
     }
 
     M_THROW_RT_ERROR("unhandled case"); // LCOV_EXCL_LINE
@@ -392,56 +377,41 @@ operator==(const R & rhs) const
 
     if(ndim() == 1)
     {
-        if(_strides.empty())
-        {
-            for(uint64 i = 0; i < _size; ++i)
-            {
-                (*out._array)[i] = (*_array)[_offset + i] == rhs;
+        #define loop( idx_expr )                                          \
+            for(uint64 i = 0; i < _size; ++i)                             \
+            {                                                             \
+                (*out._array)[i] = (*_array)[_offset + idx_expr ] == rhs; \
             }
 
-            return out;
-        }
-        else
-        {
-            for(uint64 i = 0; i < _size; ++i)
-            {
-                (*out._array)[i] = (*_array)[_offset + i * _strides[0]] == rhs;
-            }
+        if(_strides.empty()) loop( i )
+        else                 loop( i * _strides[0] )
 
-            return out;
-        }
+        #undef loop
+
+        return out;
     }
     else
     if(ndim() == 2)
     {
-        if(_strides.empty())
-        {
-            for(uint64 m = 0; m < _shape[0]; ++m)
-            {
-                for(uint64 n = 0; n < _shape[1]; ++n)
-                {
-                    const R & lhs = (*_array)[_offset + m * _shape[1] + n];
-
-                    (*out._array)[m * _shape[1] + n] = lhs == rhs;
-                }
-            }
-
-            return out;
+        #define loop( idx_expr )                                          \
+        {                                                                 \
+            index_t i = 0;                                                \
+            for(uint64 m = 0; m < _shape[0]; ++m)                         \
+            {                                                             \
+                for(uint64 n = 0; n < _shape[1]; ++n)                     \
+                {                                                         \
+                    (*out._array)[i++] =                                  \
+                        rhs == (*_array)[_offset + idx_expr ];            \
+                }                                                         \
+            }                                                             \
         }
-        else
-        {
-            for(uint64 m = 0; m < _shape[0]; ++m)
-            {
-                for(uint64 n = 0; n < _shape[1]; ++n)
-                {
-                    const R & lhs = (*_array)[_offset + m * _strides[0] + n * _strides[1]];
 
-                    (*out._array)[m * _shape[1] + n] = lhs == rhs;
-                }
-            }
+        if(_strides.empty()) loop( m * _shape[1] + n )
+        else                 loop( m * _strides[0] + n * _strides[1] )
 
-            return out;
-        }
+        #undef loop
+
+        return out;
     }
 
     M_THROW_RT_ERROR("unhandled case"); // LCOV_EXCL_LINE
@@ -478,14 +448,13 @@ operator==(const array<R> & rhs) const
     {
         out.reshape(_shape);
 
-        const index_t M = _shape[0];
-        const index_t N = _shape[1];
+        index_t i = 0;
 
-        for(index_t m = 0; m < M; ++m)
+        for(index_t m = 0; m < static_cast<index_t>(_shape[0]); ++m)
         {
-            for(index_t n = 0; n < N; ++n)
+            for(index_t n = 0; n < static_cast<index_t>(_shape[1]); ++n)
             {
-                (*out._array)[m * N + n] = bool{(*this)(m,n) == rhs(m,n)};
+                (*out._array)[i++] = bool{(*this)(m,n) == rhs(m,n)};
             }
         }
 
@@ -507,52 +476,37 @@ operator=(const R & rhs)
 
     if(ndim() == 1)
     {
-        if(_strides.empty())
-        {
-            for(uint64 i = 0; i < _size; ++i)
-            {
-                (*_array)[_offset + i] = rhs;
+        #define loop( idx )                               \
+            for(uint64 i = 0; i < _size; ++i)             \
+            {                                             \
+                (*_array)[_offset + idx ] = rhs;          \
             }
 
-            return *this;
-        }
-        else
-        {
-            for(uint64 i = 0; i < _size; ++i)
-            {
-                (*_array)[_offset + i * _strides[0]] = rhs;
-            }
+        if(_strides.empty()) loop( i )
+        else                 loop( i * _strides[0] )
 
-            return *this;
-        }
+        #undef loop
+
+        return *this;
     }
     else
     if(ndim() == 2)
     {
-        if(_strides.empty())
-        {
-            for(uint64 m = 0; m < _shape[0]; ++m)
-            {
-                for(uint64 n = 0; n < _shape[1]; ++n)
-                {
-                    (*_array)[_offset + m * _shape[1] + n] = rhs;
-                }
-            }
+        #define loop( idx )                                \
+            for(uint64 m = 0; m < _shape[0]; ++m)          \
+            {                                              \
+                for(uint64 n = 0; n < _shape[1]; ++n)      \
+                {                                          \
+                    (*_array)[_offset + idx ] = rhs;       \
+                }                                          \
+            }                                              \
 
-            return *this;
-        }
-        else
-        {
-            for(uint64 m = 0; m < _shape[0]; ++m)
-            {
-                for(uint64 n = 0; n < _shape[1]; ++n)
-                {
-                    (*_array)[_offset + m * _strides[0] + n * _strides[1]] = rhs;
-                }
-            }
+        if(_strides.empty()) loop( m * _shape[1] + n )
+        else                 loop( m * _strides[0] + n * _strides[1] )
 
-            return *this;
-        }
+        #undef loop
+
+        return *this;
     }
 
     M_THROW_RT_ERROR("unhandled case"); // LCOV_EXCL_LINE

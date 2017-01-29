@@ -168,10 +168,11 @@ unittest_env.Default(ut)
 
 #-----------------------------------------------------------------------------
 # building demo program
+if not do_coverage:
 
-demo = unittest_env.Program("demo", "src/executables/demo.cpp")
+    demo = unittest_env.Program("demo", "src/executables/demo.cpp")
 
-unittest_env.Default(demo)
+    unittest_env.Default(demo)
 
 #-----------------------------------------------------------------------------
 # extra cleaning

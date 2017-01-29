@@ -29,6 +29,12 @@
 *.app
 
 src/executables/unittests
+*.gcda
+*.gcno
+*.info
 .sconsign.dblite
 .sconf_temp
 config.log
+demo
+site.cfg
+coverage
