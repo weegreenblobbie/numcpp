@@ -3,12 +3,10 @@
 
 
 #include <numcpp/axis_iterator.hpp>
+#include <numcpp/fmt.hpp>
 #include <numcpp/macros.hpp>
 #include <numcpp/slice.hpp>
 #include <numcpp/types.hpp>
-
-
-#include <fmt/fmt.hpp>  // https://github.com/fmtlib/fmt
 
 
 #include <memory>
@@ -71,18 +69,16 @@ public:
     //-------------------------------------------------------------------------
     // operators
 
-    operator value_type () const;      // implicitly convert to R
-    operator reference ();             // implicitly convert to R &
+    operator value_type () const;      // implicitly conversion
+    operator reference ();
 
 //~    array<R> operator~() const;
     array<bool> operator!() const;
 
     array<bool> operator==(const R & rhs) const;
-
     array<bool> operator==(const array<R> & rhs) const;
 
     array<bool> operator!=(const R & rhs) const           { return !(*this == rhs); }
-
     array<bool> operator!=(const array<R> & rhs) const    { return !(*this == rhs); }
 
     array<R> & operator=(const R & rhs);
@@ -100,31 +96,13 @@ public:
 //~
 
     array<R> operator()(const slice &);
-    array<R> operator()(const slice & s0, const slice & s1);
-    array<R> operator()(const missing & , const slice & s1);
-    array<R> operator()(const slice & s0, const missing &);
+    array<R> operator()(const slice &, const slice &);
+    array<R> operator()(const slice &, const slice &, const slice &);
 
     const_array<R> operator()(const slice &) const;
     const_array<R> operator()(const slice &, const slice &) const;
+    const_array<R> operator()(const slice &, const slice &, const slice &) const;
 
-//~    const array<R> operator()(index_t i) const;
-
-//~    R &       operator()(index_t i);
-//~    const R & operator()(index_t i) const;
-
-//~    array<R>  operator()(const slice &);
-
-
-//~    array<R> operator()(index_t i, index_t j);
-
-//~    R &       operator()(index_t i, index_t j);
-//~    R &       operator()(index_t i, index_t j, index_t k);
-//~    R &       operator()(index_t i, index_t j, index_t k, index_t l);
-//~
-//~    const R & operator()(index_t i, index_t j) const;
-//~    const R & operator()(index_t i, index_t j, index_t k) const;
-//~    const R & operator()(index_t i, index_t j, index_t k, index_t l) const;
-//~
 //~
 //~    array<R> & operator=(const array<R> & rhs);
 //~
@@ -160,7 +138,7 @@ protected:
 
     std::vector<uint64>             _shape;
     std::vector<index_t>            _strides;
-    std::vector<index_t>            _offsets;
+    index_t                         _offset;
 
     friend class const_array<R>;
 
@@ -174,9 +152,11 @@ protected:
 
 namespace detail
 {
-    inline std::size_t _compute_size(const std::vector<uint64> & shape)
+    template <class R>
+    R _compute_size(const std::vector<R> & shape)
     {
-        std::size_t s = ! shape.empty();
+        R s = ! shape.empty();
+
         for(auto x : shape)
         {
             if(x == 0) throw std::runtime_error("shape contains 0's!");
@@ -184,19 +164,6 @@ namespace detail
         }
 
         return s;
-    }
-
-    inline uint64 _flat_index(
-        const std::vector<uint64> & index,
-        const std::vector<int64> & strides,
-        uint64 offset)
-    {
-        for(uint64 i = 0; i < index.size(); ++i)
-        {
-            offset += strides[i] * index[i];
-        }
-
-        return offset;
     }
 }
 
@@ -209,7 +176,7 @@ array()
     _array(nullptr),
     _shape(),
     _strides(),
-    _offsets({0})
+    _offset(0)
 {
     DOUT << __PRETTY_FUNCTION__ << std::endl;
 }
@@ -223,7 +190,7 @@ array(const std::initializer_list<R> & il)
     _array(std::make_shared<std::vector<R>>(il)),
     _shape({_size}),
     _strides(),
-    _offsets({0})
+    _offset(0)
 {
     DOUT << __PRETTY_FUNCTION__ << std::endl;
 }
@@ -237,7 +204,7 @@ array(const std::vector<R> & v)
     _array(std::make_shared<std::vector<R>>(v)),
     _shape({_size}),
     _strides(),
-    _offsets({0})
+    _offset(0)
 {
     DOUT << __PRETTY_FUNCTION__ << std::endl;
 }
@@ -251,7 +218,7 @@ array(const std::vector<uint64> & shape, const R & value)
     _array(std::make_shared<std::vector<R>>(std::vector<R>(_size, value))),
     _shape(shape),
     _strides(),
-    _offsets({0})
+    _offset(0)
 {
     DOUT << __PRETTY_FUNCTION__ << std::endl;
 }
@@ -284,7 +251,7 @@ array<R>::operator array<R>::value_type () const
         M_THROW_RT_ERROR("converting to single reference from array!");
     }
 
-    return (*_array)[_offsets[0]];
+    return (*_array)[_offset];
 }
 
 
@@ -303,7 +270,7 @@ array<R>::operator array<R>::reference ()
         M_THROW_RT_ERROR("converting to single reference from array!");
     }
 
-    return (*_array)[_offsets[0]];
+    return (*_array)[_offset];
 }
 
 
@@ -318,34 +285,9 @@ reshape(const std::vector<uint64> & shape)
 
     if(_size != s) M_THROW_RT_ERROR("total size of new array must be unchanged");
 
-    for(auto x : _offsets)
-    {
-        if(x != 0) M_THROW_RT_ERROR("trying to reshape a sliced array :(");
-    }
+    if(!_strides.empty()) M_THROW_RT_ERROR("trying to reshape a sliced array :(");
 
     _shape = shape;
-
-    switch(ndim())
-    {
-        case 1:
-        {
-            _strides = {};
-            _offsets = {0};
-            break;
-        }
-
-        case 2:
-        {
-            _strides = {static_cast<index_t>(_shape[1])};
-
-            break;
-        }
-
-        default:
-        {
-            M_THROW_RT_ERROR("unhandled case"); // LCOV_EXCL_LINE
-        }
-    }
 
     return *this;
 }
@@ -362,91 +304,48 @@ operator!() const
 
     if(ndim() == 1)
     {
-        switch(_strides.size())
-        {
-            case 0:
-            {
-                for(uint64 i = 0; i < _size; ++i)
-                {
-                    (*out._array)[i] = !(*_array)[_offsets[0] + i];
-                }
-
-                return out;
+        #define loop( idx )                                       \
+            for(uint64 i = 0; i < _size; ++i)                     \
+            {                                                     \
+                (*out._array)[i] = !(*_array)[_offset + idx ];    \
             }
 
-            case 1:
-            {
-                for(uint64 i = 0; i < _size; ++i)
-                {
-                    (*out._array)[i] = !(*_array)[_offsets[0] + i * _strides[0]];
-                }
+        if(_strides.empty()) loop( i )
+        else                 loop( i * _strides[0] )
 
-                return out;
-            }
+        #undef loop
 
-            case 2:
-            {
-                for(uint64 i = 0; i < _size; ++i)
-                {
-                    (*out._array)[i] = !(*_array)[_offsets[0] + i * _strides[1]];
-                }
-
-                return out;
-            }
-
-            default:
-            {
-                M_THROW_RT_ERROR("unhandled case (" << _strides.size() << ")"); // LCOV_EXCL_LINE
-            }
-        }
+        return out;
     }
     else
     if(ndim() == 2)
     {
         out.reshape(_shape);
 
-        switch(_strides.size())
-        {
-            case 1:
-            {
-                for(uint64 m = 0; m < _shape[0]; ++m)
-                {
-                    for(uint64 n = 0; n < _shape[1]; ++n)
-                    {
-                        (*out._array)[m * _shape[1] + n] =
-                            !(*_array)[_offsets[0] + m * _strides[0] + n];
-                    }
-                }
-
-                return out;
-            }
-
-            case 2:
-            {
-                for(uint64 m = 0; m < _shape[0]; ++m)
-                {
-                    for(uint64 n = 0; n < _shape[1]; ++n)
-                    {
-                        (*out._array)[m * _shape[1] + n] =
-                            !(*_array)[_offsets[0] + m * _strides[0] + n * _strides[1]];
-                    }
-                }
-
-                return out;
-            }
-
-            default:
-            {
-                M_THROW_RT_ERROR("unhandled case"); // LCOV_EXCL_LINE
-            }
+        #define loop( idx )                                            \
+        {                                                              \
+            index_t i = 0;                                             \
+            for(uint64 m = 0; m < _shape[0]; ++m)                      \
+            {                                                          \
+                for(uint64 n = 0; n < _shape[1]; ++n)                  \
+                {                                                      \
+                    (*out._array)[i++] = !(*_array)[_offset + idx];    \
+                }                                                      \
+            }                                                          \
         }
+
+        if(_strides.empty()) loop( m * _shape[1] + n )
+        else                 loop( m * _strides[0] + n * _strides[1] )
+
+        #undef loop
+
+        return out;
     }
 
     M_THROW_RT_ERROR("unhandled case"); // LCOV_EXCL_LINE
 
     return out; // LCOV_EXCL_LINE
 }
-
 
 
 template <class R>
@@ -460,55 +359,39 @@ operator==(const R & rhs) const
 
     if(ndim() == 1)
     {
-        switch(_strides.size())
-        {
-            case 0:
-            {
-                for(uint64 i = 0; i < _size; ++i)
-                {
-                    (*out._array)[i] = (*_array)[_offsets[0] + i] == rhs;
-                }
-
-                return out;
+        #define loop( idx_expr )                                          \
+            for(uint64 i = 0; i < _size; ++i)                             \
+            {                                                             \
+                (*out._array)[i] = (*_array)[_offset + idx_expr ] == rhs; \
             }
 
-            case 1:
-            {
-                for(uint64 i = 0; i < _size; ++i)
-                {
-                    (*out._array)[i] = (*_array)[_offsets[0] + i * _strides[0]] == rhs;
-                }
+        if(_strides.empty()) loop( i )
+        else                 loop( i * _strides[0] )
 
-                return out;
-            }
+        #undef loop
 
-            case 2:
-            {
-                for(uint64 i = 0; i < _size; ++i)
-                {
-                    (*out._array)[i] = (*_array)[_offsets[0] + i * _strides[1]] == rhs;
-                }
-
-                return out;
-            }
-        }
-
-        M_THROW_RT_ERROR("unhandled case (" << _strides.size() << ")"); // LCOV_EXCL_LINE
+        return out;
     }
     else
     if(ndim() == 2)
     {
-        if(_strides.size() != 1) M_THROW_RT_ERROR("expeting strides to contain 1 element");
-
-        for(uint64 m = 0; m < _shape[0]; ++m)
-        {
-            for(uint64 n = 0; n < _shape[1]; ++n)
-            {
-                const R & lhs = (*_array)[_offsets[0] + m * _strides[0] + n];
-
-                (*out._array)[m * _shape[1] + n] = lhs == rhs;
-            }
+        #define loop( idx_expr )                                          \
+        {                                                                 \
+            index_t i = 0;                                                \
+            for(uint64 m = 0; m < _shape[0]; ++m)                         \
+            {                                                             \
+                for(uint64 n = 0; n < _shape[1]; ++n)                     \
+                {                                                         \
+                    (*out._array)[i++] =                                  \
+                        rhs == (*_array)[_offset + idx_expr ];            \
+                }                                                         \
+            }                                                             \
         }
+
+        if(_strides.empty()) loop( m * _shape[1] + n )
+        else                 loop( m * _strides[0] + n * _strides[1] )
+
+        #undef loop
 
         return out;
     }
@@ -529,11 +412,11 @@ operator==(const array<R> & rhs) const
     if(_size != rhs._size) return array<bool>({false});
     if(_shape != rhs._shape) return array<bool>({false});
 
+    array<bool> out(std::vector<bool>(_size, false));
+
     if(ndim() == 1)
     {
-        array<bool> out(std::vector<bool>(_size, false));
-
-        index_t size_ = static_cast<index_t>(_size);
+        const index_t size_ = static_cast<index_t>(_size);
 
         for(index_t i = 0; i < size_; ++i)
         {
@@ -545,17 +428,35 @@ operator==(const array<R> & rhs) const
     else
     if(ndim() == 2)
     {
-        auto out = array<bool>(std::vector<bool>(_size, false)).reshape(_shape);
+        out.reshape(_shape);
 
-        const index_t M = _shape[0];
-        const index_t N = _shape[1];
-        const index_t stride = _strides[0];
+        index_t i = 0;
 
-        for(index_t m = 0; m < M; ++m)
+        for(index_t m = 0; m < static_cast<index_t>(_shape[0]); ++m)
         {
-            for(index_t n = 0; n < N; ++n)
+            for(index_t n = 0; n < static_cast<index_t>(_shape[1]); ++n)
             {
-                (*out._array)[m * N + n] = bool{(*this)(m,n) == rhs(m,n)};
+                (*out._array)[i++] = bool{(*this)(m,n) == rhs(m,n)};
+            }
+        }
+
+        return out;
+    }
+    else
+    if(ndim() == 3)
+    {
+        out.reshape(_shape);
+
+        index_t i = 0;
+
+        for(index_t m = 0; m < static_cast<index_t>(_shape[0]); ++m)
+        {
+            for(index_t n = 0; n < static_cast<index_t>(_shape[1]); ++n)
+            {
+                for(index_t p = 0; p < static_cast<index_t>(_shape[2]); ++p)
+                {
+                    (*out._array)[i++] = bool{(*this)(m,n,p) == rhs(m,n,p)};
+                }
             }
         }
 
@@ -577,81 +478,40 @@ operator=(const R & rhs)
 
     if(ndim() == 1)
     {
-        switch(_strides.size())
-        {
-            case 0:
-            {
-                for(uint64 i = 0; i < _size; ++i)
-                {
-                    (*_array)[_offsets[0] + i] = rhs;
-                }
-
-                return *this;
+        #define loop( idx )                               \
+            for(uint64 i = 0; i < _size; ++i)             \
+            {                                             \
+                (*_array)[_offset + idx ] = rhs;          \
             }
 
-            case 1:
-            {
-                for(uint64 i = 0; i < _size; ++i)
-                {
-                    (*_array)[_offsets[0] + i * _strides[0]] = rhs;
-                }
+        if(_strides.empty()) loop( i )
+        else                 loop( i * _strides[0] )
 
-                return *this;
-            }
+        #undef loop
 
-            case 2:
-            {
-                for(uint64 i = 0; i < _size; ++i)
-                {
-                    (*_array)[_offsets[0] + i * _strides[1]] = rhs;
-                }
-
-                return *this;
-            }
-
-            default:
-            {
-                M_THROW_RT_ERROR("unhandled case"); // LCOV_EXCL_LINE
-            }
-        }
+        return *this;
     }
     else
     if(ndim() == 2)
     {
-        switch(_strides.size())
-        {
-            case 1:
-            {
-                for(uint64 m = 0; m < _shape[0]; ++m)
-                {
-                    for(uint64 n = 0; n < _shape[1]; ++n)
-                    {
-                        (*_array)[_offsets[0] + m * _strides[0] + n] = rhs;
-                    }
-                }
+        #define loop( idx )                                \
+            for(uint64 m = 0; m < _shape[0]; ++m)          \
+            {                                              \
+                for(uint64 n = 0; n < _shape[1]; ++n)      \
+                {                                          \
+                    (*_array)[_offset + idx ] = rhs;       \
+                }                                          \
+            }                                              \
 
-                return *this;
-            }
+        if(_strides.empty()) loop( m * _shape[1] + n )
+        else                 loop( m * _strides[0] + n * _strides[1] )
 
-            case 2:
-            {
-                for(uint64 m = 0; m < _shape[0]; ++m)
-                {
-                    for(uint64 n = 0; n < _shape[1]; ++n)
-                    {
-                        (*_array)[_offsets[0] + m * _strides[0] + n * _strides[1]] = rhs;
-                    }
-                }
+        #undef loop
 
-                return *this;
-            }
-
-            default:
-            {
-                M_THROW_RT_ERROR("unhandled case"); // LCOV_EXCL_LINE
-            }
-        }
+        return *this;
     }
+
+    M_THROW_RT_ERROR("unhandled case"); // LCOV_EXCL_LINE
 
     return *this; // LCOV_EXCL_LINE
 }
@@ -684,7 +544,7 @@ operator=(const array<R> & rhs)
     _array = rhs._array;
     _shape = rhs._shape;
     _strides = rhs._strides;
-    _offsets = rhs._offsets;
+    _offset = rhs._offset;
 
     return *this;
 }
@@ -701,109 +561,53 @@ operator()(const slice & s0)
 
     array<R> out;
 
-    switch(ndim())
+    auto n_dim = ndim();
+
+    if(n_dim == 1)
     {
-        case 1:
+        axis_iterator ai(_shape[0], s0);
+        auto s = ai.final();
+
+        index_t start = s.start();
+        index_t stop = s.stop();
+        index_t step = s.step();
+
+        if(step > 0 and start >= stop) return out;
+        if(step < 0 and stop >= start) return out;
+
+        out._array = _array;
+
+        uint64 count = ai.size();
+
+        out._shape = {count};
+        out._size = count;
+        out._strides = _strides;
+
+        if(_strides.empty())
         {
-            axis_iterator ai(_shape[0], s0);
-            auto s = ai.final();
-
-            index_t start = s.start();
-            index_t stop = s.stop();
-            index_t step = s.step();
-
-            if(step > 0 and start >= stop) return out;
-            if(step < 0 and stop >= start) return out;
-
-            out._array = _array;
-
-            uint64 count = ai.size();
-
-            out._shape = {count};
-            out._size = count;
-
-            // LCOV_EXCL_START
-            DOUT << "\n"
-                << "-------------------------------------------\n"
-                << "    shape  = (";
-            for(auto x : out._shape) if(_debug_out) std::cout << x << ", ";
-            if(_debug_out) std::cout << ")\n"
-                << "    index = " << start << "\n";
-            // LCOV_EXCL_STOP
-
-            switch(_strides.size())
-            {
-                case 0:
-                {
-                    out._offsets[0] = _offsets[0] + start;
-
-                    if(step > 1 or step < 0) out._strides = {step};
-
-                    // LCOV_EXCL_START
-                    if(_debug_out) std::cout
-                        << "    offset = " << _offsets[0] << " + "
-                        << start << "\n";
-                    // LCOV_EXCL_STOP
-
-                    break;
-                }
-
-                case 1:
-                {
-                    out._offsets[0] = _offsets[0] + start * _strides[0];
-                    out._strides = {_strides[0] * step};
-
-                    // LCOV_EXCL_START
-                    if(_debug_out) std::cout
-                        << "    offset = " << _offsets[0] << " + "
-                        << start << " * " << _strides[0] << "\n";
-                    // LCOV_EXCL_STOP
-
-                    break;
-                }
-
-                case 2:
-                {
-                    out._offsets[0] = _offsets[0] + start * _strides[1];
-                    out._strides = {0, _strides[1] * step};
-
-                    // LCOV_EXCL_START
-                    if(_debug_out) std::cout
-                        << "    offset = " << _offsets[0] << " + "
-                        << start << " * " << _strides[0] << "\n";
-                    // LCOV_EXCL_STOP
-
-                    break;
-                }
-
-
-                default:
-                {
-                    M_THROW_RT_ERROR("unhandled case (" << _strides.size() << ")"); // LCOV_EXCL_LINE
-                }
-            }
-
-            // LCOV_EXCL_START
-            if(_debug_out) std::cout
-                << "    offset = " << out._offsets[0] << "\n"
-                << "    strides = (";
-            for(auto x : out._strides) if(_debug_out) std::cout << x << ", ";
-            if(_debug_out) std::cout << ")\n";
-            // LCOV_EXCL_STOP
-
-            return out;
+            out._offset = _offset + start;
+            if(step != 1) out._strides = {step};
+        }
+        else
+        {
+            out._offset = _offset + start * _strides[0];
+            out._strides[0] *= step;
         }
 
-        // 2D -> 2D
-        case 2:
-        {
-            return (*this)(s0, missing());
-        }
+        return out;
+    }
+    else
+    if(n_dim == 2)
+    {
+        return (*this)(s0, missing());
+    }
+    else
+    if(n_dim == 3)
+    {
+        return (*this)(s0,missing(),missing());
     }
 
-    M_THROW_RT_ERROR("unhandled case"); // LCOV_EXCL_LINE
-
-    return out;
+    M_THROW_RT_ERROR("unhandled case (" << n_dim << ")"); // LCOV_EXCL_LINE
 }
 
 
@@ -814,242 +618,83 @@ operator()(const slice & s0, const slice & s1)
 {
     DOUT << __PRETTY_FUNCTION__ << std::endl;
 
-    DOUT << "    s0 = " << s0 << ", " << "    s1 = " << s1 << "\n";
-
     if(_size == 0) throw std::runtime_error("can't slice an empty array");
 
-    switch(ndim())
+    auto n_dim = ndim();
+
+    if(n_dim == 1)
     {
-        case 1:
+        M_THROW_RT_ERROR("too many indicies for array");
+    }
+    else
+    if(n_dim == 2)
+    {
+        axis_iterator a0(_shape[0], s0);
+        axis_iterator a1(_shape[1], s1);
+
+        uint64 count0 = a0.size();
+        uint64 count1 = a1.size();
+
+        if(count0 == 0) M_THROW_RT_ERROR("invalid slice along axis 0");
+        if(count1 == 0) M_THROW_RT_ERROR("invalid slice along axis 1");
+
+        auto s0_ = a0.final();
+        auto s1_ = a1.final();
+
+        index_t start0 = s0_.start();
+        index_t start1 = s1_.start();
+
+        index_t step0  = s0_.step();
+        index_t step1  = s1_.step();
+
+        DOUT << "array<R> out;";
+        array<R> out;
+
+        out._size  = count0 * count1;
+        out._array = _array;
+
+        if(_strides.empty())
         {
-            M_THROW_RT_ERROR("too many indicies for array");
-            break;
+            out._offset = _offset + start0 * static_cast<index_t>(_shape[1]) + start1;
+            out._strides = {static_cast<index_t>(_shape[1]) * step0, step1};
         }
 
-        case 2:
+        else
         {
-            axis_iterator a0(_shape[0], s0);
-            auto s0_ = a0.final();
-
-            axis_iterator a1(_shape[1], s1);
-            auto s1_ = a1.final();
-
-            DOUT << "    s0_ = " << s0_ << ", " << "    s1_ = " << s1_ << "\n";
-
-            index_t start0 = s0_.start();
-            index_t stop0  = s0_.stop();
-            index_t step0  = s0_.step();
-
-            index_t start1 = s1_.start();
-            index_t stop1  = s1_.stop();
-            index_t step1  = s1_.step();
-
-            uint64 count0 = a0.size();
-            uint64 count1 = a1.size();
-
-            //-----------------------------------------------------------------
-            // special case size = 1
-
-            if(count0 == 1 && count1 == 1)
-            {
-                DOUT << "array<R> out;";
-                array<R> out;
-
-                out._size = count0 * count1;
-                out._array = _array;
-                out._shape = {1};
-
-                // LCOV_EXCL_START
-                DOUT << "\n"
-                    << "-------------------------------------------\n"
-                    << "    shape  = (";
-                for(auto x : out._shape) if(_debug_out) std::cout << x << ", ";
-                if(_debug_out) std::cout << ")\n"
-                    << "    m,n = " << start0 << ", " << start1 << "\n";
-                // LCOV_EXCL_STOP
-
-                switch(_strides.size())
-                {
-                    case 1:
-                    {
-                        out._offsets[0] = _offsets[0] + start0 * _strides[0] + start1 * step1;
-                        out._strides = {};
-
-                        // LCOV_EXCL_START
-                        if(_debug_out) std::cout
-                            << "    offset = " << _offsets[0] << " + "
-                            << start0 << " * " << _strides[0] << " + "
-                            << start1 << " * " << step1 << "\n";
-                        // LCOV_EXCL_STOP
-
-                        break;
-                    }
-
-                    case 2:
-                    {
-                        out._offsets[0] = _offsets[0] + start0 * _strides[0] + start1 * _strides[1];
-                        out._strides = {};
-
-                        // LCOV_EXCL_START
-                        if(_debug_out) std::cout
-                            << "    offset = " << _offsets[0] << " + "
-                            << start0 << " * " << _strides[0] << " + "
-                            << start1 << " * " << _strides[1] << "\n";
-                        // LCOV_EXCL_STOP
-
-                        break;
-                    }
-
-                    default:
-                    {
-                        M_THROW_RT_ERROR("unhandled case"); // LCOV_EXCL_LINE
-                    }
-                }
-
-                // LCOV_EXCL_START
-                if(_debug_out) std::cout
-                    << "    offset = " << out._offsets[0] << "\n"
-                    << "    strides = (";
-                for(auto x : out._strides) if(_debug_out) std::cout << x << ", ";
-                if(_debug_out) std::cout << ")\n";
-                // LCOV_EXCL_STOP
-
-                return out;
-            }
-
-            //-----------------------------------------------------------------
-            // special case count0 == 1
-
-            else
-            if(count0 == 1)
-            {
-                step0 = 0;
-
-                DOUT << "array<R> out;";
-                array<R> out;
-
-                out._size = count1;
-                out._array = _array;
-                out._shape = {count1};
-
-                switch(_strides.size())
-                {
-                    case 1:
-                    {
-                        out._offsets[0] = _offsets[0] + start0 * _strides[0] + start1;
-                        out._strides = {};
-
-                        if(step1 > 1 or step1 < 0) out._strides = {0, step1};
-
-                        break;
-                    }
-
-                    case 2:
-                    {
-                        out._offsets[0] = _offsets[0] + start0 * _strides[0] + start1;
-                        out._strides = _strides;
-
-                        if(step1 > 1 or step1 < 0) out._strides = {0, _strides[1] * step1};
-
-                        break;
-                    }
-
-                    default:
-                    {
-                        M_THROW_RT_ERROR("unhandled case (" << _strides.size() << ")"); // LCOV_EXCL_LINE
-                    }
-                }
-
-                return out;
-            }
-
-            //-----------------------------------------------------------------
-            // special case size > 1 in both
-
-            else
-            if(count0 >= 1 && count1 >= 1)
-            {
-                DOUT << "array<R> out;";
-                array<R> out;
-
-                out._size = count0 * count1;
-                out._array = _array;
-                out._shape = {count0, count1};
-
-                if(count1 == 1) out._shape = {count0};
-
-                // LCOV_EXCL_START
-                DOUT << "\n"
-                    << "-------------------------------------------\n"
-                    << "    shape  = (";
-                for(auto x : out._shape) if(_debug_out) std::cout << x << ", ";
-                if(_debug_out) std::cout << ")\n"
-                    << "    m = " << start0 << ":" << stop0 << ":" << step0 << "\n"
-                    << "    n = " << start1 << ":" << stop1 << ":" << step1 << "\n";
-                // LCOV_EXCL_STOP
-
-                switch(_strides.size())
-                {
-                    case 1:
-                    {
-                        out._offsets[0] = _offsets[0] + start0 * _strides[0] + start1;
-
-                        if(step1 > 1 or step1 < 0)
-                        {
-                            out._strides = {_strides[0] * step0, step1};
-                        }
-                        else
-                        {
-                            out._strides = {_strides[0] * step0};
-                        }
-
-                        // LCOV_EXCL_START
-                        if(_debug_out) std::cout
-                            << "    (" << __LINE__ << ") offset = " << _offsets[0] << " + "
-                            << start0 << " * " << _strides[0] << " + "
-                            << start1 << " * " << step1 << "\n";
-                        // LCOV_EXCL_STOP
-
-                        break;
-                    }
-
-                    case 2:
-                    {
-                        out._offsets[0] = _offsets[0] + start0 * _strides[0] + start1 * _strides[1];
-                        out._strides = {_strides[0] * step0, _strides[1] * step1};
-
-                        // LCOV_EXCL_START
-                        if(_debug_out) std::cout
-                            << "    (" << __LINE__ << ") offset = " << _offsets[0] << " + "
-                            << start0 << " * " << _strides[0] << " + "
-                            << start1 << " * " << _strides[1] << "\n";
-                        // LCOV_EXCL_STOP
-
-                        break;
-                    }
-
-                    default:
-                    {
-                        M_THROW_RT_ERROR("unhandled case"); // LCOV_EXCL_LINE
-                    }
-                }
-
-                // LCOV_EXCL_START
-                if(_debug_out) std::cout
-                    << "    offset = " << out._offsets[0] << "\n"
-                    << "    strides = (";
-                for(auto x : out._strides) if(_debug_out) std::cout << x << ", ";
-                if(_debug_out) std::cout << ")\n";
-                // LCOV_EXCL_STOP
-
-                return out;
-            }
-
-            DOUT << "count0 = " << count0 << "\n";
-            DOUT << "count1 = " << count1 << "\n";
-
-            break;
+            out._offset = _offset + start0 * _strides[0] + start1 * _strides[1];
+            out._strides = {_strides[0] * step0, _strides[1] * step1};
         }
+
+        //---------------------------------------------------------------------
+        // squeezing, not it's own funciton yet!
+
+        // row vector
+        if(count0 == 1)
+        {
+            out._shape = {count1};
+            out._strides = {out._strides[1]};
+        }
+
+        // column vector
+        else
+        if(count1 == 1)
+        {
+            out._shape = {count0};
+            out._strides = {out._strides[0]};
+        }
+
+        // 2d
+        else
+        {
+            out._shape = {count0, count1};
+        }
+
+        return out;
+    }
+    else
+    if(n_dim == 3)
+    {
+        return (*this)(s0,s1,missing());
     }
 
     M_THROW_RT_ERROR("unhandled case"); // LCOV_EXCL_LINE
@@ -1058,25 +703,171 @@ operator()(const slice & s0, const slice & s1)
 }
 
 
-template <class R>
-array<R>
-array<R>::
-operator()(const missing &, const slice & s1)
-{
-    DOUT << __PRETTY_FUNCTION__ << std::endl;
-    if(ndim() == 1) M_THROW_RT_ERROR("too many indicies for array");
-    return (*this)(slice(0, _shape[0], 1), s1);
-}
-
 
 template <class R>
 array<R>
 array<R>::
-operator()(const slice & s0, const missing &)
+operator()(const slice & s0, const slice & s1, const slice & s2)
 {
     DOUT << __PRETTY_FUNCTION__ << std::endl;
-    if(ndim() == 1) M_THROW_RT_ERROR("too many indicies for array");
-    return (*this)(s0, slice(0, _shape[1], 1));
+
+    if(_size == 0) throw std::runtime_error("can't slice an empty array");
+
+    auto n_dim = ndim();
+
+    if(n_dim <= 2)
+    {
+        M_THROW_RT_ERROR("too many indicies for array");
+    }
+    else
+    if(n_dim == 3)
+    {
+        axis_iterator a0(_shape[0], s0);
+        axis_iterator a1(_shape[1], s1);
+        axis_iterator a2(_shape[2], s2);
+
+        uint64 count0 = a0.size();
+        uint64 count1 = a1.size();
+        uint64 count2 = a2.size();
+
+        if(count0 == 0) M_THROW_RT_ERROR("invalid slice along axis 0");
+        if(count1 == 0) M_THROW_RT_ERROR("invalid slice along axis 1");
+        if(count2 == 0) M_THROW_RT_ERROR("invalid slice along axis 2");
+
+        auto s0_ = a0.final();
+        auto s1_ = a1.final();
+        auto s2_ = a2.final();
+
+        index_t start0 = s0_.start();
+        index_t start1 = s1_.start();
+        index_t start2 = s2_.start();
+
+        index_t step0  = s0_.step();
+        index_t step1  = s1_.step();
+        index_t step2  = s2_.step();
+
+        DOUT << "array<R> out;";
+        array<R> out;
+
+        out._size  = count0 * count1 * count2;
+        out._array = _array;
+
+        if(_strides.empty())
+        {
+            index_t J = _shape[1];
+            index_t K = _shape[2];
+
+            out._offset = _offset + start0 * J * K + start1 * K + start2;
+            out._strides =
+            {
+                step0 * J * K,
+                step1 * K,
+                step2
+            };
+        }
+
+        else
+        {
+            index_t I = _strides[0];
+            index_t J = _strides[1];
+            index_t K = _strides[2];
+
+            out._offset = _offset + start0 * I + start1 * J + start2 * K;
+            out._strides =
+            {
+                _strides[0] * step0,
+                _strides[1] * step1,
+                _strides[2] * step2
+            };
+        }
+
+        //---------------------------------------------------------------------
+        // squeezing, not it's own funciton yet!
+
+        int32 key = (count0 == 1) * 100 + (count1 == 1) * 10 + (count2 == 1);
+
+        // single value
+        if(key == 111)
+        {
+            out._shape = {1};
+            out._strides = {};
+        }
+
+        // row vector
+        else
+        if(key == 110)
+        {
+            out._shape = {count2};
+
+            auto c = out._strides[2];
+
+            if(out._strides[2] != 1) out._strides = {c};
+            else                     out._strides = {};
+        }
+
+        // col vector
+
+        else
+        if(key == 101)
+        {
+            out._shape = {count1};
+            out._strides = {out._strides[1]};
+        }
+
+        // 2d
+        else
+        if(key == 100)
+        {
+            out._shape = {count1, count2};
+
+            auto b = out._strides[1];
+            auto c = out._strides[2];
+
+            index_t cnt2 = static_cast<index_t>(count2);
+
+            if(b != cnt2 or c != 1) out._strides = {b,c};
+            else                    out._strides = {};
+        }
+
+        // 2d
+        else
+        if(key == 10) // 010
+        {
+            out._shape = {count0, count2};
+
+            auto a = out._strides[0];
+            auto c = out._strides[2];
+
+            out._strides = {a, c};
+        }
+
+        // 2d
+        else
+        if(key == 1) // 001
+        {
+            out._shape = {count0, count1};
+
+            auto a = out._strides[0];
+            auto b = out._strides[1];
+
+            out._strides = {a, b};
+        }
+
+        // 3d
+        else
+        if(key == 0) // 000
+        {
+            out._shape = {count0, count1, count2};
+        }
+
+        if(out._shape.empty()) M_THROW_RT_ERROR(fmt::sprintf("unandled case (%03d)", key));
+
+        return out;
+    }
+
+    M_THROW_RT_ERROR("unhandled case"); // LCOV_EXCL_LINE
+
+    return array<R>();
 }
 
 
@@ -1103,6 +894,19 @@ operator()(const slice & s0, const slice & s1) const
     array<R> & r = const_cast<array<R> &>(*this);
 
     return const_array<R>(r(s0, s1));
+}
+
+
+template <class R>
+const_array<R>
+array<R>::
+operator()(const slice & s0, const slice & s1, const slice & s2) const
+{
+    DOUT << __PRETTY_FUNCTION__ << std::endl;
+
+    array<R> & r = const_cast<array<R> &>(*this);
+
+    return const_array<R>(r(s0, s1, s2));
 }
 
 
@@ -1180,64 +984,87 @@ print(const std::string & fmt_in) const
 {
     DOUT << __PRETTY_FUNCTION__ << std::endl;
 
-    if(size() > 100) throw std::runtime_error("array to big to print");
+//~    if(size() > 100) throw std::runtime_error("array to big to print");
 
-    if(ndim() > 2) throw std::runtime_error("fixme");
+    if(ndim() > 3) throw std::runtime_error("ndim() > 3 not implemented");
 
     std::string fmt_(fmt_in);
 
     if(fmt_.length() == 0) fmt_ = detail::_array_R_to_fmt<R>();
 
-    std::stringstream out;
-
     const array<R> & a = *this;
 
-    switch(ndim())
+    if(_size == 1) return detail::_format<R>(fmt_, a(0));
+
+    std::stringstream out;
+
+    if(ndim() <= 1)
     {
+        out << "array([ ";
 
-        case 0:  // fall through
-        case 1:
+        for(uint64 i = 0; i < _size; ++i)
         {
-            if(_size != 1) out << "array([ ";
-
-            for(uint64 i = 0; i < _size; ++i)
-            {
-                out << detail::_format<R>(fmt_, a(i));
-                if(_size != 1 && i + 1 < a._size) out << ", ";
-            }
-
-            if(_size != 1) out << " ], " << detail::type_name<R>() << ")";
-
-            break;
+            out << detail::_format<R>(fmt_, a(i));
+            if(i + 1 < a._size) out << ", ";
         }
 
-        case 2:
+        out << " ], " << detail::type_name<R>() << ")";
+    }
+    else
+    if(ndim() == 2)
+    {
+        out << "array([\n";
+
+        for(auto i = 0u; i < _shape[0]; ++i)
         {
-            if(_size != 1) out << "array([\n";
+            out << "  [ ";
 
-            for(auto i = 0u; i < _shape[0]; ++i)
+            for(auto j = 0u; j < _shape[1]; ++j)
             {
-                if(_size != 1) out << "    [ ";
+                const R & r = a(i,j);
+                out << detail::_format(fmt_, r);
+                if(j + 1 < _shape[1]) out << ", ";
+            }
 
-                for(auto j = 0u; j < _shape[1]; ++j)
+            out << " ],\n";
+        }
+
+        out << "], " << detail::type_name<R>() << ")";
+    }
+    else
+    if(ndim() == 3)
+    {
+        out << "array([\n";
+
+        for(auto i = 0u; i < _shape[0]; ++i)
+        {
+            out << "  [\n";
+            for(auto j = 0u; j < _shape[1]; ++j)
+            {
+                out << "    [ ";
+
+                for(auto k = 0u; k < _shape[2]; ++k)
                 {
-                    const R r = a(i,j);
-                    out << detail::_format(fmt_, r); //a(i, j));
-                    if(_size != 1 && j + 1 < _shape[1]) out << ", ";
+                    const R & r = a(i,j,k);
+                    out << detail::_format(fmt_, r);
+                    if(k + 1 < _shape[2]) out << ", ";
                 }
 
-                if(_size != 1) out << " ],\n";
+                out << " ],\n";
             }
 
-            if(_size != 1) out << "], " << detail::type_name<R>() << ")";
+            out << "  ]";
 
-            break;
+            if(i + 1 < _shape[0]) out << ",";
+
+            out << "\n";
         }
 
-        default:
-        {
-            M_THROW_RT_ERROR("unhandled case"); // LCOV_EXCL_LINE
-        }
+        out << "], " << detail::type_name<R>() << ")";
+    }
+    else
+    {
+        M_THROW_RT_ERROR("unhandled case"); // LCOV_EXCL_LINE
     }
 
     return out.str();
@@ -1255,7 +1082,7 @@ debug_print() const
 
     ss
         << "array:\n"
-        << "        R:    " << detail::type_name<R>() << "\n"
+        << "    dtype:    " << detail::type_name<R>() << "\n"
         << "    _size:    " << _size << "\n"
         << "    _data:    " << fmt::format(
             "{:16d}",
@@ -1272,12 +1099,7 @@ debug_print() const
 
     ss
         << ")\n"
-        << "    _offsets: (";
-
-    for(const auto & x : _offsets) ss << x << ", ";
-
-    ss
-        << ")\n";
+        << "    _offset: "<< _offset << "\n";
 
     return ss.str();
 }

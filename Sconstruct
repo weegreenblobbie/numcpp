@@ -168,10 +168,11 @@ unittest_env.Default(ut)
 
 #-----------------------------------------------------------------------------
 # building demo program
+if not do_coverage and not GetOption("test"):
 
-demo = unittest_env.Program("demo", "src/executables/demo.cpp")
+    demo = unittest_env.Program("demo", "src/executables/demo.cpp")
 
-unittest_env.Default(demo)
+    unittest_env.Default(demo)
 
 #-----------------------------------------------------------------------------
 # extra cleaning
@@ -202,7 +203,7 @@ if GetOption("test"):
 
     cmd = "%s %s" % (ut.path, options)
 
-    run_ut = Command(".bogus", None, cmd)
+    run_ut = Command("test", None, cmd)
 
     Default(run_ut)
     Depends(run_ut, ut)

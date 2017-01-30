@@ -62,20 +62,7 @@ const_array<R>::operator const_reference () const
         M_THROW_RT_ERROR("converting to single reference from array!");
     }
 
-    switch(_a.ndim())
-    {
-        case 1:
-        {
-            return (*_a._array)[_a._offsets[0]];
-        }
-
-        case 2:
-        {
-            return (*_a._array)[_a._offsets[0] + 0 * _a._strides[0] + _a._offsets[1]];
-        }
-    }
-
-    M_THROW_RT_ERROR("unhandled case"); // LCOV_EXCL_LINE
+    return (*_a._array)[_a._offset];
 }
 
 
