@@ -52,6 +52,7 @@ public:
     slice(index_t start_, index_t stop_);                  // 0b11_
     slice(index_t start_, index_t stop_, index_t step_);   // 0b111
 
+    slice(missing);                                        // 0b___
     slice(missing,        index_t stop_);                  // 0b_1_
     slice(missing,        missing,        index_t step_);  // 0b__1
     slice(index_t start_, missing,        index_t step_);  // 0b1_1
@@ -165,6 +166,12 @@ inline slice::slice(index_t start_, index_t stop_)
 inline slice::slice(index_t start_, index_t stop_, index_t step_)
     :
     _start(start_), _stop(stop_), _step(step_), _valid(0b111)
+{}
+
+
+inline slice::slice(missing)
+    :
+    _start(), _stop(), _step(), _valid(0b000)
 {}
 
 

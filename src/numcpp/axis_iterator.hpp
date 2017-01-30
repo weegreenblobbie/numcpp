@@ -101,7 +101,8 @@ axis_iterator(int64 axis_length, const slice & s)
         }
     }
 
-
+    //-------------------------------------------------------------------------
+    // speci
 
     index_t lower = 0;
     index_t upper = axis_length;
@@ -129,9 +130,6 @@ axis_iterator(int64 axis_length, const slice & s)
         if(step < 0) start = upper;
         else         start = lower;
     }
-
-    //-------------------------------------------------------------------------
-    // compute stop
 
     index_t stop  = 0;
 

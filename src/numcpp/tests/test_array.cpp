@@ -249,7 +249,7 @@ TEST_CASE( "numcpp::array::slicing 2D -> 2D", "[slicing]" )
              0,  1,  2,  3,  4,
              5,  6,  7,  8,  9,
             10, 11, 12, 13, 14,
-            15, 16, 17, 18, 19
+            15, 16, 17, 18, 19,
         }
     ).reshape({4,5});
 
@@ -265,7 +265,11 @@ TEST_CASE( "numcpp::array::slicing 2D -> 2D", "[slicing]" )
 
         auto b = a( 0_s | -1);
 
-        CHECK( all(b == gold ) );
+        CHECK( all(b == gold) );
+
+        auto c = b(_);
+
+        CHECK( all(c == gold) );
     }
 
     SECTION(" slice along rows ")
@@ -291,9 +295,12 @@ TEST_CASE( "numcpp::array::slicing 2D -> 2D", "[slicing]" )
                  1,  2,  3,
                  6,  7,  8,
                 11, 12, 13,
-                16, 17, 18
+                16, 17, 18,
             }
         ).reshape({4,3});
+
+        INFO( "b = " << b.debug_print() );
+        INFO( "b = " << b.print("%2d") );
 
         CHECK( all(b == gold ) );
     }
@@ -410,98 +417,6 @@ TEST_CASE( "numcpp::array 1D element access" )
 }
 
 
-TEST_CASE( "numcpp::array 2D element access" )
-{
-    missing _;
-
-    auto a = arange<int>(20).reshape({4,5});
-
-    a(1) = 99;
-    a(_,1) = 88;
-
-    auto gold = array<int>(
-        {
-              0, 88,  2,  3,  4,
-             99, 88, 99, 99, 99,
-             10, 88, 12, 13, 14,
-             15, 88, 17, 18, 19
-        }
-    ).reshape({4,5});
-
-    CHECK( all(a == gold) );
-
-    a(2, 2_s | 4) = 77;
-
-    gold = array<int>(
-        {
-              0, 88,  2,  3,  4,
-             99, 88, 99, 99, 99,
-             10, 88, 77, 77, 14,
-             15, 88, 17, 18, 19
-        }
-    ).reshape({4,5});
-
-    CHECK( all(a == gold) );
-
-    a(1 | _, 3) = 22;
-
-    gold = array<int>(
-        {
-              0, 88,  2,  3,  4,
-             99, 88, 99, 22, 99,
-             10, 88, 77, 22, 14,
-             15, 88, 17, 22, 19
-        }
-    ).reshape({4,5});
-
-    CHECK( all(a == gold) );
-
-    a(2, _|_|2) = 44;
-
-    gold = array<int>(
-        {
-              0, 88,  2,  3,  4,
-             99, 88, 99, 22, 99,
-             44, 88, 44, 22, 44,
-             15, 88, 17, 22, 19
-        }
-    ).reshape({4,5});
-
-    INFO( "a = " << a.print("%2d") );
-    CHECK( all(a == gold) );
-
-    auto b = a == 88;
-
-    auto g = array<bool>(
-        {
-             0, 1, 0, 0, 0,
-             0, 1, 0, 0, 0,
-             0, 1, 0, 0, 0,
-             0, 1, 0, 0, 0
-        }
-    ).reshape({4,5});
-
-    INFO( "b = " << b );
-    CHECK( all(b == g) );
-
-    a = arange<int>(16).reshape({4,4});
-
-    a(_|_|2, _|_|-2) = 99;
-
-    gold = array<int>(
-        {
-            0, 99,  2, 99,
-            4,  5,  6,  7,
-            8, 99, 10, 99,
-           12, 13, 14, 15
-        }
-    ).reshape({4,4});
-
-    INFO( "a = " << a.print("%2d") );
-    CHECK( all(a == gold) );
-}
-
-
 TEST_CASE( "numcpp::array truth value throws" )
 {
     auto a = array<bool>({1,0,1,0});
@@ -567,7 +482,7 @@ TEST_CASE( "numcpp::array::operator!" )
                 0, 1, 1, 1, 1,
                 1, 0, 1, 1, 1,
                 1, 1, 0, 1, 0,
-                1, 1, 1, 0, 1
+                1, 1, 1, 0, 1,
             }
         ).reshape({4,5});
 
@@ -605,8 +520,263 @@ TEST_CASE( "numcpp::array::operator!" )
 }
 
 
+TEST_CASE( "numcpp::array 2D element access" )
+{
+    missing _;
+
+    auto a = arange<int>(20).reshape({4,5});
+
+    a(1) = 99;
+    a(_,1) = 88;
+
+    auto gold = array<int>(
+        {
+              0, 88,  2,  3,  4,
+             99, 88, 99, 99, 99,
+             10, 88, 12, 13, 14,
+             15, 88, 17, 18, 19,
+        }
+    ).reshape({4,5});
+
+    CHECK( all(a == gold) );
+
+    a(2, 2_s | 4) = 77;
+
+    gold = array<int>(
+        {
+              0, 88,  2,  3,  4,
+             99, 88, 99, 99, 99,
+             10, 88, 77, 77, 14,
+             15, 88, 17, 18, 19,
+        }
+    ).reshape({4,5});
+
+    CHECK( all(a == gold) );
+
+    auto mask = a(1_s|-1, 1_s|-1) == 99;
+
+    auto gg = array<bool>(
+        {
+            0, 1, 1,
+            0, 0, 0,
+        }
+    ).reshape({2,3});
+
+    CHECK( all(mask == gg) );
+
+    a(1 | _, 3) = 22;
+
+    gold = array<int>(
+        {
+              0, 88,  2,  3,  4,
+             99, 88, 99, 22, 99,
+             10, 88, 77, 22, 14,
+             15, 88, 17, 22, 19,
+        }
+    ).reshape({4,5});
+
+    CHECK( all(a == gold) );
+
+    a(2, _|_|2) = 44;
+
+    gold = array<int>(
+        {
+              0, 88,  2,  3,  4,
+             99, 88, 99, 22, 99,
+             44, 88, 44, 22, 44,
+             15, 88, 17, 22, 19,
+        }
+    ).reshape({4,5});
+
+    INFO( "a = " << a.print("%2d") );
+    CHECK( all(a == gold) );
+
+    auto b = a == 88;
+
+    auto g = array<bool>(
+        {
+             0, 1, 0, 0, 0,
+             0, 1, 0, 0, 0,
+             0, 1, 0, 0, 0,
+             0, 1, 0, 0, 0,
+        }
+    ).reshape({4,5});
+
+    INFO( "b = " << b );
+    CHECK( all(b == g) );
+
+    a = arange<int>(16).reshape({4,4});
+
+    a(_|_|2, _|_|-2) = 99;
+
+    gold = array<int>(
+        {
+            0, 99,  2, 99,
+            4,  5,  6,  7,
+            8, 99, 10, 99,
+           12, 13, 14, 15,
+        }
+    ).reshape({4,4});
+
+    INFO( "a = " << a.print("%2d") );
+    CHECK( all(a == gold) );
+
+    a = 300;
+
+    gold = array<int>(
+        {
+           300, 300, 300, 300,
+           300, 300, 300, 300,
+           300, 300, 300, 300,
+           300, 300, 300, 300,
+        }
+    ).reshape({4,4});
+
+    INFO( "a = " << a.debug_print() );
+    CHECK( all(a == gold) );
+}
 
 
+TEST_CASE( "numcpp::array 3D element access" )
+{
+    missing _;
 
+    auto a = arange<int>(3*5*7).reshape({3,5,7});
+
+    INFO( "a = " << a.print("%3d") );
+
+    CHECK( a(0,1,2) == 9  );
+    CHECK( a(1,2,3) == 52 );
+    CHECK( a(2,3,4) == 95 );
+
+    auto b = a(0,_|3,_|3);
+
+    CHECK_THROWS( b(0,0,0) );
+
+    auto gold = array<int>(
+        {
+             0,  1,  2,
+             7,  8,  9,
+            14, 15, 16,
+        }
+    ).reshape({3,3});
+
+    CHECK( all( b == gold) );
+
+    b = a(_|3, 0, _|3);
+
+    gold = array<int>(
+        {
+             0,  1,  2,
+            35, 36, 37,
+            70, 71, 72,
+        }
+    ).reshape({3,3});
+
+    CHECK( all( b == gold) );
+
+    b = a(_|3, _|3, 0);
+
+    gold = array<int>(
+        {
+             0,  7, 14,
+            35, 42, 49,
+            70, 77, 84,
+        }
+    ).reshape({3,3});
+
+    CHECK( all( b == gold) );
+
+    b = a(1);
+
+    gold = array<int>(
+        {
+            35, 36, 37, 38, 39, 40, 41,
+            42, 43, 44, 45, 46, 47, 48,
+            49, 50, 51, 52, 53, 54, 55,
+            56, 57, 58, 59, 60, 61, 62,
+            63, 64, 65, 66, 67, 68, 69,
+        }
+    ).reshape({5,7});
+
+    CHECK( all( b == gold) );
+
+    b = a(2, 0_s|2);
+
+    gold = array<int>(
+        {
+            70, 71, 72, 73, 74, 75, 76,
+            77, 78, 79, 80, 81, 82, 83,
+        }
+    ).reshape({2,7});
+
+    CHECK( all( b == gold) );
+
+    b = a(2, 0_s|2, 2_s|2+3);
+
+    gold = array<int>(
+        {
+            72, 73, 74,
+            79, 80, 81,
+        }
+    ).reshape({2,3});
+
+    CHECK( all( b == gold) );
+
+    b = a(1, 3, 2_s|2+3);
+
+    gold = array<int>({58, 59, 60});
+
+    CHECK( all( b == gold) );
+
+    b = a(1, 1_s|1+2, 3);
+
+    gold = array<int>({45, 52});
+
+    CHECK( all( b == gold) );
+}
+
+
+TEST_CASE( "numcpp::array 3D element access with strides" )
+{
+    missing _;
+
+    auto a = arange<int>(3*5*7).reshape({3,5,7});
+
+    a = a(_|_|-1,_|_|2,_|_|-3);
+
+    INFO( "a = " << a.print("%3d") );
+
+    auto gold = array<int>(
+        {
+             76,  73,  70,
+             90,  87,  84,
+            104, 101,  98,
+
+             41,  38,  35,
+             55,  52,  49,
+             69,  66,  63,
+
+              6,   3,   0,
+             20,  17,  14,
+             34,  31,  28,
+        }
+    ).reshape({3,3,3});
+
+    CHECK( all(a == gold) );
+
+    auto b = a(_|2, _|_|2, -1);
+
+    gold = array<int>(
+        {
+            70, 98,
+            35, 63,
+        }
+    ).reshape({2,2});
+
+    INFO( "b = " << b );
+
+    CHECK( all(b == gold) );
+}
 
 // :noTabs=true:

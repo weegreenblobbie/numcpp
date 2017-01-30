@@ -207,6 +207,15 @@ TEST_CASE( "numcpp::slice::operators 4", "[using missing]" )
 {
     missing _;
 
+    SECTION(" : ")
+    {
+        slice s = _;
+
+        CHECK( s.start_valid() == false );
+        CHECK( s.stop_valid()  == false );
+        CHECK( s.step_valid()  == false );
+    }
+
     SECTION(" 5: ")
     {
         slice s = 5 | _;

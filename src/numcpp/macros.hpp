@@ -1,7 +1,7 @@
 #ifndef _NUMCPP_MACROS_HPP_
 #define _NUMCPP_MACROS_HPP_
 
-#include <fmt/fmt.hpp>  // https://github.com/fmtlib/fmt
+#include <numcpp/fmt.hpp>  // https://github.com/fmtlib/fmt
 
 
 namespace numcpp

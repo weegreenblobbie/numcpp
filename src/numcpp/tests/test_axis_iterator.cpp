@@ -92,6 +92,17 @@ TEST_CASE( "numcpp::axis_iterator", "[directed tests]" )
 
     missing _;
 
+    INFO(" : ");
+    {
+        s = _;
+        a = axis_iterator(10, s);
+        gold = {0,1,2,3,4,5,6,7,8,9};
+
+        CHECK( a.indices() == gold );
+
+        CHECK( a.size() == gold.size() );
+    }
+
     INFO(" :-4 ");
     {
         s = _ | -4;
