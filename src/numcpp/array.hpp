@@ -442,6 +442,26 @@ operator==(const array<R> & rhs) const
 
         return out;
     }
+    else
+    if(ndim() == 3)
+    {
+        out.reshape(_shape);
+
+        index_t i = 0;
+
+        for(index_t m = 0; m < static_cast<index_t>(_shape[0]); ++m)
+        {
+            for(index_t n = 0; n < static_cast<index_t>(_shape[1]); ++n)
+            {
+                for(index_t p = 0; p < static_cast<index_t>(_shape[2]); ++p)
+                {
+                    (*out._array)[i++] = bool{(*this)(m,n,p) == rhs(m,n,p)};
+                }
+            }
+        }
+
+        return out;
+    }
 
     M_THROW_RT_ERROR("unhandled case"); // LCOV_EXCL_LINE
 
@@ -748,10 +768,11 @@ operator()(const slice & s0, const slice & s1, const slice & s2)
 
         else
         {
+            index_t I = _strides[0];
             index_t J = _strides[1];
             index_t K = _strides[2];
 
-            out._offset = _offset + start0 * J * K + start1 * K + start2;
+            out._offset = _offset + start0 * I + start1 * J + start2 * K;
             out._strides =
             {
                 _strides[0] * step0,
@@ -801,10 +822,11 @@ operator()(const slice & s0, const slice & s1, const slice & s2)
 
             auto b = out._strides[1];
             auto c = out._strides[2];
-            auto shape1 = static_cast<index_t>(_shape[1]);
 
-            if(b != shape1 and c != 1) out._strides = {b,c};
-            else                       out._strides = {};
+            index_t cnt2 = static_cast<index_t>(count2);
+
+            if(b != cnt2 or c != 1) out._strides = {b,c};
+            else                    out._strides = {};
         }
 
         // 2d
@@ -829,6 +851,13 @@ operator()(const slice & s0, const slice & s1, const slice & s2)
             auto b = out._strides[1];
 
             out._strides = {a, b};
+        }
+
+        // 3d
+        else
+        if(key == 0) // 000
+        {
+            out._shape = {count0, count1, count2};
         }
 
         if(out._shape.empty()) M_THROW_RT_ERROR(fmt::sprintf("unandled case (%03d)", key));

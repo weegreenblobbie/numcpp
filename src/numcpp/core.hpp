@@ -75,6 +75,7 @@ all(const array<bool> & a)
 
         return true;
     }
+    else
     if(a.ndim() == 2)
     {
         for(uint64 m = 0; m < a.shape()[0]; ++m)
@@ -84,6 +85,24 @@ all(const array<bool> & a)
                 bool b = a(m,n);
 
                 if(!b) return false;
+            }
+        }
+
+        return true;
+    }
+    else
+    if(a.ndim() == 3)
+    {
+        for(uint64 m = 0; m < a.shape()[0]; ++m)
+        {
+            for(uint64 n = 0; n < a.shape()[1]; ++n)
+            {
+                for(uint64 p = 0; p < a.shape()[2]; ++p)
+                {
+                    bool b = a(m,n,p);
+
+                    if(!b) return false;
+                }
             }
         }
 

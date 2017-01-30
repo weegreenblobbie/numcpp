@@ -196,66 +196,66 @@ def debug_print(ref, array):
 
 def main():
 
-    a = np.arange(17).astype(np.int32)
+#~    a = np.arange(17).astype(np.int32)
 
-    print("-" * 60)
-    print("a = arange(17)")
-    debug_print(a, a)
+#~    print("-" * 60)
+#~    print("a = arange(17)")
+#~    debug_print(a, a)
 
-    print("a[5:]")
-    debug_print(a, a[5:])
+#~    print("a[5:]")
+#~    debug_print(a, a[5:])
 
-    print("a[2:-2]")
-    debug_print(a, a[2:-2])
+#~    print("a[2:-2]")
+#~    debug_print(a, a[2:-2])
 
-    print("a[::-2]")
-    debug_print(a, a[::-2])
+#~    print("a[::-2]")
+#~    debug_print(a, a[::-2])
 
-    print("a[3:13:3]")
-    debug_print(a, a[3:13:3])
+#~    print("a[3:13:3]")
+#~    debug_print(a, a[3:13:3])
 
 
-    a = np.arange(100).reshape(10,10)
+#~    a = np.arange(100).reshape(10,10)
 
-    print("-" * 60)
-    print("a = arange(100).reshape(10,10)")
-    debug_print(a, a)
+#~    print("-" * 60)
+#~    print("a = arange(100).reshape(10,10)")
+#~    debug_print(a, a)
 
-    print("a[5]")
-    debug_print(a, a[5])
+#~    print("a[5]")
+#~    debug_print(a, a[5])
 
-    print("a[:,5]")
-    debug_print(a, a[:,5])
+#~    print("a[:,5]")
+#~    debug_print(a, a[:,5])
 
-    print("a[0:-1]")
-    debug_print(a, a[0:-1])
+#~    print("a[0:-1]")
+#~    debug_print(a, a[0:-1])
 
-    print("a[1:-1]")
-    debug_print(a, a[1:-1])
+#~    print("a[1:-1]")
+#~    debug_print(a, a[1:-1])
 
-    print("a[:, 1:-1]")
-    debug_print(a, a[:, 1:-1])
+#~    print("a[:, 1:-1]")
+#~    debug_print(a, a[:, 1:-1])
 
-    print("a[1:-1, 1:-1]")
-    debug_print(a, a[1:-1, 1:-1])
+#~    print("a[1:-1, 1:-1]")
+#~    debug_print(a, a[1:-1, 1:-1])
 
-    print("a[::2, :]")
-    debug_print(a, a[::2, :])
+#~    print("a[::2, :]")
+#~    debug_print(a, a[::2, :])
 
-    print("a[:, ::2]")
-    debug_print(a, a[:, ::2])
+#~    print("a[:, ::2]")
+#~    debug_print(a, a[:, ::2])
 
-    print("a[:, ::-2]")
-    debug_print(a, a[:, ::-2])
+#~    print("a[:, ::-2]")
+#~    debug_print(a, a[:, ::-2])
 
-    print("a[::-2, :]")
-    debug_print(a, a[::-2, :])
+#~    print("a[::-2, :]")
+#~    debug_print(a, a[::-2, :])
 
-    print("a[::-2, ::-2]")
-    debug_print(a, a[::-2, ::-2])
+#~    print("a[::-2, ::-2]")
+#~    debug_print(a, a[::-2, ::-2])
 
-    print("a[-2:1:-2, -2:1:-2]")
-    debug_print(a, a[-2:1:-2, -2:1:-2])
+#~    print("a[-2:1:-2, -2:1:-2]")
+#~    debug_print(a, a[-2:1:-2, -2:1:-2])
 
 
     a = np.arange(3*5*7).reshape(3, 5, 7)
@@ -264,50 +264,54 @@ def main():
     print("a = np.arange(3*5*7).reshape(3, 5, 7)")
     debug_print(a, a)
 
-    print("a[0:-1]")
-    debug_print(a, a[0:-1])
+    print("a[::-1,::2,::-3]")
+    debug_print(a, a[::-1,::2,::-3])
 
-    print("a[1:-1]")
-    debug_print(a, a[1:-1])
 
-    print("a[:, 1:-1]")
-    debug_print(a, a[:, 1:-1])
+#~    print("a[0:-1]")
+#~    debug_print(a, a[0:-1])
 
-    print("a[1:-1, 1:-1]")
-    debug_print(a, a[1:-1, 1:-1])
+#~    print("a[1:-1]")
+#~    debug_print(a, a[1:-1])
 
-    print("a[::2, :]")
-    debug_print(a, a[::2, :])
+#~    print("a[:, 1:-1]")
+#~    debug_print(a, a[:, 1:-1])
 
-    print("a[:, ::2]")
-    debug_print(a, a[:, ::2])
+#~    print("a[1:-1, 1:-1]")
+#~    debug_print(a, a[1:-1, 1:-1])
 
-    print("a[:, ::-2]")
-    debug_print(a, a[:, ::-2])
+#~    print("a[::2, :]")
+#~    debug_print(a, a[::2, :])
 
-    print("a[::-2, :]")
-    debug_print(a, a[::-2, :])
+#~    print("a[:, ::2]")
+#~    debug_print(a, a[:, ::2])
 
-    print("a[::-2, ::-2]")
-    debug_print(a, a[::-2, ::-2])
+#~    print("a[:, ::-2]")
+#~    debug_print(a, a[:, ::-2])
 
-    print("a[:,-2:1:-2, -1:1:-2]")
-    debug_print(a, a[:, -2:1:-2, -2:1:-2])
+#~    print("a[::-2, :]")
+#~    debug_print(a, a[::-2, :])
 
-    print("a[1]")
-    debug_print(a, a[1])
+#~    print("a[::-2, ::-2]")
+#~    debug_print(a, a[::-2, ::-2])
 
-    print("a[:,1]")
-    debug_print(a, a[:,1])
+#~    print("a[:,-2:1:-2, -1:1:-2]")
+#~    debug_print(a, a[:, -2:1:-2, -2:1:-2])
 
-    print("a[:,:,1]")
-    debug_print(a, a[:,:,1])
+#~    print("a[1]")
+#~    debug_print(a, a[1])
 
-    print("a[1,:,1]")
-    debug_print(a, a[1,:,1])
+#~    print("a[:,1]")
+#~    debug_print(a, a[:,1])
 
-    print("a[1,1]")
-    debug_print(a, a[1,1])
+#~    print("a[:,:,1]")
+#~    debug_print(a, a[:,:,1])
+
+#~    print("a[1,:,1]")
+#~    debug_print(a, a[1,:,1])
+
+#~    print("a[1,1]")
+#~    debug_print(a, a[1,1])
 
 
 if __name__ == "__main__": main()
