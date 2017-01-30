@@ -13,6 +13,8 @@ def strides_(array):
 
 def debug_print(ref, array):
 
+    orig = np.array(array)
+
     offset = addr(array) - addr(ref)
     offset /= array.itemsize
 
@@ -21,8 +23,9 @@ def debug_print(ref, array):
     if strides is not None:
         strides = [x/array.itemsize for x in strides]
 
-    print("offset = %s" % repr(offset))
+    print("offset  = %s" % repr(offset))
     print("strides = %s" % repr(strides))
+    print("shape   = %s" % repr(array.shape))
 
     # compute elment display width
     width = len(str(array.max()))
@@ -31,7 +34,7 @@ def debug_print(ref, array):
     fmt1 = " " + "x" * width + " "
     fmt2 = "[%{}s]".format(width)
 
-    if array.ndim == 1:
+    if ref.ndim == 1:
 
         step = 1
 
@@ -41,8 +44,8 @@ def debug_print(ref, array):
         if step < 0:
             array = array[::-1]
 
-        a = iter(ref)
-        b = iter(array)
+        a = iter(ref.reshape((ref.size)))
+        b = iter(array.reshape((array.size)))
 
         bb = b.next()
 
@@ -71,7 +74,7 @@ def debug_print(ref, array):
 
         print("")
 
-    elif array.ndim == 2:
+    elif ref.ndim == 2:
 
         step0 = 1
         step1 = 1
@@ -122,17 +125,7 @@ def debug_print(ref, array):
 
             print("")
 
-    elif array.ndim == 3:
-
-        print("array[0,0,0] = %s" % array[0,0,0])
-
-        i,j,k = 1,1,1
-
-        if array.shape[0] == 1: i = 0
-        if array.shape[1] == 1: j = 0
-        if array.shape[2] == 1: k = 0
-
-        print("array[%d,%d,%d] = %s" % (i,j,k,array[i,j,k]))
+    elif ref.ndim == 3:
 
         step0 = 1
         step1 = 1
@@ -193,8 +186,11 @@ def debug_print(ref, array):
 
             print("")
 
-        print("")
+    print("")
 
+    print(orig)
+
+    print("")
     print("")
 
 
@@ -224,6 +220,12 @@ def main():
     print("-" * 60)
     print("a = arange(100).reshape(10,10)")
     debug_print(a, a)
+
+    print("a[5]")
+    debug_print(a, a[5])
+
+    print("a[:,5]")
+    debug_print(a, a[:,5])
 
     print("a[0:-1]")
     debug_print(a, a[0:-1])
@@ -256,10 +258,10 @@ def main():
     debug_print(a, a[-2:1:-2, -2:1:-2])
 
 
-    a = np.arange(3*4*4).reshape(3, 4, 4)
+    a = np.arange(3*5*7).reshape(3, 5, 7)
 
     print("-" * 60)
-    print("a = np.arange(60).reshape(3, 5,4)")
+    print("a = np.arange(3*5*7).reshape(3, 5, 7)")
     debug_print(a, a)
 
     print("a[0:-1]")
@@ -291,6 +293,21 @@ def main():
 
     print("a[:,-2:1:-2, -1:1:-2]")
     debug_print(a, a[:, -2:1:-2, -2:1:-2])
+
+    print("a[1]")
+    debug_print(a, a[1])
+
+    print("a[:,1]")
+    debug_print(a, a[:,1])
+
+    print("a[:,:,1]")
+    debug_print(a, a[:,:,1])
+
+    print("a[1,:,1]")
+    debug_print(a, a[1,:,1])
+
+    print("a[1,1]")
+    debug_print(a, a[1,1])
 
 
 if __name__ == "__main__": main()

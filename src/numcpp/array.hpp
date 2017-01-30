@@ -69,18 +69,16 @@ public:
     //-------------------------------------------------------------------------
     // operators
 
-    operator value_type () const;      // implicitly convert to R
-    operator reference ();             // implicitly convert to R &
+    operator value_type () const;      // implicitly conversion
+    operator reference ();
 
 //~    array<R> operator~() const;
     array<bool> operator!() const;
 
     array<bool> operator==(const R & rhs) const;
-
     array<bool> operator==(const array<R> & rhs) const;
 
     array<bool> operator!=(const R & rhs) const           { return !(*this == rhs); }
-
     array<bool> operator!=(const array<R> & rhs) const    { return !(*this == rhs); }
 
     array<R> & operator=(const R & rhs);
@@ -98,29 +96,13 @@ public:
 //~
 
     array<R> operator()(const slice &);
-    array<R> operator()(const slice & s0, const slice & s1);
+    array<R> operator()(const slice &, const slice &);
+    array<R> operator()(const slice &, const slice &, const slice &);
 
     const_array<R> operator()(const slice &) const;
     const_array<R> operator()(const slice &, const slice &) const;
+    const_array<R> operator()(const slice &, const slice &, const slice &) const;
 
-//~    const array<R> operator()(index_t i) const;
-
-//~    R &       operator()(index_t i);
-//~    const R & operator()(index_t i) const;
-
-//~    array<R>  operator()(const slice &);
-
-
-//~    array<R> operator()(index_t i, index_t j);
-
-//~    R &       operator()(index_t i, index_t j);
-//~    R &       operator()(index_t i, index_t j, index_t k);
-//~    R &       operator()(index_t i, index_t j, index_t k, index_t l);
-//~
-//~    const R & operator()(index_t i, index_t j) const;
-//~    const R & operator()(index_t i, index_t j, index_t k) const;
-//~    const R & operator()(index_t i, index_t j, index_t k, index_t l) const;
-//~
 //~
 //~    array<R> & operator=(const array<R> & rhs);
 //~
@@ -599,6 +581,11 @@ operator()(const slice & s0)
     {
         return (*this)(s0, missing());
     }
+    else
+    if(n_dim == 3)
+    {
+        return (*this)(s0,missing(),missing());
+    }
 
     M_THROW_RT_ERROR("unhandled case (" << n_dim << ")"); // LCOV_EXCL_LINE
 }
@@ -623,22 +610,22 @@ operator()(const slice & s0, const slice & s1)
     if(n_dim == 2)
     {
         axis_iterator a0(_shape[0], s0);
-        auto s0_ = a0.final();
-
         axis_iterator a1(_shape[1], s1);
-        auto s1_ = a1.final();
-
-        index_t start0 = s0_.start();
-        index_t step0  = s0_.step();
-
-        index_t start1 = s1_.start();
-        index_t step1  = s1_.step();
 
         uint64 count0 = a0.size();
         uint64 count1 = a1.size();
 
         if(count0 == 0) M_THROW_RT_ERROR("invalid slice along axis 0");
         if(count1 == 0) M_THROW_RT_ERROR("invalid slice along axis 1");
+
+        auto s0_ = a0.final();
+        auto s1_ = a1.final();
+
+        index_t start0 = s0_.start();
+        index_t start1 = s1_.start();
+
+        index_t step0  = s0_.step();
+        index_t step1  = s1_.step();
 
         DOUT << "array<R> out;";
         array<R> out;
@@ -657,6 +644,9 @@ operator()(const slice & s0, const slice & s1)
             out._offset = _offset + start0 * _strides[0] + start1 * _strides[1];
             out._strides = {_strides[0] * step0, _strides[1] * step1};
         }
+
+        //---------------------------------------------------------------------
+        // squeezing, not it's own funciton yet!
 
         // row vector
         if(count0 == 1)
@@ -678,6 +668,170 @@ operator()(const slice & s0, const slice & s1)
         {
             out._shape = {count0, count1};
         }
+
+        return out;
+    }
+    else
+    if(n_dim == 3)
+    {
+        return (*this)(s0,s1,missing());
+    }
+
+    M_THROW_RT_ERROR("unhandled case"); // LCOV_EXCL_LINE
+
+    return array<R>();
+}
+
+
+
+template <class R>
+array<R>
+array<R>::
+operator()(const slice & s0, const slice & s1, const slice & s2)
+{
+    DOUT << __PRETTY_FUNCTION__ << std::endl;
+
+    if(_size == 0) throw std::runtime_error("can't slice an empty array");
+
+    auto n_dim = ndim();
+
+    if(n_dim <= 2)
+    {
+        M_THROW_RT_ERROR("too many indicies for array");
+    }
+    else
+    if(n_dim == 3)
+    {
+        axis_iterator a0(_shape[0], s0);
+        axis_iterator a1(_shape[1], s1);
+        axis_iterator a2(_shape[2], s2);
+
+        uint64 count0 = a0.size();
+        uint64 count1 = a1.size();
+        uint64 count2 = a2.size();
+
+        if(count0 == 0) M_THROW_RT_ERROR("invalid slice along axis 0");
+        if(count1 == 0) M_THROW_RT_ERROR("invalid slice along axis 1");
+        if(count2 == 0) M_THROW_RT_ERROR("invalid slice along axis 2");
+
+        auto s0_ = a0.final();
+        auto s1_ = a1.final();
+        auto s2_ = a2.final();
+
+        index_t start0 = s0_.start();
+        index_t start1 = s1_.start();
+        index_t start2 = s2_.start();
+
+        index_t step0  = s0_.step();
+        index_t step1  = s1_.step();
+        index_t step2  = s2_.step();
+
+        DOUT << "array<R> out;";
+        array<R> out;
+
+        out._size  = count0 * count1 * count2;
+        out._array = _array;
+
+        if(_strides.empty())
+        {
+            index_t J = _shape[1];
+            index_t K = _shape[2];
+
+            out._offset = _offset + start0 * J * K + start1 * K + start2;
+            out._strides =
+            {
+                step0 * J * K,
+                step1 * K,
+                step2
+            };
+        }
+
+        else
+        {
+            index_t J = _strides[1];
+            index_t K = _strides[2];
+
+            out._offset = _offset + start0 * J * K + start1 * K + start2;
+            out._strides =
+            {
+                _strides[0] * step0,
+                _strides[1] * step1,
+                _strides[2] * step2
+            };
+        }
+
+        //---------------------------------------------------------------------
+        // squeezing, not it's own funciton yet!
+
+        int32 key = (count0 == 1) * 100 + (count1 == 1) * 10 + (count2 == 1);
+
+        // single value
+        if(key == 111)
+        {
+            out._shape = {1};
+            out._strides = {};
+        }
+
+        // row vector
+        else
+        if(key == 110)
+        {
+            out._shape = {count2};
+
+            auto c = out._strides[2];
+
+            if(out._strides[2] != 1) out._strides = {c};
+            else                     out._strides = {};
+        }
+
+        // col vector
+
+        else
+        if(key == 101)
+        {
+            out._shape = {count1};
+            out._strides = {out._strides[1]};
+        }
+
+        // 2d
+        else
+        if(key == 100)
+        {
+            out._shape = {count1, count2};
+
+            auto b = out._strides[1];
+            auto c = out._strides[2];
+            auto shape1 = static_cast<index_t>(_shape[1]);
+
+            if(b != shape1 and c != 1) out._strides = {b,c};
+            else                       out._strides = {};
+        }
+
+        // 2d
+        else
+        if(key == 10) // 010
+        {
+            out._shape = {count0, count2};
+
+            auto a = out._strides[0];
+            auto c = out._strides[2];
+
+            out._strides = {a, c};
+        }
+
+        // 2d
+        else
+        if(key == 1) // 001
+        {
+            out._shape = {count0, count1};
+
+            auto a = out._strides[0];
+            auto b = out._strides[1];
+
+            out._strides = {a, b};
+        }
+
+        if(out._shape.empty()) M_THROW_RT_ERROR(fmt::sprintf("unandled case (%03d)", key));
 
         return out;
     }
@@ -711,6 +865,19 @@ operator()(const slice & s0, const slice & s1) const
     array<R> & r = const_cast<array<R> &>(*this);
 
     return const_array<R>(r(s0, s1));
+}
+
+
+template <class R>
+const_array<R>
+array<R>::
+operator()(const slice & s0, const slice & s1, const slice & s2) const
+{
+    DOUT << __PRETTY_FUNCTION__ << std::endl;
+
+    array<R> & r = const_cast<array<R> &>(*this);
+
+    return const_array<R>(r(s0, s1, s2));
 }
 
 
@@ -788,9 +955,9 @@ print(const std::string & fmt_in) const
 {
     DOUT << __PRETTY_FUNCTION__ << std::endl;
 
-    if(size() > 100) throw std::runtime_error("array to big to print");
+//~    if(size() > 100) throw std::runtime_error("array to big to print");
 
-    if(ndim() > 2) throw std::runtime_error("fixme");
+    if(ndim() > 3) throw std::runtime_error("ndim() > 3 not implemented");
 
     std::string fmt_(fmt_in);
 
@@ -802,51 +969,73 @@ print(const std::string & fmt_in) const
 
     std::stringstream out;
 
-    switch(ndim())
+    if(ndim() <= 1)
     {
-        case 0:  // fall through
-        case 1:
+        out << "array([ ";
+
+        for(uint64 i = 0; i < _size; ++i)
         {
-            out << "array([ ";
-
-            for(uint64 i = 0; i < _size; ++i)
-            {
-                out << detail::_format<R>(fmt_, a(i));
-                if(i + 1 < a._size) out << ", ";
-            }
-
-            out << " ], " << detail::type_name<R>() << ")";
-
-            break;
+            out << detail::_format<R>(fmt_, a(i));
+            if(i + 1 < a._size) out << ", ";
         }
 
-        case 2:
-        {
-            out << "array([\n";
+        out << " ], " << detail::type_name<R>() << ")";
+    }
+    else
+    if(ndim() == 2)
+    {
+        out << "array([\n";
 
-            for(auto i = 0u; i < _shape[0]; ++i)
+        for(auto i = 0u; i < _shape[0]; ++i)
+        {
+            out << "  [ ";
+
+            for(auto j = 0u; j < _shape[1]; ++j)
+            {
+                const R & r = a(i,j);
+                out << detail::_format(fmt_, r);
+                if(j + 1 < _shape[1]) out << ", ";
+            }
+
+            out << " ],\n";
+        }
+
+        out << "], " << detail::type_name<R>() << ")";
+    }
+    else
+    if(ndim() == 3)
+    {
+        out << "array([\n";
+
+        for(auto i = 0u; i < _shape[0]; ++i)
+        {
+            out << "  [\n";
+            for(auto j = 0u; j < _shape[1]; ++j)
             {
                 out << "    [ ";
 
-                for(auto j = 0u; j < _shape[1]; ++j)
+                for(auto k = 0u; k < _shape[2]; ++k)
                 {
-                    const R & r = a(i,j);
+                    const R & r = a(i,j,k);
                     out << detail::_format(fmt_, r);
-                    if(j + 1 < _shape[1]) out << ", ";
+                    if(k + 1 < _shape[2]) out << ", ";
                 }
 
                 out << " ],\n";
             }
 
-            out << "], " << detail::type_name<R>() << ")";
+            out << "  ]";
 
-            break;
+            if(i + 1 < _shape[0]) out << ",";
+
+            out << "\n";
         }
 
-        default:
-        {
-            M_THROW_RT_ERROR("unhandled case"); // LCOV_EXCL_LINE
-        }
+        out << "], " << detail::type_name<R>() << ")";
+    }
+    else
+    {
+        M_THROW_RT_ERROR("unhandled case"); // LCOV_EXCL_LINE
     }
 
     return out.str();
