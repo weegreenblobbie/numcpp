@@ -55,20 +55,7 @@ int main()
 
     cout << b.print("%5d") << "\n";
 
-    auto d = arange<int>(3*5*7).reshape({3,5,7});
-
-    cout << "d = " << d.print("%3d") << "\n";
-
-    cout << "d(1) = " << d(1).print("%3d") << "\n";
-
-    cout << "d(_,1) = " << d(_,1).print("%3d") << "\n";
-
-    cout << "d(_,_,1) = " << d(_,_,1).print("%3d") << "\n";
-
-    cout << "d(1,_,1) = " << d(1,_,1).print("%3d") << "\n";
-
-    cout << "d(1,1) = " << d(1,1).print("%3d") << "\n";
-
+    cout << ones<int16>({2,3,4}) << "\n";
 
 //~    const int size = 1000;
 //~    const int iterations = 1000;
