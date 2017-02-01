@@ -52,8 +52,8 @@ public:
 
 //~    array(array && other);
 //~
-//~    template <class U>
-//~    array<U>                  astype() const;
+    template <class U>
+    array<U>                  astype() const;
 //~
 //~    array<R>                  flatten() const;
     std::size_t               ndim() const                   { return _shape.size(); }
@@ -73,7 +73,9 @@ public:
     operator value_type () const;      // implicitly conversion
     operator reference ();
 
-//~    array<R> operator~() const;
+    array<R> operator+() const;
+    array<R> operator-() const;
+    array<R> operator~() const;
     array<bool> operator!() const;
 
     array<bool> operator==(const R & rhs) const;
@@ -275,6 +277,65 @@ array<R>::operator array<R>::reference ()
 }
 
 
+template <class R> template<class U>
+array<U>
+array<R>::
+astype() const
+{
+    DOUT << __PRETTY_FUNCTION__ << std::endl;
+
+    array<U> out;
+
+    out._size = _size;
+    out._array = std::make_shared<std::vector<U>>();
+    out._array->reserve(_size);
+    out._shape = _shape;
+
+    if(ndim() == 1)
+    {
+        for(std::size_t i = 0; i < _size; ++i)
+        {
+            out._array->emplace_back((*this)(i));
+        }
+
+        return out;
+    }
+    else
+    if(ndim() == 2)
+    {
+        for(std::size_t m = 0; m < _shape[0]; ++m)
+        {
+            for(std::size_t n = 0; n < _shape[1]; ++n)
+            {
+                out._array->emplace_back((*this)(m,n));
+            }
+        }
+
+        return out;
+    }
+    else
+    if(ndim() == 3)
+    {
+        for(std::size_t m = 0; m < _shape[0]; ++m)
+        {
+            for(std::size_t n = 0; n < _shape[1]; ++n)
+            {
+                for(std::size_t p = 0; p < _shape[2]; ++p)
+                {
+                    out._array->emplace_back((*this)(m,n,p));
+                }
+            }
+        }
+
+        return out;
+    }
+
+    M_THROW_RT_ERROR("unhandled case"); // LCOV_EXCL_LINE
+
+    return out;
+}
+
+
 template <class R>
 array<R> &
 array<R>::
@@ -295,20 +356,25 @@ reshape(const shape_t & shape)
 
 
 template <class R>
-array<bool>
+array<R>
 array<R>::
-operator!() const
+operator~() const
 {
     DOUT << __PRETTY_FUNCTION__ << std::endl;
 
-    array<bool> out(std::vector<bool>(_size, false));
+    array<R> out;
+
+    out._size = _size;
+    out._array = std::make_shared<std::vector<R>>();
+    out._array->reserve(_size);
+    out._shape = _shape;
 
     if(ndim() == 1)
     {
-        #define loop( idx )                                       \
-            for(uint64 i = 0; i < _size; ++i)                     \
-            {                                                     \
-                (*out._array)[i] = !(*_array)[_offset + idx ];    \
+        #define loop( idx )                                              \
+            for(std::size_t i = 0; i < _size; ++i)                       \
+            {                                                            \
+                out._array->emplace_back(~(*_array)[_offset + idx ]);    \
             }
 
         if(_strides.empty()) loop( i )
@@ -323,16 +389,73 @@ operator!() const
     {
         out.reshape(_shape);
 
-        #define loop( idx )                                            \
-        {                                                              \
-            index_t i = 0;                                             \
-            for(uint64 m = 0; m < _shape[0]; ++m)                      \
-            {                                                          \
-                for(uint64 n = 0; n < _shape[1]; ++n)                  \
-                {                                                      \
-                    (*out._array)[i++] = !(*_array)[_offset + idx];    \
-                }                                                      \
-            }                                                          \
+        #define loop( idx )                                                 \
+        {                                                                   \
+            for(std::size_t m = 0; m < _shape[0]; ++m)                      \
+            {                                                               \
+                for(std::size_t n = 0; n < _shape[1]; ++n)                  \
+                {                                                           \
+                    out._array->emplace_back(~(*_array)[_offset + idx]);    \
+                }                                                           \
+            }                                                               \
+        }
+
+        if(_strides.empty()) loop( m * _shape[1] + n )
+        else                 loop( m * _strides[0] + n * _strides[1] )
+
+        #undef loop
+
+        return out;
+    }
+
+    M_THROW_RT_ERROR("unhandled case"); // LCOV_EXCL_LINE
+
+    return out; // LCOV_EXCL_LINE
+}
+
+
+template <class R>
+array<bool>
+array<R>::
+operator!() const
+{
+    DOUT << __PRETTY_FUNCTION__ << std::endl;
+
+    array<bool> out;
+
+    out._size = _size;
+    out._array = std::make_shared<std::vector<bool>>();
+    out._array->reserve(_size);
+    out._shape = _shape;
+
+    if(ndim() == 1)
+    {
+        #define loop( idx )                                              \
+            for(std::size_t i = 0; i < _size; ++i)                       \
+            {                                                            \
+                out._array->emplace_back(!(*_array)[_offset + idx ]);    \
+            }
+        if(_strides.empty()) loop( i )
+        else                 loop( i * _strides[0] )
+
+        #undef loop
+
+        return out;
+    }
+    else
+    if(ndim() == 2)
+    {
+        out.reshape(_shape);
+
+        #define loop( idx )                                                 \
+        {                                                                   \
+            for(std::size_t m = 0; m < _shape[0]; ++m)                      \
+            {                                                               \
+                for(std::size_t n = 0; n < _shape[1]; ++n)                  \
+                {                                                           \
+                    out._array->emplace_back(!(*_array)[_offset + idx]);    \
+                }                                                           \
+            }                                                               \
         }
 
         if(_strides.empty()) loop( m * _shape[1] + n )
@@ -413,15 +536,18 @@ operator==(const array<R> & rhs) const
     if(_size != rhs._size) return array<bool>({false});
     if(_shape != rhs._shape) return array<bool>({false});
 
-    array<bool> out(std::vector<bool>(_size, false));
+    array<bool> out;
+
+    out._size = _size;
+    out._array = std::make_shared<std::vector<bool>>();
+    out._array->reserve(_size);
+    out._shape = _shape;
 
     if(ndim() == 1)
     {
-        const index_t size_ = static_cast<index_t>(_size);
-
-        for(index_t i = 0; i < size_; ++i)
+        for(std::size_t i = 0; i < _size; ++i)
         {
-            (*out._array)[i] = bool{(*this)(i) == rhs(i)};
+            out._array->emplace_back((*this)(i) == rhs(i));
         }
 
         return out;
@@ -429,15 +555,11 @@ operator==(const array<R> & rhs) const
     else
     if(ndim() == 2)
     {
-        out.reshape(_shape);
-
-        index_t i = 0;
-
-        for(index_t m = 0; m < static_cast<index_t>(_shape[0]); ++m)
+        for(std::size_t m = 0; m < _shape[0]; ++m)
         {
-            for(index_t n = 0; n < static_cast<index_t>(_shape[1]); ++n)
+            for(std::size_t n = 0; n < _shape[1]; ++n)
             {
-                (*out._array)[i++] = bool{(*this)(m,n) == rhs(m,n)};
+                out._array->emplace_back((*this)(m,n) == rhs(m,n));
             }
         }
 
@@ -446,17 +568,13 @@ operator==(const array<R> & rhs) const
     else
     if(ndim() == 3)
     {
-        out.reshape(_shape);
-
-        index_t i = 0;
-
-        for(index_t m = 0; m < static_cast<index_t>(_shape[0]); ++m)
+        for(std::size_t m = 0; m < _shape[0]; ++m)
         {
-            for(index_t n = 0; n < static_cast<index_t>(_shape[1]); ++n)
+            for(std::size_t n = 0; n < _shape[1]; ++n)
             {
-                for(index_t p = 0; p < static_cast<index_t>(_shape[2]); ++p)
+                for(std::size_t p = 0; p < _shape[2]; ++p)
                 {
-                    (*out._array)[i++] = bool{(*this)(m,n,p) == rhs(m,n,p)};
+                    out._array->emplace_back((*this)(m,n,p) == rhs(m,n,p));
                 }
             }
         }
