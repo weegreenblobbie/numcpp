@@ -6,6 +6,7 @@
 #include <numcpp/fmt.hpp>
 #include <numcpp/macros.hpp>
 #include <numcpp/slice.hpp>
+#include <numcpp/shape.hpp>
 #include <numcpp/types.hpp>
 
 
@@ -43,7 +44,7 @@ public:
     array(const std::initializer_list<R> & il);
     array(const std::vector<R> & v);
 
-    array(const std::vector<uint64> & shape, const R & value = R()); // std::vector like
+    array(const shape_t & shape, const R & value = R()); // std::vector like
 
     array(const array<R> & other);
 
@@ -55,13 +56,13 @@ public:
 //~    array<U>                  astype() const;
 //~
 //~    array<R>                  flatten() const;
-    const uint32              ndim() const                   { return _shape.size(); }
+    std::size_t               ndim() const                   { return _shape.size(); }
     std::size_t               size() const                   { return _size; }
-    const std::vector<uint64> shape() const                  { return _shape; }
+    const shape_t &           shape() const                  { return _shape; }
 //~    array<R>                  transpose();
 //~    array<R>                  T();
 
-    array<R> &                reshape(const std::vector<uint64> & new_shape);
+    array<R> &                reshape(const shape_t & new_shape);
 
     std::string               print(const std::string & fmt_ = "") const;
     std::string               debug_print() const;
@@ -136,7 +137,7 @@ protected:
 
     std::shared_ptr<std::vector<R>> _array;
 
-    std::vector<uint64>             _shape;
+    shape_t                         _shape;
     std::vector<index_t>            _strides;
     index_t                         _offset;
 
@@ -152,10 +153,10 @@ protected:
 
 namespace detail
 {
-    template <class R>
-    R _compute_size(const std::vector<R> & shape)
+    inline
+    std::size_t _compute_size(const shape_t & shape)
     {
-        R s = ! shape.empty();
+        std::size_t s = ! shape.empty();
 
         for(auto x : shape)
         {
@@ -174,7 +175,7 @@ array()
     :
     _size(0),
     _array(nullptr),
-    _shape(),
+    _shape({}),
     _strides(),
     _offset(0)
 {
@@ -212,7 +213,7 @@ array(const std::vector<R> & v)
 
 template <class R>
 array<R>::
-array(const std::vector<uint64> & shape, const R & value)
+array(const shape_t & shape, const R & value)
     :
     _size(detail::_compute_size(shape)),
     _array(std::make_shared<std::vector<R>>(std::vector<R>(_size, value))),
@@ -277,7 +278,7 @@ array<R>::operator array<R>::reference ()
 template <class R>
 array<R> &
 array<R>::
-reshape(const std::vector<uint64> & shape)
+reshape(const shape_t & shape)
 {
     DOUT << __PRETTY_FUNCTION__ << std::endl;
 
@@ -1087,12 +1088,7 @@ debug_print() const
         << "    _data:    " << fmt::format(
             "{:16d}",
             reinterpret_cast<uint64>(_array.get())) << "\n"
-        << "    _shape:   (";
-
-    for(const auto & x : _shape) ss << x << ", ";
-
-    ss
-        << ")\n"
+        << "    _shape:   " << _shape << "\n"
         << "    _strides: (";
 
     for(const auto & x : _strides) ss << x << ", ";
@@ -1108,6 +1104,6 @@ debug_print() const
 } // namespace
 
 
-#endif
+#endif // _NUMCPP_ARRAY_HPP_
 
 // :mode=c++:noTabs=true:

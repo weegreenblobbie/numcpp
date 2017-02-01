@@ -11,7 +11,7 @@ TEST_CASE("numcpp::array basics")
 {
     auto a = array<int32>({1,2,3,4});
 
-    std::vector<uint64> shape = {4};
+    shape_t shape = {4};
 
     CHECK( a.size() == 4 );
     CHECK( a.ndim() == 1 );
@@ -52,9 +52,9 @@ TEST_CASE("numcpp::array basics")
 
     float32 f = 0.0f;
 
-    for(uint64 m = 0; m < b.shape()[0]; ++m)
+    for(std::size_t m = 0; m < b.shape()[0]; ++m)
     {
-        for(uint64 n = 0; n < b.shape()[1]; ++n)
+        for(std::size_t n = 0; n < b.shape()[1]; ++n)
         {
             CHECK( b(m,n) == Approx(f) );
 
@@ -92,7 +92,7 @@ const int & foobar(const array<int> & a)
 
 TEST_CASE( "numcpp::array::reshape")
 {
-    std::vector<uint64> s = {3,4};
+    shape_t s = {3,4};
 
     auto a = array<int32>({1,2,3,4,5,6,7,8,9,10,11,12}).reshape(s);
 

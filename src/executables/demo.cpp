@@ -33,6 +33,8 @@ int main()
 {
     auto b = arange<int>(20).reshape({5,4});
 
+    cout << b.shape() << "\n";
+
     cout << b.print("%2d") << "\n";
 
     cout << b(2,3) << "\n";
