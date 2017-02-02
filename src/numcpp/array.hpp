@@ -73,7 +73,7 @@ public:
     operator value_type () const;      // implicitly conversion
     operator reference ();
 
-    array<R> operator+() const;
+//~    array<R> operator+() const;
     array<R> operator-() const;
     array<R> operator~() const;
     array<bool> operator!() const;
