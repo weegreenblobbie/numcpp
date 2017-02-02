@@ -9,6 +9,11 @@ cog_warning.warn(cog, __COGFILE__, prefix = '//')
 ]]] */
 // [[[end]]]
 
+#ifndef _NUMCPP_ARRAY_HPP_
+    #error "only numcpp/array.hpp can include this file!"
+#endif
+
+
 //-----------------------------------------------------------------------------
 // unary operators
 //

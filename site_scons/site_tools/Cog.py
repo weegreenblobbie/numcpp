@@ -24,6 +24,7 @@ from SCons.Script import GetLaunchDir
 from SCons.Script import GetOption
 from SCons.Script import Glob
 
+
 #--------------------------------------------------------------------------
 # Globals & constants
 
@@ -127,6 +128,8 @@ def emitter(target, source, env):
 
 def generate(env):
 
+    env['COG'] = exists(env)
+
     python = File(sys.executable).get_abspath()
 
     # windows fixes
@@ -177,11 +180,12 @@ def exists(env):
 
     except ImportError:
 
-        sys.stderr.write("""The python mdoule 'cogapp' wasn't detected!
-    You should be able to install it with:
+        sys.stderr.write("""
+The python mdoule 'cogapp' wasn't detected!  You should be able to install
+it with:
 
-    pip install cogapp --user
+    pip install cogapp
+
 """)
 
-        return False
-
+    return False

@@ -356,123 +356,6 @@ reshape(const shape_t & shape)
 
 
 template <class R>
-array<R>
-array<R>::
-operator~() const
-{
-    DOUT << __PRETTY_FUNCTION__ << std::endl;
-
-    array<R> out;
-
-    out._size = _size;
-    out._array = std::make_shared<std::vector<R>>();
-    out._array->reserve(_size);
-    out._shape = _shape;
-
-    if(ndim() == 1)
-    {
-        #define loop( idx )                                              \
-            for(std::size_t i = 0; i < _size; ++i)                       \
-            {                                                            \
-                out._array->emplace_back(~(*_array)[_offset + idx ]);    \
-            }
-
-        if(_strides.empty()) loop( i )
-        else                 loop( i * _strides[0] )
-
-        #undef loop
-
-        return out;
-    }
-    else
-    if(ndim() == 2)
-    {
-        out.reshape(_shape);
-
-        #define loop( idx )                                                 \
-        {                                                                   \
-            for(std::size_t m = 0; m < _shape[0]; ++m)                      \
-            {                                                               \
-                for(std::size_t n = 0; n < _shape[1]; ++n)                  \
-                {                                                           \
-                    out._array->emplace_back(~(*_array)[_offset + idx]);    \
-                }                                                           \
-            }                                                               \
-        }
-
-        if(_strides.empty()) loop( m * _shape[1] + n )
-        else                 loop( m * _strides[0] + n * _strides[1] )
-
-        #undef loop
-
-        return out;
-    }
-
-    M_THROW_RT_ERROR("unhandled case"); // LCOV_EXCL_LINE
-
-    return out; // LCOV_EXCL_LINE
-}
-
-
-template <class R>
-array<bool>
-array<R>::
-operator!() const
-{
-    DOUT << __PRETTY_FUNCTION__ << std::endl;
-
-    array<bool> out;
-
-    out._size = _size;
-    out._array = std::make_shared<std::vector<bool>>();
-    out._array->reserve(_size);
-    out._shape = _shape;
-
-    if(ndim() == 1)
-    {
-        #define loop( idx )                                              \
-            for(std::size_t i = 0; i < _size; ++i)                       \
-            {                                                            \
-                out._array->emplace_back(!(*_array)[_offset + idx ]);    \
-            }
-        if(_strides.empty()) loop( i )
-        else                 loop( i * _strides[0] )
-
-        #undef loop
-
-        return out;
-    }
-    else
-    if(ndim() == 2)
-    {
-        out.reshape(_shape);
-
-        #define loop( idx )                                                 \
-        {                                                                   \
-            for(std::size_t m = 0; m < _shape[0]; ++m)                      \
-            {                                                               \
-                for(std::size_t n = 0; n < _shape[1]; ++n)                  \
-                {                                                           \
-                    out._array->emplace_back(!(*_array)[_offset + idx]);    \
-                }                                                           \
-            }                                                               \
-        }
-
-        if(_strides.empty()) loop( m * _shape[1] + n )
-        else                 loop( m * _strides[0] + n * _strides[1] )
-
-        #undef loop
-
-        return out;
-    }
-
-    M_THROW_RT_ERROR("unhandled case"); // LCOV_EXCL_LINE
-
-    return out; // LCOV_EXCL_LINE
-}
-
-
-template <class R>
 array<bool>
 array<R>::
 operator==(const R & rhs) const
@@ -1217,6 +1100,9 @@ debug_print() const
 
     return ss.str();
 }
+
+
+#include <numcpp/_array_ops.hpp>
 
 
 } // namespace
