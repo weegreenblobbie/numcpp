@@ -25,6 +25,13 @@ AddOption(
     help = "Build and execute unittests"
 )
 
+AddOption(
+    "--verbose",
+    action = "store_true",
+    default = False,
+    help = "Build in verbose mode"
+)
+
 if GetOption("test"):
 
     AddOption(
@@ -44,7 +51,9 @@ default_cfg = dict(
         CXX = 'g++-5',
         CPPPATH = ['external', 'src'],
         CXXFLAGS = ['-std=c++14', '-Wall', '-g'],
-    )
+    ),
+
+    cog_env = dict(),
 )
 
 
@@ -101,6 +110,26 @@ for k,v in site_config.items('unittest_env'):
 
     unittest_env[k] = v
 
+cog_env = Environment()
+
+for k,v in site_config.items('cog_env'):
+
+    k = k.upper()
+    v = eval(v)
+
+    print('    %10s = %s' % (k, repr(v)))
+
+    cog_env[k] = v
+
+cog_env.Tool("Cog")
+
+Export("cog_env")
+
+
+#-----------------------------------------------------------------------------
+# import .scons scripts
+
+SConscript("src/numcpp/numcpp.scons")
 
 #-----------------------------------------------------------------------------
 # handle coverage
