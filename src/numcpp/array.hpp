@@ -73,11 +73,6 @@ public:
     operator value_type () const;      // implicitly conversion
     operator reference ();
 
-//~    array<R> operator+() const;
-    array<R> operator-() const;
-    array<R> operator~() const;
-    array<bool> operator!() const;
-
     array<bool> operator==(const R & rhs) const;
     array<bool> operator==(const array<R> & rhs) const;
 
@@ -89,14 +84,10 @@ public:
     template <typename U>
     array<R> & operator=(const U & rhs);  // used to create compiler error for type mismatch
 
-//~
-//~    // unary ops
-//~
 //~    array<R>    operator+() const;
-//~    array<R>    operator-() const;
-//~    array<R>    operator~() const;
-//~    array<bool> operator!() const;
-//~
+    array<R>    operator-() const;
+    array<R>    operator~() const;
+    array<bool> operator!() const;
 
     array<R> operator()(const slice &);
     array<R> operator()(const slice &, const slice &);
@@ -106,30 +97,27 @@ public:
     const_array<R> operator()(const slice &, const slice &) const;
     const_array<R> operator()(const slice &, const slice &, const slice &) const;
 
-//~
-//~    array<R> & operator=(const array<R> & rhs);
-//~
-//~    array<R> operator+=( const array<R> & rhs );
-//~    array<R> operator-=( const array<R> & rhs );
-//~    array<R> operator*=( const array<R> & rhs );
-//~    array<R> operator/=( const array<R> & rhs );
-//~    array<R> operator%=( const array<R> & rhs );
-//~    array<R> operator&=( const array<R> & rhs );
-//~    array<R> operator|=( const array<R> & rhs );
-//~    array<R> operator^=( const array<R> & rhs );
-//~    array<R> operator<<=( const array<R> & rhs );
-//~    array<R> operator>>=( const array<R> & rhs );
-//~
-//~    array<R> operator+=( const R & val );
-//~    array<R> operator-=( const R & val );
-//~    array<R> operator*=( const R & val );
-//~    array<R> operator/=( const R & val );
-//~    array<R> operator%=( const R & val );
-//~    array<R> operator&=( const R & val );
-//~    array<R> operator|=( const R & val );
-//~    array<R> operator^=( const R & val );
-//~    array<R> operator<<=( const R & val );
-//~    array<R> operator>>=( const R & val );
+    array<R> & operator+=( const array<R> & rhs );
+    array<R> & operator-=( const array<R> & rhs );
+    array<R> & operator*=( const array<R> & rhs );
+    array<R> & operator/=( const array<R> & rhs );
+    array<R> & operator%=( const array<R> & rhs );
+    array<R> & operator&=( const array<R> & rhs );
+    array<R> & operator|=( const array<R> & rhs );
+    array<R> & operator^=( const array<R> & rhs );
+    array<R> & operator<<=( const array<R> & rhs );
+    array<R> & operator>>=( const array<R> & rhs );
+
+    array<R> & operator+=( const R & val );
+    array<R> & operator-=( const R & val );
+    array<R> & operator*=( const R & val );
+    array<R> & operator/=( const R & val );
+    array<R> & operator%=( const R & val );
+    array<R> & operator&=( const R & val );
+    array<R> & operator|=( const R & val );
+    array<R> & operator^=( const R & val );
+    array<R> & operator<<=( const R & val );
+    array<R> & operator>>=( const R & val );
 
 protected:
 

@@ -103,3 +103,217 @@ for op, return_type in gen_ops:
 
 ]]] */
 // [[[end]]]
+
+
+//-----------------------------------------------------------------------------
+// array operators
+//
+//     operator+=   (const array<R> &)
+//     operator-=   (const array<R> &)
+//     operator*=   (const array<R> &)
+//     operator/=   (const array<R> &)
+//     operator%=   (const array<R> &)
+//     operator&=   (const array<R> &)
+//     operator|=   (const array<R> &)
+//     operator^=   (const array<R> &)
+//     operator<<=  (const array<R> &)
+//     operator>>=  (const array<R> &)
+
+/* [[[cog
+
+import cog
+
+template = '''
+template <class R>
+array<R> &
+array<R>::
+operator{op}(const array<R> & rhs)
+{{
+    DOUT << __PRETTY_FUNCTION__ << std::endl;
+
+    if(ndim() == 1)
+    {{
+        #define loop( idx )                                 \\
+            for(std::size_t i = 0; i < _size; ++i)          \\
+            {{                                               \\
+                (*_array)[_offset + idx ] {op} rhs(i);        \\
+            }}
+
+        if(_strides.empty()) loop( i )
+        else                 loop( i * _strides[0] )
+
+        #undef loop
+
+        return *this;
+    }}
+    else
+    if(ndim() == 2)
+    {{
+        #define loop( idx )                                                 \\
+        {{                                                                   \\
+            for(std::size_t m = 0; m < _shape[0]; ++m)                      \\
+            {{                                                               \\
+                for(std::size_t n = 0; n < _shape[1]; ++n)                  \\
+                {{                                                           \\
+                    (*_array)[_offset + idx] {op} rhs(m,n);                   \\
+                }}                                                           \\
+            }}                                                               \\
+        }}
+
+        if(_strides.empty()) loop( m * _shape[1] + n )
+        else                 loop( m * _strides[0] + n * _strides[1] )
+
+        #undef loop
+
+        return *this;
+    }}
+    else
+    if(ndim() == 3)
+    {{
+        #define loop( idx )                                                 \\
+        {{                                                                   \\
+            for(std::size_t m = 0; m < _shape[0]; ++m)                      \\
+            {{                                                               \\
+                for(std::size_t n = 0; n < _shape[1]; ++n)                  \\
+                {{                                                           \\
+                    for(std::size_t p = 0; p < _shape[2]; ++p)              \\
+                    {{                                                       \\
+                        (*_array)[_offset + idx] {op} rhs(m,n, p);            \\
+                    }}                                                       \\
+                }}                                                           \\
+            }}                                                               \\
+        }}
+
+        if(_strides.empty()) loop( m * _shape[1] * _shape[2] + n * _shape[2] + p )
+        else                 loop( m * _strides[0] + n * _strides[1] + p * _strides[2] )
+
+        #undef loop
+
+        return *this;
+    }}
+
+    M_THROW_RT_ERROR("unhandled case"); // LCOV_EXCL_LINE
+
+    return *this; // LCOV_EXCL_LINE
+}}
+
+'''
+
+gen_ops = '+= -= *= /= %= &= |= ^= <<= >>='.split()
+
+for op in gen_ops:
+
+    code = template.format(op = op)
+
+    cog.out(code)
+
+]]] */
+// [[[end]]]
+
+
+
+
+//-----------------------------------------------------------------------------
+// array operators
+//
+//     operator+=   (const R &)
+//     operator-=   (const R &)
+//     operator*=   (const R &)
+//     operator/=   (const R &)
+//     operator%=   (const R &)
+//     operator&=   (const R &)
+//     operator|=   (const R &)
+//     operator^=   (const R &)
+//     operator<<=  (const R &)
+//     operator>>=  (const R &)
+
+/* [[[cog
+
+import cog
+
+template = '''
+template <class R>
+array<R> &
+array<R>::
+operator{op}(const R & rhs)
+{{
+    DOUT << __PRETTY_FUNCTION__ << std::endl;
+
+    if(ndim() == 1)
+    {{
+        #define loop( idx )                                 \\
+            for(std::size_t i = 0; i < _size; ++i)          \\
+            {{                                               \\
+                (*_array)[_offset + idx ] {op} rhs;           \\
+            }}
+
+        if(_strides.empty()) loop( i )
+        else                 loop( i * _strides[0] )
+
+        #undef loop
+
+        return *this;
+    }}
+    else
+    if(ndim() == 2)
+    {{
+        #define loop( idx )                                                 \\
+        {{                                                                   \\
+            for(std::size_t m = 0; m < _shape[0]; ++m)                      \\
+            {{                                                               \\
+                for(std::size_t n = 0; n < _shape[1]; ++n)                  \\
+                {{                                                           \\
+                    (*_array)[_offset + idx] {op} rhs;                        \\
+                }}                                                           \\
+            }}                                                               \\
+        }}
+
+        if(_strides.empty()) loop( m * _shape[1] + n )
+        else                 loop( m * _strides[0] + n * _strides[1] )
+
+        #undef loop
+
+        return *this;
+    }}
+    else
+    if(ndim() == 3)
+    {{
+        #define loop( idx )                                                \\
+        {{                                                                  \\
+            for(std::size_t m = 0; m < _shape[0]; ++m)                     \\
+            {{                                                              \\
+                for(std::size_t n = 0; n < _shape[1]; ++n)                 \\
+                {{                                                          \\
+                    for(std::size_t p = 0; p < _shape[2]; ++p)             \\
+                    {{                                                      \\
+                        (*_array)[_offset + idx] {op} rhs;                   \\
+                    }}                                                      \\
+                }}                                                          \\
+            }}                                                              \\
+        }}
+
+        if(_strides.empty()) loop( m * _shape[1] * _shape[2] + n * _shape[2] + p )
+        else                 loop( m * _strides[0] + n * _strides[1] + p * _strides[2] )
+
+        #undef loop
+
+        return *this;
+    }}
+
+    M_THROW_RT_ERROR("unhandled case"); // LCOV_EXCL_LINE
+
+    return *this; // LCOV_EXCL_LINE
+}}
+
+'''
+
+gen_ops = '+= -= *= /= %= &= |= ^= <<= >>='.split()
+
+for op in gen_ops:
+
+    code = template.format(op = op)
+
+    cog.out(code)
+
+]]] */
+// [[[end]]]
