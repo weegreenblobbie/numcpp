@@ -86,7 +86,11 @@ const int & foobar(const array<int> & a)
 
     CHECK( x == 1 );
 
-    return a(5);
+    auto tmp = a(5);
+
+    const int & out = tmp;
+
+    return out;
 }
 
 
@@ -131,6 +135,9 @@ TEST_CASE( "numcpp::array::reshape")
     CHECK_THROWS( a(2,2) );
 
     auto y = foobar(a);
+
+    INFO( "a = " << a );
+    INFO( "y = " << y );
 
     CHECK( y == 6 );
 }

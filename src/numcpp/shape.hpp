@@ -44,6 +44,9 @@ public:
     bool operator==(const shape_t & rhs) const     { return _shape == rhs._shape; }
     bool operator!=(const shape_t & rhs) const     { return _shape != rhs._shape; }
 
+    shape_t(const shape_t & other) = default;
+    shape_t & operator=(const shape_t & rhs) = default;
+
 protected:
 
     std::vector<std::size_t> _shape;

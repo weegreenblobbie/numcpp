@@ -211,8 +211,6 @@ for op in gen_ops:
 // [[[end]]]
 
 
-
-
 //-----------------------------------------------------------------------------
 // array operators
 //
@@ -308,6 +306,130 @@ operator{op}(const R & rhs)
 '''
 
 gen_ops = '+= -= *= /= %= &= |= ^= <<= >>='.split()
+
+for op in gen_ops:
+
+    code = template.format(op = op)
+
+    cog.out(code)
+
+]]] */
+// [[[end]]]
+
+
+//-----------------------------------------------------------------------------
+// array operators
+//
+//     operator+
+//     operator-
+//     operator*
+//     operator/
+//     operator%
+//     operator&
+//     operator|
+//     operator^
+//     operator<<
+//     operator>>
+
+/* [[[cog
+
+import cog
+
+template = '''
+template <class R>
+array<R>
+operator{op}(const array<R> & lhs, const R & rhs)
+{{
+    DOUT << __PRETTY_FUNCTION__ << std::endl;
+
+    array<R> out(lhs);
+
+    out {op}= rhs;
+
+    return out;
+}}
+
+
+template <class R>
+array<R>
+operator{op}(const R & lhs, const array<R> & rhs)
+{{
+    DOUT << __PRETTY_FUNCTION__ << std::endl;
+
+    array<R> out(R(), rhs.shape());
+
+    if(out.ndim() == 1)
+    {{
+        for(std::size_t i = 0; i < out.size(); ++i)
+        {{
+            R tmp = R{{lhs}};
+            tmp {op}= rhs(i);
+            out(i) = tmp;
+        }}
+
+        return out;
+    }}
+    else
+    if(out.ndim() == 2)
+    {{
+        for(std::size_t m = 0; m < out.shape()[0]; ++m)
+        {{
+            for(std::size_t n = 0; n < out.shape()[1]; ++n)
+            {{
+                R tmp = R{{lhs}};
+                tmp {op}= rhs(m,n);
+                out(m,n) = tmp;
+            }}
+        }}
+
+        return out;
+    }}
+    else
+    if(out.ndim() == 3)
+    {{
+        for(std::size_t m = 0; m < out.shape()[0]; ++m)
+        {{
+            for(std::size_t n = 0; n < out.shape()[1]; ++n)
+            {{
+                for(std::size_t p = 0; p < out.shape()[2]; ++p)
+                {{
+                    R tmp = R{{lhs}};
+                    tmp {op}= rhs(m,n,p);
+                    out(m,n,p) = tmp;
+                }}
+            }}
+        }}
+
+        return out;
+    }}
+
+    M_THROW_RT_ERROR("unhandled case"); // LCOV_EXCL_LINE
+
+    return out; // LCOV_EXCL_LINE
+}}
+
+
+template <class R>
+array<R>
+operator{op}(const array<R> & lhs, const array<R> & rhs)
+{{
+    DOUT << __PRETTY_FUNCTION__ << std::endl;
+
+    if(lhs.shape() != rhs.shape())
+    {{
+        M_THROW_RT_ERROR("operands could not be broadcast together with shapes " << lhs.shape() << " " << rhs.shape());
+    }}
+
+    array<R> out(lhs);
+
+    out {op}= rhs;
+
+    return out;
+}}
+
+'''
+
+gen_ops = '+ - * / % & | ^ << >>'.split()
 
 for op in gen_ops:
 

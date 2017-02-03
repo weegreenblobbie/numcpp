@@ -219,11 +219,69 @@ template <class R>
 array<R>::
 array(const array<R> & other)
     :
-    array<R>()
+    _size(other._size),
+    _shape(other._shape),
+    _offset(0)
 {
-    DOUT << __PRETTY_FUNCTION__ << std::endl;
+    _array = std::make_shared<std::vector<R>>();
+    _array->reserve(_size);
 
-    *this = other;
+    if(ndim() == 1)
+    {
+        #define loop( idx )                                                  \
+            for(std::size_t i = 0; i < _size; ++i)                           \
+            {                                                                \
+                _array->emplace_back((*other._array)[other._offset + idx]);      \
+            }
+
+        if(other._strides.empty()) loop( i )
+        else                     loop( i * other._strides[0] )
+
+        #undef loop
+    }
+    else
+    if(ndim() == 2)
+    {
+        #define loop( idx )                                                   \
+            for(std::size_t m = 0; m < _shape[0]; ++m)                        \
+            {                                                                 \
+                for(std::size_t n = 0; n < _shape[1]; ++n)                    \
+                {                                                             \
+                    _array->emplace_back(                                     \
+                        (*other._array)[other._offset + idx ]);                   \
+                }                                                             \
+            }
+
+        if(other._strides.empty()) loop( m * _shape[1] + n )
+        else                     loop( m * other._strides[0] + n * other._strides[1] )
+
+        #undef loop
+    }
+    else
+    if(ndim() == 3)
+    {
+        #define loop( idx )                                                   \
+            for(std::size_t m = 0; m < _shape[0]; ++m)                        \
+            {                                                                 \
+                for(std::size_t n = 0; n < _shape[1]; ++n)                    \
+                {                                                             \
+                    for(std::size_t p = 0; p < _shape[2]; ++p)                \
+                    {                                                         \
+                        _array->emplace_back(                                 \
+                            (*other._array)[other._offset + idx]);                \
+                    }                                                         \
+                }                                                             \
+            }
+
+        if(other._strides.empty()) loop( m * _shape[1] *_shape[2] + n * _shape[2] + p )
+        else                     loop( m * other._strides[0] + n * other._strides[1] + p * other._strides[2] )
+
+        #undef loop
+    }
+    else
+    {
+        M_THROW_RT_ERROR("unhandled case"); // LCOV_EXCL_LINE
+    }
 }
 
 
@@ -534,7 +592,6 @@ operator=(const array<R> & rhs)
     _array = rhs._array;
     _shape = rhs._shape;
     _strides = rhs._strides;
-    _offset = rhs._offset;
 
     return *this;
 }
@@ -870,7 +927,11 @@ operator()(const slice & s) const
 
     array<R> & r = const_cast<array<R>&>(*this);
 
-    return const_array<R>(r(s));
+    auto out = const_array<R>(r(s));
+
+    std::cout << "out = " << out << "\n";
+
+    return out;
 }
 
 
