@@ -773,6 +773,10 @@ operator()(const slice & s0, const slice & s1)
         {
             out._shape = {count1};
             out._strides = {out._strides[1]};
+
+            DOUT << "\n"
+                << "m,n = " << start0 << ", " << start1 << "\n"
+                << out.debug_print() << "\n";
         }
 
         // column vector
@@ -1104,7 +1108,7 @@ print(const std::string & fmt_in) const
 
         for(uint64 i = 0; i < _size; ++i)
         {
-            out << detail::_format<R>(fmt_, a(i));
+            out << detail::_format<R>(fmt_, R{a(i)});
             if(i + 1 < a._size) out << ", ";
         }
 
@@ -1121,8 +1125,7 @@ print(const std::string & fmt_in) const
 
             for(auto j = 0u; j < _shape[1]; ++j)
             {
-                const R & r = a(i,j);
-                out << detail::_format(fmt_, r);
+                out << detail::_format(fmt_, R{a(i,j)});
                 if(j + 1 < _shape[1]) out << ", ";
             }
 
@@ -1145,8 +1148,7 @@ print(const std::string & fmt_in) const
 
                 for(auto k = 0u; k < _shape[2]; ++k)
                 {
-                    const R & r = a(i,j,k);
-                    out << detail::_format(fmt_, r);
+                    out << detail::_format(fmt_, R{a(i,j,k)});
                     if(k + 1 < _shape[2]) out << ", ";
                 }
 
@@ -1185,8 +1187,10 @@ debug_print() const
         << "    dtype:    " << detail::type_name<R>() << "\n"
         << "    _size:    " << _size << "\n"
         << "    _data:    " << fmt::format(
-            "{:16d}",
-            reinterpret_cast<uint64>(_array.get())) << "\n"
+            "{:16d}, ref_count={:d}",
+            reinterpret_cast<uint64>(_array.get()),
+            _array.use_count()
+        ) << "\n"
         << "    _shape:   " << _shape << "\n"
         << "    _strides: (";
 
@@ -1194,7 +1198,8 @@ debug_print() const
 
     ss
         << ")\n"
-        << "    _offset: "<< _offset << "\n";
+        << "    _offset: "<< _offset << "\n"
+        << "    _array[_offset]: " << (*_array)[_offset] << "\n";
 
     return ss.str();
 }

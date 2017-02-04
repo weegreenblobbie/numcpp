@@ -604,7 +604,6 @@ TEST_CASE( "numcpp::array 2D element access" )
         }
     ).reshape({4,4});
 
-    INFO( "a = " << a.print("%2d") );
     CHECK( all(a == gold) );
 
     a = 300;
@@ -618,8 +617,38 @@ TEST_CASE( "numcpp::array 2D element access" )
         }
     ).reshape({4,4});
 
-    INFO( "a = " << a.debug_print() );
     CHECK( all(a == gold) );
+
+    a(1_s|3,1_s|3) = 0;
+
+    gold = array<int>(
+        {
+           300, 300, 300, 300,
+           300,   0,   0, 300,
+           300,   0,   0, 300,
+           300, 300, 300, 300,
+        }
+    ).reshape({4,4});
+
+    CHECK( all(a == gold) );
+
+    // deep copy
+    auto c = array<int>(a);
+
+    c(1_s|3,1_s|3) = 300;
+
+    CHECK( all(a == gold) );
+
+    gold = array<int>(
+        {
+           300, 300, 300, 300,
+           300, 300, 300, 300,
+           300, 300, 300, 300,
+           300, 300, 300, 300,
+        }
+    ).reshape({4,4});
+
+    CHECK( all(c == gold) );
 }
 
 
