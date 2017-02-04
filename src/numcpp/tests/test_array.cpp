@@ -80,20 +80,6 @@ TEST_CASE( "numcpp::array::operator==" )
 }
 
 
-const int & foobar(const array<int> & a)
-{
-    int x = a(0);
-
-    CHECK( x == 1 );
-
-    auto tmp = a(5);
-
-    const int & out = tmp;
-
-    return out;
-}
-
-
 TEST_CASE( "numcpp::array::reshape")
 {
     shape_t s = {3,4};
@@ -133,13 +119,6 @@ TEST_CASE( "numcpp::array::reshape")
     CHECK( a(2) == 3 );
     CHECK_THROWS( a(1,1) );
     CHECK_THROWS( a(2,2) );
-
-    auto y = foobar(a);
-
-    INFO( "a = " << a );
-    INFO( "y = " << y );
-
-    CHECK( y == 6 );
 }
 
 

@@ -46,6 +46,8 @@ public:
 
     array(const shape_t & shape, const R & value = R()); // std::vector like
 
+    array(array<R> && move) = default;
+
     array(const array<R> & other);
 
     array<R> & operator=(const array<R> & rhs);
@@ -408,14 +410,20 @@ operator==(const R & rhs) const
 {
     DOUT << __PRETTY_FUNCTION__ << std::endl;
 
-    auto out = array<bool>(std::vector<bool>(_size, false)).reshape(_shape);
+    array<bool> out;
+
+    out._size = _size;
+    out._shape = _shape;
+    out._array = std::make_shared<std::vector<bool>>();
+    out._array->reserve(_size);
 
     if(ndim() == 1)
     {
         #define loop( idx_expr )                                          \
             for(uint64 i = 0; i < _size; ++i)                             \
             {                                                             \
-                (*out._array)[i] = (*_array)[_offset + idx_expr ] == rhs; \
+                out._array->emplace_back(                                 \
+                    (*_array)[_offset + idx_expr ] == rhs);               \
             }
 
         if(_strides.empty()) loop( i )
@@ -430,19 +438,41 @@ operator==(const R & rhs) const
     {
         #define loop( idx_expr )                                          \
         {                                                                 \
-            index_t i = 0;                                                \
             for(uint64 m = 0; m < _shape[0]; ++m)                         \
             {                                                             \
                 for(uint64 n = 0; n < _shape[1]; ++n)                     \
                 {                                                         \
-                    (*out._array)[i++] =                                  \
-                        rhs == (*_array)[_offset + idx_expr ];            \
+                    out._array->emplace_back(                             \
+                        (*_array)[_offset + idx_expr ] == rhs);           \
                 }                                                         \
             }                                                             \
         }
 
         if(_strides.empty()) loop( m * _shape[1] + n )
         else                 loop( m * _strides[0] + n * _strides[1] )
+
+        #undef loop
+
+        return out;
+    }
+    else
+    if(ndim() == 3)
+    {
+        #define loop( idx )                                              \
+            for(uint64 m = 0; m < _shape[0]; ++m)                        \
+            {                                                            \
+                for(uint64 n = 0; n < _shape[1]; ++n)                    \
+                {                                                        \
+                    for(uint64 p = 0; n < _shape[2]; ++p)                \
+                    {                                                    \
+                        out._array->emplace_back(                        \
+                            (*_array)[_offset + idx ] == rhs);           \
+                    }                                                    \
+                }                                                        \
+            }
+
+        if(_strides.empty()) loop( m * _shape[1] * _shape[2] + n * _shape[2] + p )
+        else                 loop( m * _strides[0] + n * _strides[1] + p * _strides[2] )
 
         #undef loop
 
@@ -558,6 +588,28 @@ operator=(const R & rhs)
 
         return *this;
     }
+    else
+    if(ndim() == 3)
+    {
+        #define loop( idx )                                    \
+            for(uint64 m = 0; m < _shape[0]; ++m)              \
+            {                                                  \
+                for(uint64 n = 0; n < _shape[1]; ++n)          \
+                {                                              \
+                    for(uint64 p = 0; n < _shape[2]; ++p)      \
+                    {                                          \
+                        (*_array)[_offset + idx ] = rhs;       \
+                    }                                          \
+                }                                              \
+            }                                                  \
+
+        if(_strides.empty()) loop( m * _shape[1] * _shape[2] + n * _shape[2] + p )
+        else                 loop( m * _strides[0] + n * _strides[1] + p * _strides[2] )
+
+        #undef loop
+
+        return *this;
+    }
 
     M_THROW_RT_ERROR("unhandled case"); // LCOV_EXCL_LINE
 
@@ -592,6 +644,7 @@ operator=(const array<R> & rhs)
     _array = rhs._array;
     _shape = rhs._shape;
     _strides = rhs._strides;
+    _offset = rhs._offset;
 
     return *this;
 }
@@ -831,10 +884,10 @@ operator()(const slice & s0, const slice & s1, const slice & s2)
         //---------------------------------------------------------------------
         // squeezing, not it's own funciton yet!
 
-        int32 key = (count0 == 1) * 100 + (count1 == 1) * 10 + (count2 == 1);
+        int32 key = 4 * (count0 == 1) + 2 * (count1 == 1) + (count2 == 1);
 
         // single value
-        if(key == 111)
+        if(key == 0b111)
         {
             out._shape = {1};
             out._strides = {};
@@ -842,7 +895,7 @@ operator()(const slice & s0, const slice & s1, const slice & s2)
 
         // row vector
         else
-        if(key == 110)
+        if(key == 0b110)
         {
             out._shape = {count2};
 
@@ -855,7 +908,7 @@ operator()(const slice & s0, const slice & s1, const slice & s2)
         // col vector
 
         else
-        if(key == 101)
+        if(key == 0b101)
         {
             out._shape = {count1};
             out._strides = {out._strides[1]};
@@ -863,7 +916,7 @@ operator()(const slice & s0, const slice & s1, const slice & s2)
 
         // 2d
         else
-        if(key == 100)
+        if(key == 0b100)
         {
             out._shape = {count1, count2};
 
@@ -878,7 +931,7 @@ operator()(const slice & s0, const slice & s1, const slice & s2)
 
         // 2d
         else
-        if(key == 10) // 010
+        if(key == 0b010)
         {
             out._shape = {count0, count2};
 
@@ -890,7 +943,7 @@ operator()(const slice & s0, const slice & s1, const slice & s2)
 
         // 2d
         else
-        if(key == 1) // 001
+        if(key == 0b001)
         {
             out._shape = {count0, count1};
 
@@ -902,7 +955,7 @@ operator()(const slice & s0, const slice & s1, const slice & s2)
 
         // 3d
         else
-        if(key == 0) // 000
+        if(key == 0b000)
         {
             out._shape = {count0, count1, count2};
         }
@@ -927,11 +980,7 @@ operator()(const slice & s) const
 
     array<R> & r = const_cast<array<R>&>(*this);
 
-    auto out = const_array<R>(r(s));
-
-    std::cout << "out = " << out << "\n";
-
-    return out;
+    return const_array<R>(r(s));
 }
 
 
