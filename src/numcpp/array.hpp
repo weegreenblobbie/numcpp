@@ -30,6 +30,28 @@ template <class R> class const_array;
 template <class R> std::ostream & operator<<(std::ostream &, const array<R> &);
 template <class R> std::ostream & operator<<(std::ostream &, const const_array<R> &);
 
+// forward these so they can be friends
+template <class R> array<bool> operator== (const array<R> & lhs, const R & rhs);
+template <class R> array<bool> operator!= (const array<R> & lhs, const R & rhs);
+template <class R> array<bool> operator<  (const array<R> & lhs, const R & rhs);
+template <class R> array<bool> operator<= (const array<R> & lhs, const R & rhs);
+template <class R> array<bool> operator>  (const array<R> & lhs, const R & rhs);
+template <class R> array<bool> operator>= (const array<R> & lhs, const R & rhs);
+
+template <class R> array<bool> operator== (const R & lhs, const array<R> & rhs);
+template <class R> array<bool> operator!= (const R & lhs, const array<R> & rhs);
+template <class R> array<bool> operator<  (const R & lhs, const array<R> & rhs);
+template <class R> array<bool> operator<= (const R & lhs, const array<R> & rhs);
+template <class R> array<bool> operator>  (const R & lhs, const array<R> & rhs);
+template <class R> array<bool> operator>= (const R & lhs, const array<R> & rhs);
+
+template <class R> array<bool> operator== (const array<R> & lhs, const array<R> & rhs);
+template <class R> array<bool> operator!= (const array<R> & lhs, const array<R> & rhs);
+template <class R> array<bool> operator<  (const array<R> & lhs, const array<R> & rhs);
+template <class R> array<bool> operator<= (const array<R> & lhs, const array<R> & rhs);
+template <class R> array<bool> operator>  (const array<R> & lhs, const array<R> & rhs);
+template <class R> array<bool> operator>= (const array<R> & lhs, const array<R> & rhs);
+
 
 template <class R>
 class array
@@ -74,12 +96,6 @@ public:
 
     operator value_type () const;      // implicitly conversion
     operator reference ();
-
-    array<bool> operator==(const R & rhs) const;
-    array<bool> operator==(const array<R> & rhs) const;
-
-    array<bool> operator!=(const R & rhs) const           { return !(*this == rhs); }
-    array<bool> operator!=(const array<R> & rhs) const    { return !(*this == rhs); }
 
     array<R> & operator=(const R & rhs);
 
@@ -135,8 +151,28 @@ protected:
 
     friend class const_array<R>;
 
-    template <typename>
-    friend class array;
+    template <typename> friend class array;
+
+    friend array<bool> operator== <> (const array<R> & lhs, const R & rhs);
+    friend array<bool> operator!= <> (const array<R> & lhs, const R & rhs);
+    friend array<bool> operator<  <> (const array<R> & lhs, const R & rhs);
+    friend array<bool> operator<= <> (const array<R> & lhs, const R & rhs);
+    friend array<bool> operator>  <> (const array<R> & lhs, const R & rhs);
+    friend array<bool> operator>= <> (const array<R> & lhs, const R & rhs);
+
+    friend array<bool> operator== <> (const R & lhs, const array<R> & rhs);
+    friend array<bool> operator!= <> (const R & lhs, const array<R> & rhs);
+    friend array<bool> operator<  <> (const R & lhs, const array<R> & rhs);
+    friend array<bool> operator<= <> (const R & lhs, const array<R> & rhs);
+    friend array<bool> operator>  <> (const R & lhs, const array<R> & rhs);
+    friend array<bool> operator>= <> (const R & lhs, const array<R> & rhs);
+
+    friend array<bool> operator== <> (const array<R> & lhs, const array<R> & rhs);
+    friend array<bool> operator!= <> (const array<R> & lhs, const array<R> & rhs);
+    friend array<bool> operator<  <> (const array<R> & lhs, const array<R> & rhs);
+    friend array<bool> operator<= <> (const array<R> & lhs, const array<R> & rhs);
+    friend array<bool> operator>  <> (const array<R> & lhs, const array<R> & rhs);
+    friend array<bool> operator>= <> (const array<R> & lhs, const array<R> & rhs);
 };
 
 
@@ -404,150 +440,6 @@ reshape(const shape_t & shape)
 
 
 template <class R>
-array<bool>
-array<R>::
-operator==(const R & rhs) const
-{
-    DOUT << __PRETTY_FUNCTION__ << std::endl;
-
-    array<bool> out;
-
-    out._size = _size;
-    out._shape = _shape;
-    out._array = std::make_shared<std::vector<bool>>();
-    out._array->reserve(_size);
-
-    if(ndim() == 1)
-    {
-        #define loop( idx_expr )                                          \
-            for(uint64 i = 0; i < _size; ++i)                             \
-            {                                                             \
-                out._array->emplace_back(                                 \
-                    (*_array)[_offset + idx_expr ] == rhs);               \
-            }
-
-        if(_strides.empty()) loop( i )
-        else                 loop( i * _strides[0] )
-
-        #undef loop
-
-        return out;
-    }
-    else
-    if(ndim() == 2)
-    {
-        #define loop( idx_expr )                                          \
-        {                                                                 \
-            for(uint64 m = 0; m < _shape[0]; ++m)                         \
-            {                                                             \
-                for(uint64 n = 0; n < _shape[1]; ++n)                     \
-                {                                                         \
-                    out._array->emplace_back(                             \
-                        (*_array)[_offset + idx_expr ] == rhs);           \
-                }                                                         \
-            }                                                             \
-        }
-
-        if(_strides.empty()) loop( m * _shape[1] + n )
-        else                 loop( m * _strides[0] + n * _strides[1] )
-
-        #undef loop
-
-        return out;
-    }
-    else
-    if(ndim() == 3)
-    {
-        #define loop( idx )                                              \
-            for(uint64 m = 0; m < _shape[0]; ++m)                        \
-            {                                                            \
-                for(uint64 n = 0; n < _shape[1]; ++n)                    \
-                {                                                        \
-                    for(uint64 p = 0; n < _shape[2]; ++p)                \
-                    {                                                    \
-                        out._array->emplace_back(                        \
-                            (*_array)[_offset + idx ] == rhs);           \
-                    }                                                    \
-                }                                                        \
-            }
-
-        if(_strides.empty()) loop( m * _shape[1] * _shape[2] + n * _shape[2] + p )
-        else                 loop( m * _strides[0] + n * _strides[1] + p * _strides[2] )
-
-        #undef loop
-
-        return out;
-    }
-
-    M_THROW_RT_ERROR("unhandled case"); // LCOV_EXCL_LINE
-
-    return out;
-}
-
-
-template <class R>
-array<bool>
-array<R>::
-operator==(const array<R> & rhs) const
-{
-    DOUT << __PRETTY_FUNCTION__ << std::endl;
-
-    if(_size != rhs._size) return array<bool>({false});
-    if(_shape != rhs._shape) return array<bool>({false});
-
-    array<bool> out;
-
-    out._size = _size;
-    out._array = std::make_shared<std::vector<bool>>();
-    out._array->reserve(_size);
-    out._shape = _shape;
-
-    if(ndim() == 1)
-    {
-        for(std::size_t i = 0; i < _size; ++i)
-        {
-            out._array->emplace_back((*this)(i) == rhs(i));
-        }
-
-        return out;
-    }
-    else
-    if(ndim() == 2)
-    {
-        for(std::size_t m = 0; m < _shape[0]; ++m)
-        {
-            for(std::size_t n = 0; n < _shape[1]; ++n)
-            {
-                out._array->emplace_back((*this)(m,n) == rhs(m,n));
-            }
-        }
-
-        return out;
-    }
-    else
-    if(ndim() == 3)
-    {
-        for(std::size_t m = 0; m < _shape[0]; ++m)
-        {
-            for(std::size_t n = 0; n < _shape[1]; ++n)
-            {
-                for(std::size_t p = 0; p < _shape[2]; ++p)
-                {
-                    out._array->emplace_back((*this)(m,n,p) == rhs(m,n,p));
-                }
-            }
-        }
-
-        return out;
-    }
-
-    M_THROW_RT_ERROR("unhandled case"); // LCOV_EXCL_LINE
-
-    return array<bool>();
-}
-
-
-template <class R>
 array<R> &
 array<R>::
 operator=(const R & rhs)
@@ -596,7 +488,7 @@ operator=(const R & rhs)
             {                                                  \
                 for(uint64 n = 0; n < _shape[1]; ++n)          \
                 {                                              \
-                    for(uint64 p = 0; n < _shape[2]; ++p)      \
+                    for(uint64 p = 0; p < _shape[2]; ++p)      \
                     {                                          \
                         (*_array)[_offset + idx ] = rhs;       \
                     }                                          \
