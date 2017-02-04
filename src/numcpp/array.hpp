@@ -30,7 +30,11 @@ template <class R> class const_array;
 template <class R> std::ostream & operator<<(std::ostream &, const array<R> &);
 template <class R> std::ostream & operator<<(std::ostream &, const const_array<R> &);
 
+//-----------------------------------------------------------------------------
 // forward these so they can be friends
+
+template <class R> R sum(const array<R> & a);
+
 template <class R> array<bool> operator== (const array<R> & lhs, const R & rhs);
 template <class R> array<bool> operator!= (const array<R> & lhs, const R & rhs);
 template <class R> array<bool> operator<  (const array<R> & lhs, const R & rhs);
@@ -72,10 +76,10 @@ public:
 
     array(const array<R> & other);
 
-    array<R> & operator=(const array<R> & rhs);
+    array(const const_array<R> & other) : array(other._a) {}
 
-//~    array(array && other);
-//~
+    array<R> & operator=(const array<R> & rhs) = default;
+
     template <class U>
     array<U>                  astype() const;
 //~
@@ -115,25 +119,36 @@ public:
     const_array<R> operator()(const slice &, const slice &) const;
     const_array<R> operator()(const slice &, const slice &, const slice &) const;
 
-    array<R> & operator+=( const array<R> & rhs );
-    array<R> & operator-=( const array<R> & rhs );
-    array<R> & operator*=( const array<R> & rhs );
-    array<R> & operator/=( const array<R> & rhs );
-    array<R> & operator%=( const array<R> & rhs );
-    array<R> & operator&=( const array<R> & rhs );
-    array<R> & operator|=( const array<R> & rhs );
-    array<R> & operator^=( const array<R> & rhs );
+    array<R> & operator+= ( const array<R> & rhs );
+    array<R> & operator-= ( const array<R> & rhs );
+    array<R> & operator*= ( const array<R> & rhs );
+    array<R> & operator/= ( const array<R> & rhs );
+    array<R> & operator%= ( const array<R> & rhs );
+    array<R> & operator&= ( const array<R> & rhs );
+    array<R> & operator|= ( const array<R> & rhs );
+    array<R> & operator^= ( const array<R> & rhs );
     array<R> & operator<<=( const array<R> & rhs );
     array<R> & operator>>=( const array<R> & rhs );
 
-    array<R> & operator+=( const R & val );
-    array<R> & operator-=( const R & val );
-    array<R> & operator*=( const R & val );
-    array<R> & operator/=( const R & val );
-    array<R> & operator%=( const R & val );
-    array<R> & operator&=( const R & val );
-    array<R> & operator|=( const R & val );
-    array<R> & operator^=( const R & val );
+    array<R> & operator+= ( const const_array<R> & rhs )   { *this +=  rhs._a; return *this; }
+    array<R> & operator-= ( const const_array<R> & rhs )   { *this -=  rhs._a; return *this; }
+    array<R> & operator*= ( const const_array<R> & rhs )   { *this *=  rhs._a; return *this; }
+    array<R> & operator/= ( const const_array<R> & rhs )   { *this /=  rhs._a; return *this; }
+    array<R> & operator%= ( const const_array<R> & rhs )   { *this %=  rhs._a; return *this; }
+    array<R> & operator&= ( const const_array<R> & rhs )   { *this &=  rhs._a; return *this; }
+    array<R> & operator|= ( const const_array<R> & rhs )   { *this |=  rhs._a; return *this; }
+    array<R> & operator^= ( const const_array<R> & rhs )   { *this ^=  rhs._a; return *this; }
+    array<R> & operator<<=( const const_array<R> & rhs )   { *this <<= rhs._a; return *this; }
+    array<R> & operator>>=( const const_array<R> & rhs )   { *this >>= rhs._a; return *this; }
+
+    array<R> & operator+= ( const R & val );
+    array<R> & operator-= ( const R & val );
+    array<R> & operator*= ( const R & val );
+    array<R> & operator/= ( const R & val );
+    array<R> & operator%= ( const R & val );
+    array<R> & operator&= ( const R & val );
+    array<R> & operator|= ( const R & val );
+    array<R> & operator^= ( const R & val );
     array<R> & operator<<=( const R & val );
     array<R> & operator>>=( const R & val );
 
@@ -152,6 +167,8 @@ protected:
     friend class const_array<R>;
 
     template <typename> friend class array;
+
+    friend R sum <> (const array<R> & a);
 
     friend array<bool> operator== <> (const array<R> & lhs, const R & rhs);
     friend array<bool> operator!= <> (const array<R> & lhs, const R & rhs);
@@ -269,11 +286,11 @@ array(const array<R> & other)
         #define loop( idx )                                                  \
             for(std::size_t i = 0; i < _size; ++i)                           \
             {                                                                \
-                _array->emplace_back((*other._array)[other._offset + idx]);      \
+                _array->emplace_back((*other._array)[other._offset + idx]);  \
             }
 
         if(other._strides.empty()) loop( i )
-        else                     loop( i * other._strides[0] )
+        else                       loop( i * other._strides[0] )
 
         #undef loop
     }
@@ -286,12 +303,12 @@ array(const array<R> & other)
                 for(std::size_t n = 0; n < _shape[1]; ++n)                    \
                 {                                                             \
                     _array->emplace_back(                                     \
-                        (*other._array)[other._offset + idx ]);                   \
+                        (*other._array)[other._offset + idx ]);               \
                 }                                                             \
             }
 
         if(other._strides.empty()) loop( m * _shape[1] + n )
-        else                     loop( m * other._strides[0] + n * other._strides[1] )
+        else                       loop( m * other._strides[0] + n * other._strides[1] )
 
         #undef loop
     }
@@ -306,13 +323,13 @@ array(const array<R> & other)
                     for(std::size_t p = 0; p < _shape[2]; ++p)                \
                     {                                                         \
                         _array->emplace_back(                                 \
-                            (*other._array)[other._offset + idx]);                \
+                            (*other._array)[other._offset + idx]);            \
                     }                                                         \
                 }                                                             \
             }
 
         if(other._strides.empty()) loop( m * _shape[1] *_shape[2] + n * _shape[2] + p )
-        else                     loop( m * other._strides[0] + n * other._strides[1] + p * other._strides[2] )
+        else                       loop( m * other._strides[0] + n * other._strides[1] + p * other._strides[2] )
 
         #undef loop
     }
@@ -518,25 +535,6 @@ operator=(const U & rhs)
         std::is_same<R, U>::value,
         "array<R> = array<U> is not allowed"
     );
-
-    return *this;
-}
-
-
-template <class R>
-array<R> &
-array<R>::
-operator=(const array<R> & rhs)
-{
-    DOUT << __PRETTY_FUNCTION__ << std::endl;
-
-    if(this == &rhs) return *this;
-
-    _size = rhs._size;
-    _array = rhs._array;
-    _shape = rhs._shape;
-    _strides = rhs._strides;
-    _offset = rhs._offset;
 
     return *this;
 }
