@@ -38,3 +38,5 @@ config.log
 demo
 site.cfg
 coverage
+_*.hpp
+*.pyc

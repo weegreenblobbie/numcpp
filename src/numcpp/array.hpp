@@ -6,6 +6,7 @@
 #include <numcpp/fmt.hpp>
 #include <numcpp/macros.hpp>
 #include <numcpp/slice.hpp>
+#include <numcpp/shape.hpp>
 #include <numcpp/types.hpp>
 
 
@@ -29,6 +30,32 @@ template <class R> class const_array;
 template <class R> std::ostream & operator<<(std::ostream &, const array<R> &);
 template <class R> std::ostream & operator<<(std::ostream &, const const_array<R> &);
 
+//-----------------------------------------------------------------------------
+// forward these so they can be friends
+
+template <class R> R sum(const array<R> & a);
+
+template <class R> array<bool> operator== (const array<R> & lhs, const R & rhs);
+template <class R> array<bool> operator!= (const array<R> & lhs, const R & rhs);
+template <class R> array<bool> operator<  (const array<R> & lhs, const R & rhs);
+template <class R> array<bool> operator<= (const array<R> & lhs, const R & rhs);
+template <class R> array<bool> operator>  (const array<R> & lhs, const R & rhs);
+template <class R> array<bool> operator>= (const array<R> & lhs, const R & rhs);
+
+template <class R> array<bool> operator== (const R & lhs, const array<R> & rhs);
+template <class R> array<bool> operator!= (const R & lhs, const array<R> & rhs);
+template <class R> array<bool> operator<  (const R & lhs, const array<R> & rhs);
+template <class R> array<bool> operator<= (const R & lhs, const array<R> & rhs);
+template <class R> array<bool> operator>  (const R & lhs, const array<R> & rhs);
+template <class R> array<bool> operator>= (const R & lhs, const array<R> & rhs);
+
+template <class R> array<bool> operator== (const array<R> & lhs, const array<R> & rhs);
+template <class R> array<bool> operator!= (const array<R> & lhs, const array<R> & rhs);
+template <class R> array<bool> operator<  (const array<R> & lhs, const array<R> & rhs);
+template <class R> array<bool> operator<= (const array<R> & lhs, const array<R> & rhs);
+template <class R> array<bool> operator>  (const array<R> & lhs, const array<R> & rhs);
+template <class R> array<bool> operator>= (const array<R> & lhs, const array<R> & rhs);
+
 
 template <class R>
 class array
@@ -43,25 +70,27 @@ public:
     array(const std::initializer_list<R> & il);
     array(const std::vector<R> & v);
 
-    array(const std::vector<uint64> & shape, const R & value = R()); // std::vector like
+    array(const shape_t & shape, const R & value = R()); // std::vector like
+
+    array(array<R> && move) = default;
 
     array(const array<R> & other);
 
-    array<R> & operator=(const array<R> & rhs);
+    array(const const_array<R> & other) : array(other._a) {}
 
-//~    array(array && other);
-//~
-//~    template <class U>
-//~    array<U>                  astype() const;
+    array<R> & operator=(const array<R> & rhs) = default;
+
+    template <class U>
+    array<U>                  astype() const;
 //~
 //~    array<R>                  flatten() const;
-    const uint32              ndim() const                   { return _shape.size(); }
+    std::size_t               ndim() const                   { return _shape.size(); }
     std::size_t               size() const                   { return _size; }
-    const std::vector<uint64> shape() const                  { return _shape; }
+    const shape_t &           shape() const                  { return _shape; }
 //~    array<R>                  transpose();
 //~    array<R>                  T();
 
-    array<R> &                reshape(const std::vector<uint64> & new_shape);
+    array<R> &                reshape(const shape_t & new_shape);
 
     std::string               print(const std::string & fmt_ = "") const;
     std::string               debug_print() const;
@@ -72,28 +101,15 @@ public:
     operator value_type () const;      // implicitly conversion
     operator reference ();
 
-//~    array<R> operator~() const;
-    array<bool> operator!() const;
-
-    array<bool> operator==(const R & rhs) const;
-    array<bool> operator==(const array<R> & rhs) const;
-
-    array<bool> operator!=(const R & rhs) const           { return !(*this == rhs); }
-    array<bool> operator!=(const array<R> & rhs) const    { return !(*this == rhs); }
-
     array<R> & operator=(const R & rhs);
 
     template <typename U>
     array<R> & operator=(const U & rhs);  // used to create compiler error for type mismatch
 
-//~
-//~    // unary ops
-//~
 //~    array<R>    operator+() const;
-//~    array<R>    operator-() const;
-//~    array<R>    operator~() const;
-//~    array<bool> operator!() const;
-//~
+    array<R>    operator-() const;
+    array<R>    operator~() const;
+    array<bool> operator!() const;
 
     array<R> operator()(const slice &);
     array<R> operator()(const slice &, const slice &);
@@ -103,30 +119,38 @@ public:
     const_array<R> operator()(const slice &, const slice &) const;
     const_array<R> operator()(const slice &, const slice &, const slice &) const;
 
-//~
-//~    array<R> & operator=(const array<R> & rhs);
-//~
-//~    array<R> operator+=( const array<R> & rhs );
-//~    array<R> operator-=( const array<R> & rhs );
-//~    array<R> operator*=( const array<R> & rhs );
-//~    array<R> operator/=( const array<R> & rhs );
-//~    array<R> operator%=( const array<R> & rhs );
-//~    array<R> operator&=( const array<R> & rhs );
-//~    array<R> operator|=( const array<R> & rhs );
-//~    array<R> operator^=( const array<R> & rhs );
-//~    array<R> operator<<=( const array<R> & rhs );
-//~    array<R> operator>>=( const array<R> & rhs );
-//~
-//~    array<R> operator+=( const R & val );
-//~    array<R> operator-=( const R & val );
-//~    array<R> operator*=( const R & val );
-//~    array<R> operator/=( const R & val );
-//~    array<R> operator%=( const R & val );
-//~    array<R> operator&=( const R & val );
-//~    array<R> operator|=( const R & val );
-//~    array<R> operator^=( const R & val );
-//~    array<R> operator<<=( const R & val );
-//~    array<R> operator>>=( const R & val );
+    array<R> & operator+= ( const array<R> & rhs );
+    array<R> & operator-= ( const array<R> & rhs );
+    array<R> & operator*= ( const array<R> & rhs );
+    array<R> & operator/= ( const array<R> & rhs );
+    array<R> & operator%= ( const array<R> & rhs );
+    array<R> & operator&= ( const array<R> & rhs );
+    array<R> & operator|= ( const array<R> & rhs );
+    array<R> & operator^= ( const array<R> & rhs );
+    array<R> & operator<<=( const array<R> & rhs );
+    array<R> & operator>>=( const array<R> & rhs );
+
+    array<R> & operator+= ( const const_array<R> & rhs )   { *this +=  rhs._a; return *this; }
+    array<R> & operator-= ( const const_array<R> & rhs )   { *this -=  rhs._a; return *this; }
+    array<R> & operator*= ( const const_array<R> & rhs )   { *this *=  rhs._a; return *this; }
+    array<R> & operator/= ( const const_array<R> & rhs )   { *this /=  rhs._a; return *this; }
+    array<R> & operator%= ( const const_array<R> & rhs )   { *this %=  rhs._a; return *this; }
+    array<R> & operator&= ( const const_array<R> & rhs )   { *this &=  rhs._a; return *this; }
+    array<R> & operator|= ( const const_array<R> & rhs )   { *this |=  rhs._a; return *this; }
+    array<R> & operator^= ( const const_array<R> & rhs )   { *this ^=  rhs._a; return *this; }
+    array<R> & operator<<=( const const_array<R> & rhs )   { *this <<= rhs._a; return *this; }
+    array<R> & operator>>=( const const_array<R> & rhs )   { *this >>= rhs._a; return *this; }
+
+    array<R> & operator+= ( const R & val );
+    array<R> & operator-= ( const R & val );
+    array<R> & operator*= ( const R & val );
+    array<R> & operator/= ( const R & val );
+    array<R> & operator%= ( const R & val );
+    array<R> & operator&= ( const R & val );
+    array<R> & operator|= ( const R & val );
+    array<R> & operator^= ( const R & val );
+    array<R> & operator<<=( const R & val );
+    array<R> & operator>>=( const R & val );
 
 protected:
 
@@ -136,14 +160,36 @@ protected:
 
     std::shared_ptr<std::vector<R>> _array;
 
-    std::vector<uint64>             _shape;
+    shape_t                         _shape;
     std::vector<index_t>            _strides;
     index_t                         _offset;
 
     friend class const_array<R>;
 
-    template <typename>
-    friend class array;
+    template <typename> friend class array;
+
+    friend R sum <> (const array<R> & a);
+
+    friend array<bool> operator== <> (const array<R> & lhs, const R & rhs);
+    friend array<bool> operator!= <> (const array<R> & lhs, const R & rhs);
+    friend array<bool> operator<  <> (const array<R> & lhs, const R & rhs);
+    friend array<bool> operator<= <> (const array<R> & lhs, const R & rhs);
+    friend array<bool> operator>  <> (const array<R> & lhs, const R & rhs);
+    friend array<bool> operator>= <> (const array<R> & lhs, const R & rhs);
+
+    friend array<bool> operator== <> (const R & lhs, const array<R> & rhs);
+    friend array<bool> operator!= <> (const R & lhs, const array<R> & rhs);
+    friend array<bool> operator<  <> (const R & lhs, const array<R> & rhs);
+    friend array<bool> operator<= <> (const R & lhs, const array<R> & rhs);
+    friend array<bool> operator>  <> (const R & lhs, const array<R> & rhs);
+    friend array<bool> operator>= <> (const R & lhs, const array<R> & rhs);
+
+    friend array<bool> operator== <> (const array<R> & lhs, const array<R> & rhs);
+    friend array<bool> operator!= <> (const array<R> & lhs, const array<R> & rhs);
+    friend array<bool> operator<  <> (const array<R> & lhs, const array<R> & rhs);
+    friend array<bool> operator<= <> (const array<R> & lhs, const array<R> & rhs);
+    friend array<bool> operator>  <> (const array<R> & lhs, const array<R> & rhs);
+    friend array<bool> operator>= <> (const array<R> & lhs, const array<R> & rhs);
 };
 
 
@@ -152,10 +198,10 @@ protected:
 
 namespace detail
 {
-    template <class R>
-    R _compute_size(const std::vector<R> & shape)
+    inline
+    std::size_t _compute_size(const shape_t & shape)
     {
-        R s = ! shape.empty();
+        std::size_t s = ! shape.empty();
 
         for(auto x : shape)
         {
@@ -174,7 +220,7 @@ array()
     :
     _size(0),
     _array(nullptr),
-    _shape(),
+    _shape({}),
     _strides(),
     _offset(0)
 {
@@ -212,7 +258,7 @@ array(const std::vector<R> & v)
 
 template <class R>
 array<R>::
-array(const std::vector<uint64> & shape, const R & value)
+array(const shape_t & shape, const R & value)
     :
     _size(detail::_compute_size(shape)),
     _array(std::make_shared<std::vector<R>>(std::vector<R>(_size, value))),
@@ -228,11 +274,69 @@ template <class R>
 array<R>::
 array(const array<R> & other)
     :
-    array<R>()
+    _size(other._size),
+    _shape(other._shape),
+    _offset(0)
 {
-    DOUT << __PRETTY_FUNCTION__ << std::endl;
+    _array = std::make_shared<std::vector<R>>();
+    _array->reserve(_size);
 
-    *this = other;
+    if(ndim() == 1)
+    {
+        #define loop( idx )                                                  \
+            for(std::size_t i = 0; i < _size; ++i)                           \
+            {                                                                \
+                _array->emplace_back((*other._array)[other._offset + idx]);  \
+            }
+
+        if(other._strides.empty()) loop( i )
+        else                       loop( i * other._strides[0] )
+
+        #undef loop
+    }
+    else
+    if(ndim() == 2)
+    {
+        #define loop( idx )                                                   \
+            for(std::size_t m = 0; m < _shape[0]; ++m)                        \
+            {                                                                 \
+                for(std::size_t n = 0; n < _shape[1]; ++n)                    \
+                {                                                             \
+                    _array->emplace_back(                                     \
+                        (*other._array)[other._offset + idx ]);               \
+                }                                                             \
+            }
+
+        if(other._strides.empty()) loop( m * _shape[1] + n )
+        else                       loop( m * other._strides[0] + n * other._strides[1] )
+
+        #undef loop
+    }
+    else
+    if(ndim() == 3)
+    {
+        #define loop( idx )                                                   \
+            for(std::size_t m = 0; m < _shape[0]; ++m)                        \
+            {                                                                 \
+                for(std::size_t n = 0; n < _shape[1]; ++n)                    \
+                {                                                             \
+                    for(std::size_t p = 0; p < _shape[2]; ++p)                \
+                    {                                                         \
+                        _array->emplace_back(                                 \
+                            (*other._array)[other._offset + idx]);            \
+                    }                                                         \
+                }                                                             \
+            }
+
+        if(other._strides.empty()) loop( m * _shape[1] *_shape[2] + n * _shape[2] + p )
+        else                       loop( m * other._strides[0] + n * other._strides[1] + p * other._strides[2] )
+
+        #undef loop
+    }
+    else
+    {
+        M_THROW_RT_ERROR("unhandled case"); // LCOV_EXCL_LINE
+    }
 }
 
 
@@ -274,10 +378,69 @@ array<R>::operator array<R>::reference ()
 }
 
 
+template <class R> template<class U>
+array<U>
+array<R>::
+astype() const
+{
+    DOUT << __PRETTY_FUNCTION__ << std::endl;
+
+    array<U> out;
+
+    out._size = _size;
+    out._array = std::make_shared<std::vector<U>>();
+    out._array->reserve(_size);
+    out._shape = _shape;
+
+    if(ndim() == 1)
+    {
+        for(std::size_t i = 0; i < _size; ++i)
+        {
+            out._array->emplace_back((*this)(i));
+        }
+
+        return out;
+    }
+    else
+    if(ndim() == 2)
+    {
+        for(std::size_t m = 0; m < _shape[0]; ++m)
+        {
+            for(std::size_t n = 0; n < _shape[1]; ++n)
+            {
+                out._array->emplace_back((*this)(m,n));
+            }
+        }
+
+        return out;
+    }
+    else
+    if(ndim() == 3)
+    {
+        for(std::size_t m = 0; m < _shape[0]; ++m)
+        {
+            for(std::size_t n = 0; n < _shape[1]; ++n)
+            {
+                for(std::size_t p = 0; p < _shape[2]; ++p)
+                {
+                    out._array->emplace_back((*this)(m,n,p));
+                }
+            }
+        }
+
+        return out;
+    }
+
+    M_THROW_RT_ERROR("unhandled case"); // LCOV_EXCL_LINE
+
+    return out;
+}
+
+
 template <class R>
 array<R> &
 array<R>::
-reshape(const std::vector<uint64> & shape)
+reshape(const shape_t & shape)
 {
     DOUT << __PRETTY_FUNCTION__ << std::endl;
 
@@ -290,182 +453,6 @@ reshape(const std::vector<uint64> & shape)
     _shape = shape;
 
     return *this;
-}
-
-
-template <class R>
-array<bool>
-array<R>::
-operator!() const
-{
-    DOUT << __PRETTY_FUNCTION__ << std::endl;
-
-    array<bool> out(std::vector<bool>(_size, false));
-
-    if(ndim() == 1)
-    {
-        #define loop( idx )                                       \
-            for(uint64 i = 0; i < _size; ++i)                     \
-            {                                                     \
-                (*out._array)[i] = !(*_array)[_offset + idx ];    \
-            }
-
-        if(_strides.empty()) loop( i )
-        else                 loop( i * _strides[0] )
-
-        #undef loop
-
-        return out;
-    }
-    else
-    if(ndim() == 2)
-    {
-        out.reshape(_shape);
-
-        #define loop( idx )                                            \
-        {                                                              \
-            index_t i = 0;                                             \
-            for(uint64 m = 0; m < _shape[0]; ++m)                      \
-            {                                                          \
-                for(uint64 n = 0; n < _shape[1]; ++n)                  \
-                {                                                      \
-                    (*out._array)[i++] = !(*_array)[_offset + idx];    \
-                }                                                      \
-            }                                                          \
-        }
-
-        if(_strides.empty()) loop( m * _shape[1] + n )
-        else                 loop( m * _strides[0] + n * _strides[1] )
-
-        #undef loop
-
-        return out;
-    }
-
-    M_THROW_RT_ERROR("unhandled case"); // LCOV_EXCL_LINE
-
-    return out; // LCOV_EXCL_LINE
-}
-
-
-template <class R>
-array<bool>
-array<R>::
-operator==(const R & rhs) const
-{
-    DOUT << __PRETTY_FUNCTION__ << std::endl;
-
-    auto out = array<bool>(std::vector<bool>(_size, false)).reshape(_shape);
-
-    if(ndim() == 1)
-    {
-        #define loop( idx_expr )                                          \
-            for(uint64 i = 0; i < _size; ++i)                             \
-            {                                                             \
-                (*out._array)[i] = (*_array)[_offset + idx_expr ] == rhs; \
-            }
-
-        if(_strides.empty()) loop( i )
-        else                 loop( i * _strides[0] )
-
-        #undef loop
-
-        return out;
-    }
-    else
-    if(ndim() == 2)
-    {
-        #define loop( idx_expr )                                          \
-        {                                                                 \
-            index_t i = 0;                                                \
-            for(uint64 m = 0; m < _shape[0]; ++m)                         \
-            {                                                             \
-                for(uint64 n = 0; n < _shape[1]; ++n)                     \
-                {                                                         \
-                    (*out._array)[i++] =                                  \
-                        rhs == (*_array)[_offset + idx_expr ];            \
-                }                                                         \
-            }                                                             \
-        }
-
-        if(_strides.empty()) loop( m * _shape[1] + n )
-        else                 loop( m * _strides[0] + n * _strides[1] )
-
-        #undef loop
-
-        return out;
-    }
-
-    M_THROW_RT_ERROR("unhandled case"); // LCOV_EXCL_LINE
-
-    return out;
-}
-
-
-template <class R>
-array<bool>
-array<R>::
-operator==(const array<R> & rhs) const
-{
-    DOUT << __PRETTY_FUNCTION__ << std::endl;
-
-    if(_size != rhs._size) return array<bool>({false});
-    if(_shape != rhs._shape) return array<bool>({false});
-
-    array<bool> out(std::vector<bool>(_size, false));
-
-    if(ndim() == 1)
-    {
-        const index_t size_ = static_cast<index_t>(_size);
-
-        for(index_t i = 0; i < size_; ++i)
-        {
-            (*out._array)[i] = bool{(*this)(i) == rhs(i)};
-        }
-
-        return out;
-    }
-    else
-    if(ndim() == 2)
-    {
-        out.reshape(_shape);
-
-        index_t i = 0;
-
-        for(index_t m = 0; m < static_cast<index_t>(_shape[0]); ++m)
-        {
-            for(index_t n = 0; n < static_cast<index_t>(_shape[1]); ++n)
-            {
-                (*out._array)[i++] = bool{(*this)(m,n) == rhs(m,n)};
-            }
-        }
-
-        return out;
-    }
-    else
-    if(ndim() == 3)
-    {
-        out.reshape(_shape);
-
-        index_t i = 0;
-
-        for(index_t m = 0; m < static_cast<index_t>(_shape[0]); ++m)
-        {
-            for(index_t n = 0; n < static_cast<index_t>(_shape[1]); ++n)
-            {
-                for(index_t p = 0; p < static_cast<index_t>(_shape[2]); ++p)
-                {
-                    (*out._array)[i++] = bool{(*this)(m,n,p) == rhs(m,n,p)};
-                }
-            }
-        }
-
-        return out;
-    }
-
-    M_THROW_RT_ERROR("unhandled case"); // LCOV_EXCL_LINE
-
-    return array<bool>();
 }
 
 
@@ -510,6 +497,28 @@ operator=(const R & rhs)
 
         return *this;
     }
+    else
+    if(ndim() == 3)
+    {
+        #define loop( idx )                                    \
+            for(uint64 m = 0; m < _shape[0]; ++m)              \
+            {                                                  \
+                for(uint64 n = 0; n < _shape[1]; ++n)          \
+                {                                              \
+                    for(uint64 p = 0; p < _shape[2]; ++p)      \
+                    {                                          \
+                        (*_array)[_offset + idx ] = rhs;       \
+                    }                                          \
+                }                                              \
+            }                                                  \
+
+        if(_strides.empty()) loop( m * _shape[1] * _shape[2] + n * _shape[2] + p )
+        else                 loop( m * _strides[0] + n * _strides[1] + p * _strides[2] )
+
+        #undef loop
+
+        return *this;
+    }
 
     M_THROW_RT_ERROR("unhandled case"); // LCOV_EXCL_LINE
 
@@ -526,25 +535,6 @@ operator=(const U & rhs)
         std::is_same<R, U>::value,
         "array<R> = array<U> is not allowed"
     );
-
-    return *this;
-}
-
-
-template <class R>
-array<R> &
-array<R>::
-operator=(const array<R> & rhs)
-{
-    DOUT << __PRETTY_FUNCTION__ << std::endl;
-
-    if(this == &rhs) return *this;
-
-    _size = rhs._size;
-    _array = rhs._array;
-    _shape = rhs._shape;
-    _strides = rhs._strides;
-    _offset = rhs._offset;
 
     return *this;
 }
@@ -673,6 +663,10 @@ operator()(const slice & s0, const slice & s1)
         {
             out._shape = {count1};
             out._strides = {out._strides[1]};
+
+            DOUT << "\n"
+                << "m,n = " << start0 << ", " << start1 << "\n"
+                << out.debug_print() << "\n";
         }
 
         // column vector
@@ -784,10 +778,10 @@ operator()(const slice & s0, const slice & s1, const slice & s2)
         //---------------------------------------------------------------------
         // squeezing, not it's own funciton yet!
 
-        int32 key = (count0 == 1) * 100 + (count1 == 1) * 10 + (count2 == 1);
+        int32 key = 4 * (count0 == 1) + 2 * (count1 == 1) + (count2 == 1);
 
         // single value
-        if(key == 111)
+        if(key == 0b111)
         {
             out._shape = {1};
             out._strides = {};
@@ -795,7 +789,7 @@ operator()(const slice & s0, const slice & s1, const slice & s2)
 
         // row vector
         else
-        if(key == 110)
+        if(key == 0b110)
         {
             out._shape = {count2};
 
@@ -808,7 +802,7 @@ operator()(const slice & s0, const slice & s1, const slice & s2)
         // col vector
 
         else
-        if(key == 101)
+        if(key == 0b101)
         {
             out._shape = {count1};
             out._strides = {out._strides[1]};
@@ -816,7 +810,7 @@ operator()(const slice & s0, const slice & s1, const slice & s2)
 
         // 2d
         else
-        if(key == 100)
+        if(key == 0b100)
         {
             out._shape = {count1, count2};
 
@@ -831,7 +825,7 @@ operator()(const slice & s0, const slice & s1, const slice & s2)
 
         // 2d
         else
-        if(key == 10) // 010
+        if(key == 0b010)
         {
             out._shape = {count0, count2};
 
@@ -843,7 +837,7 @@ operator()(const slice & s0, const slice & s1, const slice & s2)
 
         // 2d
         else
-        if(key == 1) // 001
+        if(key == 0b001)
         {
             out._shape = {count0, count1};
 
@@ -855,7 +849,7 @@ operator()(const slice & s0, const slice & s1, const slice & s2)
 
         // 3d
         else
-        if(key == 0) // 000
+        if(key == 0b000)
         {
             out._shape = {count0, count1, count2};
         }
@@ -1004,7 +998,7 @@ print(const std::string & fmt_in) const
 
         for(uint64 i = 0; i < _size; ++i)
         {
-            out << detail::_format<R>(fmt_, a(i));
+            out << detail::_format<R>(fmt_, R{a(i)});
             if(i + 1 < a._size) out << ", ";
         }
 
@@ -1021,8 +1015,7 @@ print(const std::string & fmt_in) const
 
             for(auto j = 0u; j < _shape[1]; ++j)
             {
-                const R & r = a(i,j);
-                out << detail::_format(fmt_, r);
+                out << detail::_format(fmt_, R{a(i,j)});
                 if(j + 1 < _shape[1]) out << ", ";
             }
 
@@ -1045,8 +1038,7 @@ print(const std::string & fmt_in) const
 
                 for(auto k = 0u; k < _shape[2]; ++k)
                 {
-                    const R & r = a(i,j,k);
-                    out << detail::_format(fmt_, r);
+                    out << detail::_format(fmt_, R{a(i,j,k)});
                     if(k + 1 < _shape[2]) out << ", ";
                 }
 
@@ -1085,29 +1077,30 @@ debug_print() const
         << "    dtype:    " << detail::type_name<R>() << "\n"
         << "    _size:    " << _size << "\n"
         << "    _data:    " << fmt::format(
-            "{:16d}",
-            reinterpret_cast<uint64>(_array.get())) << "\n"
-        << "    _shape:   (";
-
-    for(const auto & x : _shape) ss << x << ", ";
-
-    ss
-        << ")\n"
+            "{:16d}, ref_count={:d}",
+            reinterpret_cast<uint64>(_array.get()),
+            _array.use_count()
+        ) << "\n"
+        << "    _shape:   " << _shape << "\n"
         << "    _strides: (";
 
     for(const auto & x : _strides) ss << x << ", ";
 
     ss
         << ")\n"
-        << "    _offset: "<< _offset << "\n";
+        << "    _offset: "<< _offset << "\n"
+        << "    _array[_offset]: " << (*_array)[_offset] << "\n";
 
     return ss.str();
 }
 
 
+#include <numcpp/_array_ops.hpp>
+
+
 } // namespace
 
 
-#endif
+#endif // _NUMCPP_ARRAY_HPP_
 
 // :mode=c++:noTabs=true:

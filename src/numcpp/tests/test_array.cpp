@@ -11,7 +11,7 @@ TEST_CASE("numcpp::array basics")
 {
     auto a = array<int32>({1,2,3,4});
 
-    std::vector<uint64> shape = {4};
+    shape_t shape = {4};
 
     CHECK( a.size() == 4 );
     CHECK( a.ndim() == 1 );
@@ -52,9 +52,9 @@ TEST_CASE("numcpp::array basics")
 
     float32 f = 0.0f;
 
-    for(uint64 m = 0; m < b.shape()[0]; ++m)
+    for(std::size_t m = 0; m < b.shape()[0]; ++m)
     {
-        for(uint64 n = 0; n < b.shape()[1]; ++n)
+        for(std::size_t n = 0; n < b.shape()[1]; ++n)
         {
             CHECK( b(m,n) == Approx(f) );
 
@@ -80,19 +80,9 @@ TEST_CASE( "numcpp::array::operator==" )
 }
 
 
-const int & foobar(const array<int> & a)
-{
-    int x = a(0);
-
-    CHECK( x == 1 );
-
-    return a(5);
-}
-
-
 TEST_CASE( "numcpp::array::reshape")
 {
-    std::vector<uint64> s = {3,4};
+    shape_t s = {3,4};
 
     auto a = array<int32>({1,2,3,4,5,6,7,8,9,10,11,12}).reshape(s);
 
@@ -129,10 +119,6 @@ TEST_CASE( "numcpp::array::reshape")
     CHECK( a(2) == 3 );
     CHECK_THROWS( a(1,1) );
     CHECK_THROWS( a(2,2) );
-
-    auto y = foobar(a);
-
-    CHECK( y == 6 );
 }
 
 
@@ -618,7 +604,6 @@ TEST_CASE( "numcpp::array 2D element access" )
         }
     ).reshape({4,4});
 
-    INFO( "a = " << a.print("%2d") );
     CHECK( all(a == gold) );
 
     a = 300;
@@ -632,8 +617,38 @@ TEST_CASE( "numcpp::array 2D element access" )
         }
     ).reshape({4,4});
 
-    INFO( "a = " << a.debug_print() );
     CHECK( all(a == gold) );
+
+    a(1_s|3,1_s|3) = 0;
+
+    gold = array<int>(
+        {
+           300, 300, 300, 300,
+           300,   0,   0, 300,
+           300,   0,   0, 300,
+           300, 300, 300, 300,
+        }
+    ).reshape({4,4});
+
+    CHECK( all(a == gold) );
+
+    // deep copy
+    auto c = array<int>(a);
+
+    c(1_s|3,1_s|3) = 300;
+
+    CHECK( all(a == gold) );
+
+    gold = array<int>(
+        {
+           300, 300, 300, 300,
+           300, 300, 300, 300,
+           300, 300, 300, 300,
+           300, 300, 300, 300,
+        }
+    ).reshape({4,4});
+
+    CHECK( all(c == gold) );
 }
 
 

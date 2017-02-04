@@ -5,6 +5,7 @@
 #include <numcpp/array.hpp>
 #include <numcpp/const_array.hpp>
 #include <numcpp/macros.hpp>
+#include <numcpp/shape.hpp>
 
 
 namespace numcpp
@@ -19,9 +20,11 @@ template <class R> array<R> arange(R stop);
 template <class R> array<R> arange(R start, R stop);
 template <class R> array<R> arange(R start, R stop, R step);
 
-template <class R> array<R> ones(const std::vector<uint64> & shape);
-template <class R> array<R> zeros(const std::vector<uint64> & shape);
+template <class R> array<R> ones(const shape_t & shape);
+template <class R> array<R> zeros(const shape_t & shape);
 
+template <class R> R        sum(const array<R> & a);
+template <class R> array<R> sum(const array<R> & a, std::size_t axis);
 
 //-----------------------------------------------------------------------------
 // inline implementation
@@ -42,9 +45,9 @@ any(const array<bool> & a)
     }
     if(a.ndim() == 2)
     {
-        for(uint64 m = 0; m < a.shape()[0]; ++m)
+        for(std::size_t m = 0; m < a.shape()[0]; ++m)
         {
-            for(uint64 n = 0; n < a.shape()[1]; ++n)
+            for(std::size_t n = 0; n < a.shape()[1]; ++n)
             {
                 bool b = a(m,n);
 
@@ -66,7 +69,7 @@ all(const array<bool> & a)
 {
     if(a.ndim() == 1)
     {
-        for(uint64 i = 0; i < a.size(); ++i)
+        for(std::size_t i = 0; i < a.size(); ++i)
         {
             bool b = a(i);
 
@@ -78,9 +81,9 @@ all(const array<bool> & a)
     else
     if(a.ndim() == 2)
     {
-        for(uint64 m = 0; m < a.shape()[0]; ++m)
+        for(std::size_t m = 0; m < a.shape()[0]; ++m)
         {
-            for(uint64 n = 0; n < a.shape()[1]; ++n)
+            for(std::size_t n = 0; n < a.shape()[1]; ++n)
             {
                 bool b = a(m,n);
 
@@ -93,11 +96,11 @@ all(const array<bool> & a)
     else
     if(a.ndim() == 3)
     {
-        for(uint64 m = 0; m < a.shape()[0]; ++m)
+        for(std::size_t m = 0; m < a.shape()[0]; ++m)
         {
-            for(uint64 n = 0; n < a.shape()[1]; ++n)
+            for(std::size_t n = 0; n < a.shape()[1]; ++n)
             {
-                for(uint64 p = 0; p < a.shape()[2]; ++p)
+                for(std::size_t p = 0; p < a.shape()[2]; ++p)
                 {
                     bool b = a(m,n,p);
 
@@ -212,7 +215,7 @@ arange(R start, R stop, R step)
 
 
 template <class R>
-array<R> ones(const std::vector<uint64> & shape)
+array<R> ones(const shape_t & shape)
 {
     return array<R>(
         std::vector<R>(detail::_compute_size(shape), static_cast<R>(1))
@@ -221,11 +224,158 @@ array<R> ones(const std::vector<uint64> & shape)
 
 
 template <class R>
-array<R> zeros(const std::vector<uint64> & shape)
+array<R> zeros(const shape_t & shape)
 {
     return array<R>(
         std::vector<R>(detail::_compute_size(shape), static_cast<R>(0))
     ).reshape(shape);
+}
+
+
+template <class R>
+R
+sum(const array<R> & a)
+{
+    R sum_ = 0;
+
+    if(a.ndim() == 1)
+    {
+        #define loop( idx )                                              \
+            for(std::size_t i = 0; i < a._size; ++i)                     \
+            {                                                            \
+                sum_ += (*a._array)[a._offset + idx];                    \
+            }
+
+        if(a._strides.empty()) loop( i )
+        else                   loop( i * a._strides[0] )
+
+        #undef loop
+    }
+    else
+    if(a.ndim() == 2)
+    {
+        #define loop( idx )                                               \
+            for(std::size_t m = 0; m < a._shape[0]; ++m)                  \
+            {                                                             \
+                for(std::size_t n = 0; n < a._shape[1]; ++n)              \
+                {                                                         \
+                    sum_ += (*a._array)[a._offset + idx ];                \
+                }                                                         \
+            }
+
+        if(a._strides.empty()) loop( m * a._shape[1] + n )
+        else                   loop( m * a._strides[0] + n * a._strides[1] )
+
+        #undef loop
+    }
+    else
+    if(a.ndim() == 3)
+    {
+        #define loop( idx )                                               \
+            for(std::size_t m = 0; m < a._shape[0]; ++m)                  \
+            {                                                             \
+                for(std::size_t n = 0; n < a._shape[1]; ++n)              \
+                {                                                         \
+                    for(std::size_t p = 0; p < a._shape[2]; ++p)          \
+                    {                                                     \
+                        sum_ += (*a._array)[a._offset + idx];             \
+                    }                                                     \
+                }                                                         \
+            }
+
+        if(a._strides.empty()) loop( m * a._shape[1] *a._shape[2] + n * a._shape[2] + p )
+        else                   loop( m * a._strides[0] + n * a._strides[1] + p * a._strides[2] )
+
+        #undef loop
+    }
+    else
+    {
+        M_THROW_RT_ERROR("unhandled case"); // LCOV_EXCL_LINE
+    }
+
+    return sum_;
+}
+
+
+template <class R>
+array<R>
+sum(const array<R> & a, std::size_t axis)
+{
+    if(axis >= a.ndim()) M_THROW_RT_ERROR("axis is out of bounds (" << axis << " >= " << a.ndim());
+
+    if(a.ndim() == 1) return array<R>({sum(a)});
+
+    missing _;
+
+    if(a.ndim() == 2 and axis == 0)
+    {
+        // init to first row
+        array<R> out(a(0,_));
+
+        for(std::size_t m = 1; m < a.shape()[0]; ++m)
+        {
+            out += a(m,_);
+        }
+
+        return out;
+    }
+    else
+    if(a.ndim() == 2 and axis == 1)
+    {
+        // init to first column
+        array<R> out(a(_,0));
+
+        for(std::size_t n = 1; n < a.shape()[1]; ++n)
+        {
+            out += a(_, n);
+        }
+
+        return out;
+    }
+    if(a.ndim() == 3 and axis == 0)
+    {
+        // init to first row
+        array<R> out(a(0,_,_));
+
+        for(std::size_t m = 1; m < a.shape()[0]; ++m)
+        {
+            out += a(m,_,_);
+        }
+
+        return out;
+    }
+    else
+    if(a.ndim() == 3 and axis == 1)
+    {
+        // init to first column
+        array<R> out(a(_,0,_));
+
+        for(std::size_t n = 1; n < a.shape()[1]; ++n)
+        {
+            out += a(_, n, _);
+        }
+
+        return out;
+    }
+    else
+    if(a.ndim() == 3 and axis == 2)
+    {
+        // init to first slice
+        array<R> out(a(_,_,0));
+
+        for(std::size_t p = 1; p < a.shape()[2]; ++p)
+        {
+            out += a(_, _, p);
+        }
+
+        return out;
+    }
+    else
+    {
+        M_THROW_RT_ERROR("unhandled case"); // LCOV_EXCL_LINE
+    }
+
+    return array<R>({});
 }
 
 

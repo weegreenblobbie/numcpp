@@ -1,0 +1,699 @@
+/* [[[cog
+
+# :mode=python:
+
+import cog
+import cog_warning
+
+cog_warning.warn(cog, __COGFILE__, prefix = '//')
+]]] */
+// [[[end]]]
+
+#ifndef _NUMCPP_ARRAY_HPP_
+    #error "only <numcpp/array.hpp> can include this file!"
+#endif
+
+
+//-----------------------------------------------------------------------------
+// unary operators
+//
+//     /*operator+*/
+//     operator-
+//     operator~
+//     operator!
+
+/* [[[cog
+
+import cog
+
+template = '''
+template <class R>
+array<{return_type}>
+array<R>::
+operator{op}() const
+{{
+    DOUT << __PRETTY_FUNCTION__ << std::endl;
+
+    std::vector<R> vec;
+
+    vec.reserve(_size);
+
+    if(ndim() == 1)
+    {{
+        #define loop( idx )                                                 \\
+            for(std::size_t i = 0; i < _size; ++i)                          \\
+            {{                                                               \\
+                vec.emplace_back({op}(*_array)[_offset + idx ]);       \\
+            }}
+
+        if(_strides.empty()) loop( i )
+        else                 loop( i * _strides[0] )
+
+        #undef loop
+
+        return array<R>(vec).reshape(_shape);
+    }}
+    else
+    if(ndim() == 2)
+    {{
+        #define loop( idx )                                                 \\
+        {{                                                                   \\
+            for(std::size_t m = 0; m < _shape[0]; ++m)                      \\
+            {{                                                               \\
+                for(std::size_t n = 0; n < _shape[1]; ++n)                  \\
+                {{                                                           \\
+                    vec.emplace_back({op}(*_array)[_offset + idx]);    \\
+                }}                                                           \\
+            }}                                                               \\
+        }}
+
+        if(_strides.empty()) loop( m * _shape[1] + n )
+        else                 loop( m * _strides[0] + n * _strides[1] )
+
+        #undef loop
+
+        return array<R>(vec).reshape(_shape);
+    }}
+    else
+    if(ndim() == 3)
+    {{
+        #define loop( idx )                                                 \\
+        {{                                                                   \\
+            for(std::size_t m = 0; m < _shape[0]; ++m)                      \\
+            {{                                                               \\
+                for(std::size_t n = 0; n < _shape[1]; ++n)                  \\
+                {{                                                           \\
+                    for(std::size_t p = 0; p < _shape[2]; ++p)              \\
+                    {{                                                       \\
+                        vec.emplace_back({op}(*_array)[_offset + idx]);     \\
+                    }}                                                       \\
+                }}                                                           \\
+            }}                                                               \\
+        }}
+
+        if(_strides.empty()) loop( m * _shape[1] * _shape[2] + n * _shape[2] + p )
+        else                 loop( m * _strides[0] + n * _strides[1] + p * _strides[2] )
+
+        #undef loop
+
+        return array<R>(vec).reshape(_shape);
+    }}
+
+    M_THROW_RT_ERROR("unhandled case"); // LCOV_EXCL_LINE
+
+    return array<R>({{}}); // LCOV_EXCL_LINE
+}}
+
+'''
+
+gen_ops = (
+#~    ('+', 'R'),
+    ('-', 'R'),
+    ('~', 'R'),
+    ('!', 'bool'),
+)
+
+for op, return_type in gen_ops:
+
+    code = template.format(op = op, return_type = return_type)
+
+    cog.out(code)
+
+
+]]] */
+// [[[end]]]
+
+
+//-----------------------------------------------------------------------------
+// array operators
+//
+//     operator+=   (const array<R> &)
+//     operator-=   (const array<R> &)
+//     operator*=   (const array<R> &)
+//     operator/=   (const array<R> &)
+//     operator%=   (const array<R> &)
+//     operator&=   (const array<R> &)
+//     operator|=   (const array<R> &)
+//     operator^=   (const array<R> &)
+//     operator<<=  (const array<R> &)
+//     operator>>=  (const array<R> &)
+
+/* [[[cog
+
+import cog
+
+template = '''
+template <class R>
+array<R> &
+array<R>::
+operator{op}(const array<R> & rhs)
+{{
+    DOUT << __PRETTY_FUNCTION__ << std::endl;
+
+    if(ndim() == 1)
+    {{
+        #define loop( idx )                                 \\
+            for(std::size_t i = 0; i < _size; ++i)          \\
+            {{                                               \\
+                (*_array)[_offset + idx ] {op} rhs(i);        \\
+            }}
+
+        if(_strides.empty()) loop( i )
+        else                 loop( i * _strides[0] )
+
+        #undef loop
+
+        return *this;
+    }}
+    else
+    if(ndim() == 2)
+    {{
+        #define loop( idx )                                                 \\
+        {{                                                                   \\
+            for(std::size_t m = 0; m < _shape[0]; ++m)                      \\
+            {{                                                               \\
+                for(std::size_t n = 0; n < _shape[1]; ++n)                  \\
+                {{                                                           \\
+                    (*_array)[_offset + idx] {op} rhs(m,n);                   \\
+                }}                                                           \\
+            }}                                                               \\
+        }}
+
+        if(_strides.empty()) loop( m * _shape[1] + n )
+        else                 loop( m * _strides[0] + n * _strides[1] )
+
+        #undef loop
+
+        return *this;
+    }}
+    else
+    if(ndim() == 3)
+    {{
+        #define loop( idx )                                                 \\
+        {{                                                                   \\
+            for(std::size_t m = 0; m < _shape[0]; ++m)                      \\
+            {{                                                               \\
+                for(std::size_t n = 0; n < _shape[1]; ++n)                  \\
+                {{                                                           \\
+                    for(std::size_t p = 0; p < _shape[2]; ++p)              \\
+                    {{                                                       \\
+                        (*_array)[_offset + idx] {op} rhs(m,n, p);            \\
+                    }}                                                       \\
+                }}                                                           \\
+            }}                                                               \\
+        }}
+
+        if(_strides.empty()) loop( m * _shape[1] * _shape[2] + n * _shape[2] + p )
+        else                 loop( m * _strides[0] + n * _strides[1] + p * _strides[2] )
+
+        #undef loop
+
+        return *this;
+    }}
+
+    M_THROW_RT_ERROR("unhandled case"); // LCOV_EXCL_LINE
+
+    return *this; // LCOV_EXCL_LINE
+}}
+
+'''
+
+gen_ops = '+= -= *= /= %= &= |= ^= <<= >>='.split()
+
+for op in gen_ops:
+
+    code = template.format(op = op)
+
+    cog.out(code)
+
+]]] */
+// [[[end]]]
+
+
+//-----------------------------------------------------------------------------
+// array operators
+//
+//     operator+=   (const R &)
+//     operator-=   (const R &)
+//     operator*=   (const R &)
+//     operator/=   (const R &)
+//     operator%=   (const R &)
+//     operator&=   (const R &)
+//     operator|=   (const R &)
+//     operator^=   (const R &)
+//     operator<<=  (const R &)
+//     operator>>=  (const R &)
+
+/* [[[cog
+
+import cog
+
+template = '''
+template <class R>
+array<R> &
+array<R>::
+operator{op}(const R & rhs)
+{{
+    DOUT << __PRETTY_FUNCTION__ << std::endl;
+
+    if(ndim() == 1)
+    {{
+        #define loop( idx )                                 \\
+            for(std::size_t i = 0; i < _size; ++i)          \\
+            {{                                               \\
+                (*_array)[_offset + idx ] {op} rhs;           \\
+            }}
+
+        if(_strides.empty()) loop( i )
+        else                 loop( i * _strides[0] )
+
+        #undef loop
+
+        return *this;
+    }}
+    else
+    if(ndim() == 2)
+    {{
+        #define loop( idx )                                                 \\
+        {{                                                                   \\
+            for(std::size_t m = 0; m < _shape[0]; ++m)                      \\
+            {{                                                               \\
+                for(std::size_t n = 0; n < _shape[1]; ++n)                  \\
+                {{                                                           \\
+                    (*_array)[_offset + idx] {op} rhs;                        \\
+                }}                                                           \\
+            }}                                                               \\
+        }}
+
+        if(_strides.empty()) loop( m * _shape[1] + n )
+        else                 loop( m * _strides[0] + n * _strides[1] )
+
+        #undef loop
+
+        return *this;
+    }}
+    else
+    if(ndim() == 3)
+    {{
+        #define loop( idx )                                                \\
+        {{                                                                  \\
+            for(std::size_t m = 0; m < _shape[0]; ++m)                     \\
+            {{                                                              \\
+                for(std::size_t n = 0; n < _shape[1]; ++n)                 \\
+                {{                                                          \\
+                    for(std::size_t p = 0; p < _shape[2]; ++p)             \\
+                    {{                                                      \\
+                        (*_array)[_offset + idx] {op} rhs;                   \\
+                    }}                                                      \\
+                }}                                                          \\
+            }}                                                              \\
+        }}
+
+        if(_strides.empty()) loop( m * _shape[1] * _shape[2] + n * _shape[2] + p )
+        else                 loop( m * _strides[0] + n * _strides[1] + p * _strides[2] )
+
+        #undef loop
+
+        return *this;
+    }}
+
+    M_THROW_RT_ERROR("unhandled case"); // LCOV_EXCL_LINE
+
+    return *this; // LCOV_EXCL_LINE
+}}
+
+'''
+
+gen_ops = '+= -= *= /= %= &= |= ^= <<= >>='.split()
+
+for op in gen_ops:
+
+    code = template.format(op = op)
+
+    cog.out(code)
+
+]]] */
+// [[[end]]]
+
+
+//-----------------------------------------------------------------------------
+// array operators
+//
+//     operator+
+//     operator-
+//     operator*
+//     operator/
+//     operator%
+//     operator&
+//     operator|
+//     operator^
+//     operator<<
+//     operator>>
+
+/* [[[cog
+
+import cog
+
+template = '''
+template <class R>
+array<R>
+operator{op}(const array<R> & lhs, const R & rhs)
+{{
+    DOUT << __PRETTY_FUNCTION__ << std::endl;
+
+    array<R> out(lhs);
+
+    out {op}= rhs;
+
+    return out;
+}}
+
+
+template <class R>
+array<R>
+operator{op}(const R & lhs, const array<R> & rhs)
+{{
+    DOUT << __PRETTY_FUNCTION__ << std::endl;
+
+    array<R> out(rhs.shape(), lhs);
+
+    out {op}= rhs;
+
+    return out;
+}}
+
+
+template <class R>
+array<R>
+operator{op}(const array<R> & lhs, const array<R> & rhs)
+{{
+    DOUT << __PRETTY_FUNCTION__ << std::endl;
+
+    if(lhs.shape() != rhs.shape())
+    {{
+        M_THROW_RT_ERROR("operands could not be broadcast together with shapes " << lhs.shape() << " " << rhs.shape());
+    }}
+
+    array<R> out(lhs);
+
+    out {op}= rhs;
+
+    return out;
+}}
+
+'''
+
+gen_ops = '+ - * / % & | ^ << >>'.split()
+
+for op in gen_ops:
+
+    code = template.format(op = op)
+
+    cog.out(code)
+
+]]] */
+// [[[end]]]
+
+
+//-----------------------------------------------------------------------------
+// array<bool> operators
+//
+//     operator==
+//     operator!=
+//     operator<
+//     operator<=
+//     operator>
+//     operator>=
+
+/* [[[cog
+
+import cog
+
+template = '''
+template <class R>
+array<bool>
+operator{op}(const array<R> & lhs, const R & rhs)
+{{
+    DOUT << __PRETTY_FUNCTION__ << std::endl;
+
+    std::vector<bool> vec;
+
+    vec.reserve(lhs._size);
+
+    if(lhs.ndim() == 1)
+    {{
+        #define loop( idx )                                           \\
+            for(std::size_t i = 0; i < lhs._size; ++i)                \\
+            {{                                                         \\
+                vec.emplace_back(                             \\
+                    (*lhs._array)[lhs._offset + idx ] {op} rhs);      \\
+            }}
+
+        if(lhs._strides.empty()) loop( i )
+        else                     loop( i * lhs._strides[0] )
+
+        #undef loop
+
+        return array<bool>(vec).reshape(lhs.shape());
+    }}
+    else
+    if(lhs.ndim() == 2)
+    {{
+        #define loop( idx )                                               \\
+        {{                                                                 \\
+            for(std::size_t m = 0; m < lhs._shape[0]; ++m)                \\
+            {{                                                             \\
+                for(std::size_t n = 0; n < lhs._shape[1]; ++n)            \\
+                {{                                                         \\
+                    vec.emplace_back(                             \\
+                        (*lhs._array)[lhs._offset + idx ] {op} rhs);      \\
+                }}                                                         \\
+            }}                                                             \\
+        }}
+
+        if(lhs._strides.empty()) loop( m * lhs._shape[1] + n )
+        else                     loop( m * lhs._strides[0] + n * lhs._strides[1] )
+
+        #undef loop
+
+        return array<bool>(vec).reshape(lhs.shape());
+    }}
+    else
+    if(lhs.ndim() == 3)
+    {{
+        #define loop( idx )                                                  \\
+            for(std::size_t m = 0; m < lhs._shape[0]; ++m)                   \\
+            {{                                                                \\
+                for(std::size_t n = 0; n < lhs._shape[1]; ++n)               \\
+                {{                                                            \\
+                    for(std::size_t p = 0; p < lhs._shape[2]; ++p)           \\
+                    {{                                                        \\
+                        vec.emplace_back(                            \\
+                            (*lhs._array)[lhs._offset + idx ] {op} rhs);     \\
+                    }}                                                        \\
+                }}                                                            \\
+            }}
+
+        if(lhs._strides.empty()) loop( m * lhs._shape[1] * lhs._shape[2] + n * lhs._shape[2]   + p )
+        else                     loop( m * lhs._strides[0]               + n * lhs._strides[1] + p * lhs._strides[2] )
+
+        #undef loop
+
+        return array<bool>(vec).reshape(lhs.shape());
+    }}
+
+    M_THROW_RT_ERROR("unhandled case"); // LCOV_EXCL_LINE
+
+    return array<bool>({{false}});
+}}
+
+
+template <class R>
+array<bool>
+operator{op}(const R & lhs, const array<R> & rhs)
+{{
+    DOUT << __PRETTY_FUNCTION__ << std::endl;
+
+    array<bool> out;
+
+    out._size = rhs._size;
+    out._shape = rhs._shape;
+    out._array = std::make_shared<std::vector<bool>>();
+    out._array->reserve(rhs._size);
+
+    if(rhs.ndim() == 1)
+    {{
+        #define loop( idx )                                           \\
+            for(std::size_t i = 0; i < rhs._size; ++i)                \\
+            {{                                                         \\
+                out._array->emplace_back(                             \\
+                    lhs {op} (*rhs._array)[rhs._offset + idx ]);      \\
+            }}
+
+        if(rhs._strides.empty()) loop( i )
+        else                     loop( i * rhs._strides[0] )
+
+        #undef loop
+
+        return out;
+    }}
+    else
+    if(rhs.ndim() == 2)
+    {{
+        #define loop( idx )                                               \\
+        {{                                                                 \\
+            for(std::size_t m = 0; m < rhs._shape[0]; ++m)                \\
+            {{                                                             \\
+                for(std::size_t n = 0; n < rhs._shape[1]; ++n)            \\
+                {{                                                         \\
+                    out._array->emplace_back(                             \\
+                        lhs {op} (*rhs._array)[rhs._offset + idx ]);      \\
+                }}                                                         \\
+            }}                                                             \\
+        }}
+
+        if(rhs._strides.empty()) loop( m * rhs._shape[1] + n )
+        else                     loop( m * rhs._strides[0] + n * rhs._strides[1] )
+
+        #undef loop
+
+        return out;
+    }}
+    else
+    if(rhs.ndim() == 3)
+    {{
+        #define loop( idx )                                                  \\
+            for(std::size_t m = 0; m < rhs._shape[0]; ++m)                   \\
+            {{                                                                \\
+                for(std::size_t n = 0; n < rhs._shape[1]; ++n)               \\
+                {{                                                            \\
+                    for(std::size_t p = 0; p < rhs._shape[2]; ++p)           \\
+                    {{                                                        \\
+                        out._array->emplace_back(                            \\
+                            lhs {op} (*rhs._array)[rhs._offset + idx ]);     \\
+                    }}                                                        \\
+                }}                                                            \\
+            }}
+
+        if(rhs._strides.empty()) loop( m * rhs._shape[1] * rhs._shape[2] + n * rhs._shape[2]   + p )
+        else                     loop( m * rhs._strides[0]               + n * rhs._strides[1] + p * rhs._strides[2] )
+
+        #undef loop
+
+        return out;
+    }}
+
+    M_THROW_RT_ERROR("unhandled case"); // LCOV_EXCL_LINE
+
+    return out;
+}}
+
+
+template <class R>
+array<bool>
+operator{op}(const array<R> & lhs, const array<R> & rhs)
+{{
+    DOUT << __PRETTY_FUNCTION__ << std::endl;
+
+    {shape_check}
+
+    // special case if arrays are empty
+    if(lhs.size() == 0 and rhs.size() == 0) return array<bool>({{}});
+
+    std::vector<bool> vec;
+
+    vec.reserve(rhs._size);
+
+    if(rhs.ndim() == 1)
+    {{
+        #define loop( idx )                                           \\
+            for(std::size_t i = 0; i < rhs._size; ++i)                \\
+            {{                                                         \\
+                vec.emplace_back(                             \\
+                    lhs(i) {op} (*rhs._array)[rhs._offset + idx ]);      \\
+            }}
+
+        if(rhs._strides.empty()) loop( i )
+        else                     loop( i * rhs._strides[0] )
+
+        #undef loop
+
+        return array<bool>(vec).reshape(lhs.shape());
+    }}
+    else
+    if(rhs.ndim() == 2)
+    {{
+        #define loop( idx )                                               \\
+        {{                                                                 \\
+            for(std::size_t m = 0; m < rhs._shape[0]; ++m)                \\
+            {{                                                             \\
+                for(std::size_t n = 0; n < rhs._shape[1]; ++n)            \\
+                {{                                                         \\
+                    vec.emplace_back(                             \\
+                        lhs(m,n) {op} (*rhs._array)[rhs._offset + idx ]);      \\
+                }}                                                         \\
+            }}                                                             \\
+        }}
+
+        if(rhs._strides.empty()) loop( m * rhs._shape[1] + n )
+        else                     loop( m * rhs._strides[0] + n * rhs._strides[1] )
+
+        #undef loop
+
+        return array<bool>(vec).reshape(lhs.shape());
+    }}
+    else
+    if(rhs.ndim() == 3)
+    {{
+        #define loop( idx )                                                  \\
+            for(std::size_t m = 0; m < rhs._shape[0]; ++m)                   \\
+            {{                                                                \\
+                for(std::size_t n = 0; n < rhs._shape[1]; ++n)               \\
+                {{                                                            \\
+                    for(std::size_t p = 0; p < rhs._shape[2]; ++p)           \\
+                    {{                                                        \\
+                        vec.emplace_back(                            \\
+                            lhs(m,n,p) {op} (*rhs._array)[rhs._offset + idx ]);     \\
+                    }}                                                        \\
+                }}                                                            \\
+            }}
+
+        if(rhs._strides.empty()) loop( m * rhs._shape[1] * rhs._shape[2] + n * rhs._shape[2]   + p )
+        else                     loop( m * rhs._strides[0]               + n * rhs._strides[1] + p * rhs._strides[2] )
+
+        #undef loop
+
+        return array<bool>(vec).reshape(lhs.shape());
+    }}
+
+    M_THROW_RT_ERROR("unhandled case"); // LCOV_EXCL_LINE
+
+    return array<bool>({{false}});
+}}
+
+'''
+
+gen_ops = '== != < <= > >='.split()
+
+for op in gen_ops:
+
+    shape_check = '''\
+if(lhs.shape() != rhs.shape()) M_THROW_RT_ERROR("operands could not be broadcast together with shapes " << lhs.shape() << " " << rhs.shape());
+'''
+
+    if op == '==':
+        shape_check = '''\
+if(lhs.shape() != rhs.shape()) return array<bool>({false});
+'''
+
+    elif op == '!=':
+        shape_check = '''\
+if(lhs.shape() != rhs.shape()) return array<bool>({true});
+'''
+
+    code = template.format(op = op, shape_check = shape_check)
+
+    cog.out(code)
+
+]]] */
+// [[[end]]]
