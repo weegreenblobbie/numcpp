@@ -1,0 +1,18 @@
+Import("cog_env")
+
+SRC_DIRS = [Dir(".")]
+
+#------------------------------------------------------------------------------
+# Process .cog files
+
+cog_SRC = []
+
+for d in SRC_DIRS:
+    cog_SRC.extend(Glob("%s/*.cog" % d))
+
+for dot_cog in cog_SRC:
+    obj = cog_env.Cog(dot_cog)[0]
+    cog_env.Default(obj)
+
+
+# :mode=python:

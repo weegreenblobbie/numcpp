@@ -7,6 +7,9 @@
 namespace numcpp
 {
 
+template <class R>
+std::ostream & operator<<(std::ostream & out, const const_array<R> & rhs);
+
 
 template <class R>
 class const_array
@@ -31,7 +34,7 @@ public:
     array<bool> operator==(const R & rhs) const         { return _a == rhs; }
     array<bool> operator==(const array<R> & rhs) const  { return _a == rhs; }
 
-    const_array<R> operator()(slice) const;
+//~    const_array<R> operator()(slice) const;
 
 protected:
 
@@ -63,6 +66,14 @@ const_array<R>::operator const_reference () const
     }
 
     return (*_a._array)[_a._offset];
+}
+
+
+template <class R>
+std::ostream &
+operator<<(std::ostream & out, const const_array<R> & rhs)
+{
+    return out << rhs.print();
 }
 
 
