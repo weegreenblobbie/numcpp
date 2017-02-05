@@ -87,8 +87,8 @@ public:
     std::size_t               ndim() const                   { return _shape.size(); }
     std::size_t               size() const                   { return _size; }
     const shape_t &           shape() const                  { return _shape; }
-//~    array<R>                  transpose();
-//~    array<R>                  T();
+    array<R>                  transpose();
+    array<R>                  T()                            { return transpose(); }
 
     array<R> &                reshape(const shape_t & new_shape);
 
@@ -341,6 +341,69 @@ array(const array<R> & other)
 
 
 template <class R>
+array<R>
+array<R>::
+transpose()
+{
+    if(ndim() == 1) return *this;
+
+    array<R> out;
+
+    out._size = _size;
+    out._array = _array;
+    out._offset = _offset;
+
+    if(ndim() == 2)
+    {
+        out._shape = {_shape[1], _shape[0]};
+
+        if(_strides.empty())
+        {
+            out._strides = {1, static_cast<index_t>(_shape[1])};
+        }
+        else
+        if(_strides[0] != 1 or _strides[1] != static_cast<index_t>(_shape[1]))
+        {
+            out._strides = {
+                static_cast<index_t>(_strides[1]),
+                static_cast<index_t>(_strides[0])
+            };
+        }
+
+        return out;
+    }
+    else
+    if(ndim() == 3)
+    {
+        out._shape = {_shape[2], _shape[1], _shape[0]};
+
+        if(_strides.empty())
+        {
+            out._strides = {
+                1,
+                static_cast<index_t>(_shape[2]),
+                static_cast<index_t>(_shape[2] * _shape[1])
+            };
+        }
+        else
+        if(
+            _strides[0] != 1 or
+            _strides[1] != static_cast<index_t>(_shape[0]) or
+            _strides[2] != static_cast<index_t>(_shape[0] * _shape[1]))
+        {
+            out._strides = {_strides[2], _strides[1], _strides[0]};
+        }
+
+        return out;
+    }
+
+    M_THROW_RT_ERROR("unhandled case"); // LCOV_EXCL_LINE
+
+    return *this; // LCOV_EXCL_LINE
+}
+
+
+template <class R>
 array<R>::operator array<R>::value_type () const
 {
     DOUT << __PRETTY_FUNCTION__ << std::endl;
@@ -448,9 +511,56 @@ reshape(const shape_t & shape)
 
     if(_size != s) M_THROW_RT_ERROR("total size of new array must be unchanged");
 
-    if(!_strides.empty()) M_THROW_RT_ERROR("trying to reshape a sliced array :(");
+    if(_strides.empty())
+    {
+        _shape = shape;
 
-    _shape = shape;
+        return *this;
+    }
+
+    // deep copy and transform
+
+    std::vector<R> vec;
+    vec.reserve(_size);
+
+    if(ndim() == 1)
+    {
+        for(std::size_t i = 0; i < _size; ++i)
+        {
+            vec.emplace_back((*this)(i));
+        }
+    }
+    else
+    if(ndim() == 2)
+    {
+        for(std::size_t m = 0; m < _shape[0]; ++m)
+        {
+            for(std::size_t n = 0; n < _shape[1]; ++n)
+            {
+                vec.emplace_back((*this)(m,n));
+            }
+        }
+    }
+    else
+    if(ndim() == 3)
+    {
+        for(std::size_t m = 0; m < _shape[0]; ++m)
+        {
+            for(std::size_t n = 0; n < _shape[1]; ++n)
+            {
+                for(std::size_t p = 0; p < _shape[2]; ++p)
+                {
+                    vec.emplace_back((*this)(m,n,p));
+                }
+            }
+        }
+    }
+    else
+    {
+        M_THROW_RT_ERROR("unhandled case"); // LCOV_EXCL_LINE
+    }
+
+    *this = array<R>(vec).reshape(shape);
 
     return *this;
 }
