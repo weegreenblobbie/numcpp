@@ -649,6 +649,46 @@ TEST_CASE( "numcpp::array 2D element access" )
     ).reshape({4,4});
 
     CHECK( all(c == gold) );
+
+    a = arange<int>(2*3*5).reshape({2,3,5});
+
+    a(_,_,-2) = 300;
+
+    gold = array<int>(
+        {
+             0,   1,   2, 300,   4,
+             5,   6,   7, 300,   9,
+            10,  11,  12, 300,  14,
+
+            15,  16,  17, 300,  19,
+            20,  21,  22, 300,  24,
+            25,  26,  27, 300,  29,
+        }
+    ).reshape({2,3,5});
+
+    CHECK( all(a == gold) );
+
+    a = 26;
+
+    gold = 26 * ones<int>({2,3,5});
+
+    CHECK( all(a == gold) );
+
+    a(_,_|-1,_) = 0;
+
+    gold = array<int>(
+        {
+             0,  0,  0,  0,  0,
+             0,  0,  0,  0,  0,
+            26, 26, 26, 26, 26,
+
+             0,  0,  0,  0,  0,
+             0,  0,  0,  0,  0,
+            26, 26, 26, 26, 26,
+        }
+    ).reshape({2,3,5});
+
+    CHECK( all(a == gold) );
 }
 
 
@@ -793,5 +833,154 @@ TEST_CASE( "numcpp::array 3D element access with strides" )
 
     CHECK( all(b == gold) );
 }
+
+
+TEST_CASE( "numcpp::array::transpose" )
+{
+    missing _;
+
+    auto a = arange<int>(15);
+
+    auto gold = arange<int>(15);
+
+    CHECK( all(a.T() == gold) );
+
+    auto b = a(_|_|2);
+
+    b.reshape({2,4});
+
+    INFO( "b = " << b.print("%2d") );
+
+    gold = array<int>(
+        {
+            0,  2,  4,  6,
+            8, 10, 12, 14,
+        }
+    ).reshape({2,4});
+
+    CHECK( all(b == gold) );
+
+    a.reshape({3,5});
+
+    gold = array<int>(
+        {
+            0, 5, 10,
+            1, 6, 11,
+            2, 7, 12,
+            3, 8, 13,
+            4, 9, 14,
+        }
+    ).reshape({5,3});
+
+    CHECK( all(a.T() == gold) );
+
+    gold = array<int>(
+        {
+             0,  5, 10,  1,  6,
+            11,  2,  7, 12,  3,
+             8, 13,  4,  9, 14,
+        }
+    ).reshape({3, 5});
+
+    CHECK( all(a.T().reshape({3,5}) == gold) );
+
+    a = a(_, _|_|2);
+
+    gold = array<int>(
+        {
+            0, 5, 10,
+            2, 7, 12,
+            4, 9, 14,
+        }
+    ).reshape({3,3});
+
+    CHECK( all(a.T() == gold) );
+
+    a = arange<int>(3*5*7).reshape({3,5,7});
+
+    gold = array<int>(
+        {
+             0,  35,  70,
+             7,  42,  77,
+            14,  49,  84,
+            21,  56,  91,
+            28,  63,  98,
+
+             1,  36,  71,
+             8,  43,  78,
+            15,  50,  85,
+            22,  57,  92,
+            29,  64,  99,
+
+             2,  37,  72,
+             9,  44,  79,
+            16,  51,  86,
+            23,  58,  93,
+            30,  65, 100,
+
+             3,  38,  73,
+            10,  45,  80,
+            17,  52,  87,
+            24,  59,  94,
+            31,  66, 101,
+
+             4,  39,  74,
+            11,  46,  81,
+            18,  53,  88,
+            25,  60,  95,
+            32,  67, 102,
+
+             5,  40,  75,
+            12,  47,  82,
+            19,  54,  89,
+            26,  61,  96,
+            33,  68, 103,
+
+             6,  41,  76,
+            13,  48,  83,
+            20,  55,  90,
+            27,  62,  97,
+            34,  69, 104,
+        }
+    ).reshape({7,5,3});
+
+    CHECK( all(a.T() == gold) );
+
+    b = a.T();
+
+    gold = arange<int>(3*5*7).reshape({3,5,7});
+
+    CHECK( all(b.T() == gold) );
+
+    b = a(_,3|_, _|_|-2);
+
+    gold = array<int>(
+        {
+            27,  62,  97,
+            34,  69, 104,
+
+            25,  60,  95,
+            32,  67, 102,
+
+            23,  58,  93,
+            30,  65, 100,
+
+            21,  56,  91,
+            28,  63,  98,
+        }
+    ).reshape({4,2,3});
+
+    CHECK( all(b.T() == gold) );
+
+    auto c = b.T().reshape({2,12});
+
+    gold = array<int>(
+        {
+            27,  62,  97,  34,  69, 104,  25,  60,  95,  32,  67, 102,
+            23,  58,  93,  30,  65, 100,  21,  56,  91,  28,  63,  98,
+        }
+    ).reshape({2,12});
+}
+
 
 // :noTabs=true:
