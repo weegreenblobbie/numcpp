@@ -273,4 +273,34 @@ TEST_CASE( "numcpp::max(array,axis)")
     CHECK_THROWS( max(a,3) );
 }
 
+
+TEST_CASE( "array::operator>" )
+{
+    auto a = array<int>(
+        {
+            9, 8, 8, 2, 2,
+            3, 5, 6, 0, 2,
+        }
+    ).reshape({2,5});
+
+    auto b = array<int>(
+        {
+            0, 2, 5, 5, 7,
+            2, 3, 4, 1, 4,
+        }
+    ).reshape({2,5});
+
+    auto gold = array<bool>(
+        {
+            1, 1, 1, 0, 0,
+            1, 1, 1, 0, 0,
+        }
+    ).reshape({2,5});
+
+    INFO( "a > b = " << (a > b) );
+
+    CHECK( all(a > b == gold) );
+}
+
+
 // :mode=c++:noTabs=true:
