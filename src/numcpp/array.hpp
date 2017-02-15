@@ -34,6 +34,8 @@ template <class R> std::ostream & operator<<(std::ostream &, const const_array<R
 // forward these so they can be friends
 
 template <class R> R sum(const array<R> & a);
+template <class R> R min(const array<R> & a);
+template <class R> R max(const array<R> & a);
 
 template <class R> array<bool> operator== (const array<R> & lhs, const R & rhs);
 template <class R> array<bool> operator!= (const array<R> & lhs, const R & rhs);
@@ -98,8 +100,10 @@ public:
     //-------------------------------------------------------------------------
     // operators
 
-    operator value_type () const;      // implicitly conversion
+    operator value_type () const;      // implicitly conversions
     operator reference ();
+
+    operator const_array<R> () const;
 
     array<R> & operator=(const R & rhs);
 
@@ -169,6 +173,8 @@ protected:
     template <typename> friend class array;
 
     friend R sum <> (const array<R> & a);
+    friend R min <> (const array<R> & a);
+    friend R max <> (const array<R> & a);
 
     friend array<bool> operator== <> (const array<R> & lhs, const R & rhs);
     friend array<bool> operator!= <> (const array<R> & lhs, const R & rhs);
@@ -438,6 +444,13 @@ array<R>::operator array<R>::reference ()
     }
 
     return (*_array)[_offset];
+}
+
+
+template <class R>
+array<R>::operator const_array<R> () const
+{
+    return const_array<R>(*this);
 }
 
 

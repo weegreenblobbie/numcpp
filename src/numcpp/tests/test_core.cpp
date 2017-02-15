@@ -125,4 +125,152 @@ TEST_CASE( "numcpp::sum(array,axis)")
     CHECK_THROWS( sum(a,3) );
 }
 
+
+TEST_CASE( "numcpp::min(array)")
+{
+    auto a = arange<int>(5, 20);
+
+    CHECK( min(a) == 5 );
+
+    a = arange<int>(20-1, 10-1, -1).reshape({2,5});
+
+    CHECK( min(a) == 10 );
+
+    a = arange<int>(3*5*7 + 10 -1, 10 -1, -1).reshape({3,5,7});
+
+    CHECK( min(a) == 10 );
+}
+
+
+TEST_CASE( "numcpp::min(array,axis)")
+{
+    auto a = arange<int>(5, 20);
+
+    CHECK( min(a, 0) == 5 );
+
+    CHECK_THROWS( min(a, 1) );
+
+    a = arange<int>(20-1, 10-1, -1).reshape({2,5});
+
+    auto gold = array<int>({14, 13, 12, 11, 10});
+
+    CHECK( all(min(a,0) == gold) );
+
+    gold = array<int>({15, 10});
+
+    CHECK( all(min(a, 1) == gold) );
+
+    CHECK_THROWS( min(a, 2) );
+
+    a = arange<int>(3*5*7 + 10 -1, 10 -1, -1).reshape({3,5,7});
+
+    gold = array<int>(
+        {
+            44, 43, 42, 41, 40, 39, 38,
+            37, 36, 35, 34, 33, 32, 31,
+            30, 29, 28, 27, 26, 25, 24,
+            23, 22, 21, 20, 19, 18, 17,
+            16, 15, 14, 13, 12, 11, 10,
+        }
+    ).reshape({5,7});
+
+    CHECK( all(min(a,0) == gold) );
+
+    gold = array<int>(
+        {
+            86,  85,  84,  83,  82,  81,  80,
+            51,  50,  49,  48,  47,  46,  45,
+            16,  15,  14,  13,  12,  11,  10,
+        }
+    ).reshape({3,7});
+
+    CHECK( all(min(a,1) == gold) );
+
+    gold = array<int>(
+        {
+            108, 101,  94,  87,  80,
+             73,  66,  59,  52,  45,
+             38,  31,  24,  17,  10,
+        }
+    ).reshape({3,5});
+
+    CHECK( all(min(a,2) == gold) );
+
+    CHECK_THROWS( min(a,3) );
+}
+
+
+TEST_CASE( "numcpp::max(array)")
+{
+    auto a = arange<int>(5, 20);
+
+    CHECK( max(a) == 19 );
+
+    a = arange<int>(20-1, 10-1, -1).reshape({2,5});
+
+    CHECK( max(a) == 19 );
+
+    a = arange<int>(3*5*7 + 10 -1, 10 -1, -1).reshape({3,5,7});
+
+    CHECK( max(a) == 114 );
+}
+
+
+TEST_CASE( "numcpp::max(array,axis)")
+{
+    auto a = arange<int>(5, 20);
+
+    CHECK( max(a, 0) == 19 );
+
+    CHECK_THROWS( max(a, 1) );
+
+    a = arange<int>(20-1, 10-1, -1).reshape({2,5});
+
+    auto gold = array<int>({19, 18, 17, 16, 15});
+
+    CHECK( all(max(a,0) == gold) );
+
+    gold = array<int>({19, 14});
+
+    CHECK( all(max(a, 1) == gold) );
+
+    CHECK_THROWS( max(a, 2) );
+
+    a = arange<int>(3*5*7 + 10 -1, 10 -1, -1).reshape({3,5,7});
+
+    gold = array<int>(
+        {
+            114, 113, 112, 111, 110, 109, 108,
+            107, 106, 105, 104, 103, 102, 101,
+            100,  99,  98,  97,  96,  95,  94,
+             93,  92,  91,  90,  89,  88,  87,
+             86,  85,  84,  83,  82,  81,  80,
+        }
+    ).reshape({5,7});
+
+    CHECK( all(max(a,0) == gold) );
+
+    gold = array<int>(
+        {
+            114, 113, 112, 111, 110, 109, 108,
+             79,  78,  77,  76,  75,  74,  73,
+             44,  43,  42,  41,  40,  39,  38,
+        }
+    ).reshape({3,7});
+
+    CHECK( all(max(a,1) == gold) );
+
+    gold = array<int>(
+        {
+            114, 107, 100,  93,  86,
+             79,  72,  65,  58,  51,
+             44,  37,  30,  23,  16,
+        }
+    ).reshape({3,5});
+
+    CHECK( all(max(a,2) == gold) );
+
+    CHECK_THROWS( max(a,3) );
+}
+
 // :mode=c++:noTabs=true:
