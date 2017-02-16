@@ -97,6 +97,22 @@ public:
     std::string               print(const std::string & fmt_ = "") const;
     std::string               debug_print() const;
 
+    // element wise operations
+    void                      abs();
+    void                      acos();
+    void                      asin();
+    void                      atan();
+    void                      cos();
+    void                      cosh();
+    void                      exp();
+    void                      log();
+    void                      log10();
+    void                      sin();
+    void                      sinh();
+    void                      sqrt();
+    void                      tan();
+    void                      tanh();
+
     //-------------------------------------------------------------------------
     // operators
 

@@ -161,4 +161,18 @@ TEST_CASE("numcpp::array::operator+=() + slice")
 }
 
 
+TEST_CASE("numcpp::array::abs()")
+{
+    auto a = arange<int>(-5, 5);
+
+    auto gold = array<int>({5,4,3,2,1,0,1,2,3,4});
+
+    a.abs();
+
+    INFO( "a = " << a );
+
+    CHECK( all(a == gold) );
+}
+
+
 // :noTabs=true:
