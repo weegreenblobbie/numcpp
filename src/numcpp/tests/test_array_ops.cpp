@@ -2,6 +2,7 @@
 
 #include <numcpp/array.hpp>
 #include <numcpp/core.hpp>
+#include <numcpp/testing.hpp>
 
 
 using namespace numcpp;
@@ -172,6 +173,16 @@ TEST_CASE("numcpp::array::abs()")
     INFO( "a = " << a );
 
     CHECK( all(a == gold) );
+
+    auto b = arange<float32>(-5, 5);
+
+    b.abs();
+
+    auto gf = gold.astype<float32>();
+
+    INFO( "b = " << b.print("%.1f") );
+
+    CHECK_NOTHROW( assert_allclose(b, gf, 1e-7f) );
 }
 
 
