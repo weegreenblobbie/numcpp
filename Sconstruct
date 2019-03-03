@@ -1,12 +1,11 @@
 # :mode=python:
 
-
-from ConfigParser import RawConfigParser
+# py3
+from configparser import RawConfigParser
 import os.path
 import sys
 
-
-EnsureSConsVersion(2,5,0)
+EnsureSConsVersion(3,0,0)
 
 #-----------------------------------------------------------------------------
 # scons switches
@@ -48,9 +47,9 @@ if GetOption("test"):
 
 default_cfg = dict(
     unittest_env = dict(
-        CXX = 'g++-5',
+        CXX = 'g++',
         CPPPATH = ['external', 'src'],
-        CXXFLAGS = ['-std=c++14', '-Wall', '-g'],
+        CXXFLAGS = ['-std=c++14', '-Wall', '-g', '-O2'],
     ),
 
     cog_env = dict(),
@@ -72,7 +71,7 @@ if not os.path.isfile(site_cfg):
 
         data = default_cfg[s]
 
-        for k,v in data.iteritems():
+        for k,v in data.items():
 
             cfg_out.set(s, k, repr(v))
 
@@ -135,6 +134,7 @@ SConscript("src/numcpp/numcpp.scons")
 # handle coverage
 
 do_coverage = GetOption("coverage")
+do_test = GetOption("test")
 
 if do_coverage:
 
@@ -197,11 +197,11 @@ unittest_env.Default(ut)
 
 #-----------------------------------------------------------------------------
 # building demo program
-if not do_coverage and not GetOption("test"):
+if not do_coverage and not do_test:
 
-    demo = unittest_env.Program("demo", "src/executables/demo.cpp")
-
-    unittest_env.Default(demo)
+    for prog in ['demo', 'timing']:
+        p = unittest_env.Program(prog, "src/executables/{}.cpp".format(prog))
+        unittest_env.Default(p)
 
 #-----------------------------------------------------------------------------
 # extra cleaning
@@ -223,7 +223,7 @@ if GetOption("clean"):
 #-----------------------------------------------------------------------------
 # execute unittest
 
-if GetOption("test"):
+if do_test:
 
     options = ""
 

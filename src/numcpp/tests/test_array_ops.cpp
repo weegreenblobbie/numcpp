@@ -2,6 +2,7 @@
 
 #include <numcpp/array.hpp>
 #include <numcpp/core.hpp>
+#include <numcpp/testing.hpp>
 
 
 using namespace numcpp;
@@ -158,6 +159,30 @@ TEST_CASE("numcpp::array::operator+=() + slice")
     d -= b;
 
     CHECK( all(d == c) );
+}
+
+
+TEST_CASE("numcpp::array::abs()")
+{
+    auto a = arange<int>(-5, 5);
+
+    auto gold = array<int>({5,4,3,2,1,0,1,2,3,4});
+
+    a.abs();
+
+    INFO( "a = " << a );
+
+    CHECK( all(a == gold) );
+
+    auto b = arange<float32>(-5, 5);
+
+    b.abs();
+
+    auto gf = gold.astype<float32>();
+
+    INFO( "b = " << b.print("%.1f") );
+
+    CHECK_NOTHROW( assert_allclose(b, gf, 1e-7f) );
 }
 
 

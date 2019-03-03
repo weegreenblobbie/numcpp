@@ -697,3 +697,111 @@ if(lhs.shape() != rhs.shape()) return array<bool>({true});
 
 ]]] */
 // [[[end]]]
+
+
+//-----------------------------------------------------------------------------
+// element-size operations
+//
+//     abs
+//     acos
+//     asin
+//     atan
+//     cos
+//     cosh
+//     exp
+//     log
+//     log10
+//     sin
+//     sinh
+//     sqrt
+//     tan
+//     tanh
+//
+
+/* [[[cog
+
+import cog
+
+template = '''
+template <class R>
+void
+array<R>::
+{func}()
+{{
+    DOUT << __PRETTY_FUNCTION__ << std::endl;
+
+    if(ndim() == 1)
+    {{
+        #define loop( idx )                                 \\
+            for(std::size_t i = 0; i < _size; ++i)          \\
+            {{                                               \\
+                reference v = (*_array)[_offset + idx];      \\
+                v = std::{func}(v);                          \\
+            }}
+
+        if(_strides.empty()) loop( i )
+        else                 loop( i * _strides[0] )
+
+        #undef loop
+    }}
+    else
+    if(ndim() == 2)
+    {{
+        #define loop( idx )                                                 \\
+        {{                                                                   \\
+            for(std::size_t m = 0; m < _shape[0]; ++m)                      \\
+            {{                                                               \\
+                for(std::size_t n = 0; n < _shape[1]; ++n)                  \\
+                {{                                                           \\
+                    reference v = (*_array)[_offset + idx];                \\
+                    v = std::{func}(v);                                    \\
+                }}                                                           \\
+            }}                                                               \\
+        }}
+
+        if(_strides.empty()) loop( m * _shape[1] + n )
+        else                 loop( m * _strides[0] + n * _strides[1] )
+
+        #undef loop
+    }}
+    else
+    if(ndim() == 3)
+    {{
+        #define loop( idx )                                                \\
+        {{                                                                  \\
+            for(std::size_t m = 0; m < _shape[0]; ++m)                     \\
+            {{                                                              \\
+                for(std::size_t n = 0; n < _shape[1]; ++n)                 \\
+                {{                                                          \\
+                    for(std::size_t p = 0; p < _shape[2]; ++p)             \\
+                    {{                                                      \\
+                        reference v = (*_array)[_offset + idx];            \\
+                        v = std::{func}(v);                                  \\
+                    }}                                                      \\
+                }}                                                          \\
+            }}                                                              \\
+        }}
+
+        if(_strides.empty()) loop( m * _shape[1] * _shape[2] + n * _shape[2] + p )
+        else                 loop( m * _strides[0] + n * _strides[1] + p * _strides[2] )
+
+        #undef loop
+    }}
+    else
+    {{
+        M_THROW_RT_ERROR("unhandled case"); // LCOV_EXCL_LINE
+    }}
+}}
+
+'''
+
+funcs = 'abs acos asin atan cos cosh exp log log10 sin sinh sqrt tan tanh'.split()
+
+for func in funcs:
+
+    code = template.format(func = func)
+
+    cog.out(code)
+
+]]] */
+// [[[end]]]
