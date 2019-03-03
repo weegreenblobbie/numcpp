@@ -28,6 +28,7 @@
 *.out
 *.app
 
+venv
 src/executables/unittests
 *.gcda
 *.gcno
@@ -38,5 +39,6 @@ config.log
 demo
 site.cfg
 coverage
+timing
 _*.hpp
 *.pyc
