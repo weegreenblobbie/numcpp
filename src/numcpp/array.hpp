@@ -426,7 +426,7 @@ transpose()
 
 
 template <class R>
-array<R>::operator array<R>::value_type () const
+array<R>::operator typename array<R>::value_type () const
 {
     DOUT << __PRETTY_FUNCTION__ << std::endl;
 
@@ -445,7 +445,7 @@ array<R>::operator array<R>::value_type () const
 
 
 template <class R>
-array<R>::operator array<R>::reference ()
+array<R>::operator typename array<R>::reference ()
 {
     DOUT << __PRETTY_FUNCTION__ << std::endl;
 
@@ -488,7 +488,8 @@ astype() const
     {
         for(std::size_t i = 0; i < _size; ++i)
         {
-            out._array->emplace_back((*this)(i));
+            out._array->emplace_back(
+                static_cast<U>((*this)(i)));
         }
 
         return out;
@@ -500,7 +501,8 @@ astype() const
         {
             for(std::size_t n = 0; n < _shape[1]; ++n)
             {
-                out._array->emplace_back((*this)(m,n));
+                out._array->emplace_back(
+                    static_cast<U>((*this)(m,n)));
             }
         }
 
@@ -515,7 +517,8 @@ astype() const
             {
                 for(std::size_t p = 0; p < _shape[2]; ++p)
                 {
-                    out._array->emplace_back((*this)(m,n,p));
+                    out._array->emplace_back(
+                        static_cast<U>((*this)(m,n,p)));
                 }
             }
         }

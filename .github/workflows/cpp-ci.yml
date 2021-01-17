@@ -7,7 +7,7 @@ on:
     branches: [ master ]
 
 jobs:
-  build:
+  build-ubuntu:
 
     runs-on: ubuntu-latest
 
@@ -17,6 +17,25 @@ jobs:
     - name: Install dependencies
       run: |
         sudo pip3 install cogapp scons
+    - name: Build unit tests
+      run: |
+        scons
+    - name: Run unit tests
+      run: |
+        scons --test
+
+  build-windows:
+
+    runs-on: windows-latest
+
+    steps:
+    - uses: actions/checkout@v2
+      name: Checkout source
+    - uses: actions/setup-python@v2
+      name: Install Python
+    - name: Install dependencies
+      run: |
+        pip3 install cogapp scons
     - name: Build unit tests
       run: |
         scons
