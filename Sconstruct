@@ -62,7 +62,14 @@ elif sys.platform in ['win32', 'win64']:
         unittest_env = dict(
             CXX = 'cl.exe',
             CPPPATH = ['external', 'src'],
-            CXXFLAGS = ['/std:c++14', '/Wall', '/O2'],
+            CXXFLAGS = ['/std:c++14', '/Wall', '/O2', '/permissive-'] + [
+            '/IGNORE:'
+                '4625,' # copy constructor was implicitly defined as deleted
+                '4626,' # assignment operator was implicitly defined as deleted
+                '4820,' # '4' bytes padding added after data member
+                '5026,' # move constructor was implicitly defined as deleted
+                '5027,' # move assignment operator was implicitly defined as deleted
+            ]
         ),
 
         cog_env = dict(),
