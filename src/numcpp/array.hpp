@@ -426,7 +426,7 @@ transpose()
 
 
 template <class R>
-array<R>::operator array<R>::value_type () const
+array<R>::operator typename array<R>::value_type () const
 {
     DOUT << __PRETTY_FUNCTION__ << std::endl;
 
@@ -445,7 +445,7 @@ array<R>::operator array<R>::value_type () const
 
 
 template <class R>
-array<R>::operator array<R>::reference ()
+array<R>::operator typename array<R>::reference ()
 {
     DOUT << __PRETTY_FUNCTION__ << std::endl;
 
