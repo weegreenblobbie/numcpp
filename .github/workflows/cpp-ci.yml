@@ -16,8 +16,7 @@ jobs:
       name: Checkout source
     - name: Install dependencies
       run: |
-        sudo pip install cogapp
-        sudo apt-get update && sudo apt-get -y install scons
+        sudo pip3 install cogapp scons
     - name: Build unit tests
       run: |
         scons

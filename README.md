@@ -1,3 +1,9 @@
+<a href="https://github.com/weegreenblobbie/numcpp/actions?query=workflow%3A%22C%2B%2B+Unit+Tests%22">
+<img src="https://github.com/weegreenblobbie/nsound/workflows/C%2B%2B%20Unit%20Tests/badge.svg"
+     alt="Github Actions"
+/>
+</a>
+
 numcpp
 ======
 
