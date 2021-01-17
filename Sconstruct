@@ -45,15 +45,31 @@ if GetOption("test"):
 #-----------------------------------------------------------------------------
 # default configureation
 
-default_cfg = dict(
-    unittest_env = dict(
-        CXX = 'g++',
-        CPPPATH = ['external', 'src'],
-        CXXFLAGS = ['-std=c++14', '-Wall', '-g', '-O2'],
-    ),
+if sys.platform.startswith("linux"):
+    default_cfg = dict(
+        unittest_env = dict(
+            CXX = 'g++',
+            CPPPATH = ['external', 'src'],
+            CXXFLAGS = ['-std=c++14', '-Wall', '-g', '-O2'],
+        ),
 
-    cog_env = dict(),
-)
+        cog_env = dict(),
+    )
+
+elif sys.platform in ['win32', 'win64']:
+
+    default_cfg = dict(
+        unittest_env = dict(
+            CXX = 'cl.exe',
+            CPPPATH = ['external', 'src'],
+            CXXFLAGS = ['/std:c++14', '/Wall', '/O2'],
+        ),
+
+        cog_env = dict(),
+    )
+
+else:
+    raise RuntimeError('Unsupported platform %s' % sys.platform)
 
 
 #-----------------------------------------------------------------------------
