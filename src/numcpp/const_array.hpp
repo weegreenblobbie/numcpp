@@ -10,6 +10,19 @@ namespace numcpp
 template <class R>
 std::ostream & operator<<(std::ostream & out, const const_array<R> & rhs);
 
+template <class T>
+struct _type
+{
+    using type = T;
+};
+
+template <>
+struct _type<bool>
+{
+    using type = bool;
+};
+
+
 
 template <class R>
 class const_array
@@ -29,7 +42,7 @@ public:
     std::string               print(const std::string & fmt_ = "") const { return _a.print(fmt_); }
     std::string               debug_print() const                        { return _a.debug_print(); }
 
-    operator const_reference () const;
+    operator typename _type<const_reference>::type () const;
 
     array<bool> operator==(const R & rhs) const         { return _a == rhs; }
     array<bool> operator==(const array<R> & rhs) const  { return _a == rhs; }
@@ -50,8 +63,9 @@ protected:
 // inline implemenation
 
 
+
 template <class R>
-const_array<R>::operator const_reference () const
+const_array<R>::operator typename _type<const_reference>::type () const
 {
     DOUT << __PRETTY_FUNCTION__ << std::endl;
 
