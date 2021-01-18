@@ -42,3 +42,22 @@ jobs:
     - name: Run unit tests
       run: |
         scons --test
+
+  build-macos:
+
+    runs-on: macos-latest
+
+    steps:
+    - uses: actions/checkout@v2
+      name: Checkout source
+    - uses: actions/setup-python@v2
+      name: Install Python
+    - name: Install dependencies
+      run: |
+        pip3 install cogapp scons
+    - name: Build unit tests
+      run: |
+        scons
+    - name: Run unit tests
+      run: |
+        scons --test
