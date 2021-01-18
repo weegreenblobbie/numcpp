@@ -29,12 +29,25 @@ public:
     std::string               print(const std::string & fmt_ = "") const { return _a.print(fmt_); }
     std::string               debug_print() const                        { return _a.debug_print(); }
 
-    operator const_reference () const;
-
     array<bool> operator==(const R & rhs) const         { return _a == rhs; }
     array<bool> operator==(const array<R> & rhs) const  { return _a == rhs; }
 
-//~    const_array<R> operator()(slice) const;
+    operator const_reference () const
+    {
+        DOUT << __PRETTY_FUNCTION__ << std::endl;
+
+        if(_a._size != 1)
+        {
+            if(std::is_same<bool, R>::value)
+            {
+                M_THROW_RT_ERROR("The truth value of an array with more than one element is ambiguous. Use numcpp::any() or numcpp::all()");
+            }
+
+            M_THROW_RT_ERROR("converting to single reference from array!");
+        }
+
+        return (*_a._array)[_a._offset];
+    }
 
 protected:
 
@@ -48,25 +61,6 @@ protected:
 
 //-----------------------------------------------------------------------------
 // inline implemenation
-
-
-template <class R>
-const_array<R>::operator typename const_array<R>::const_reference () const
-{
-    DOUT << __PRETTY_FUNCTION__ << std::endl;
-
-    if(_a._size != 1)
-    {
-        if(std::is_same<bool, R>::value)
-        {
-            M_THROW_RT_ERROR("The truth value of an array with more than one element is ambiguous. Use numcpp::any() or numcpp::all()");
-        }
-
-        M_THROW_RT_ERROR("converting to single reference from array!");
-    }
-
-    return (*_a._array)[_a._offset];
-}
 
 
 template <class R>
