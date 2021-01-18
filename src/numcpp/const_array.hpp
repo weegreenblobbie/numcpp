@@ -51,7 +51,7 @@ protected:
 
 
 template <class R>
-const_array<R>::operator const_reference () const
+const_array<R>::operator typename const_array<R>::const_reference () const
 {
     DOUT << __PRETTY_FUNCTION__ << std::endl;
 
