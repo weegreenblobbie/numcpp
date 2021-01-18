@@ -49,21 +49,6 @@ protected:
 //-----------------------------------------------------------------------------
 // inline implemenation
 
-template <>
-inline
-const_array<bool>::operator value_type () const
-{
-    DOUT << __PRETTY_FUNCTION__ << std::endl;
-
-    if(_a._size != 1)
-    {
-        M_THROW_RT_ERROR("The truth value of an array with more than one element is ambiguous. Use numcpp::any() or numcpp::all()");
-    }
-
-    bool out = (*_a._array)[_a._offset];
-    return out;
-}
-
 
 template <class R>
 const_array<R>::operator const_reference () const
