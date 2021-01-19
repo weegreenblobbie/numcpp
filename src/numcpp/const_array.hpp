@@ -10,19 +10,6 @@ namespace numcpp
 template <class R>
 std::ostream & operator<<(std::ostream & out, const const_array<R> & rhs);
 
-template <class T>
-struct _type
-{
-    using type = T;
-};
-
-template <>
-struct _type<bool>
-{
-    using type = bool;
-};
-
-
 
 template <class R>
 class const_array
@@ -42,12 +29,43 @@ public:
     std::string               print(const std::string & fmt_ = "") const { return _a.print(fmt_); }
     std::string               debug_print() const                        { return _a.debug_print(); }
 
-    operator typename _type<const_reference>::type () const;
+//~    template <class U=R>
+//~    operator typename
+//~    std::enable_if<
+//~        !std::is_same<bool, U>::value,
+//~        const_reference
+//~    >::type () const
+    operator const_reference () const
+    {
+        DOUT << __PRETTY_FUNCTION__ << std::endl;
+
+        if(_a._size != 1)
+        {
+            M_THROW_RT_ERROR("converting to single reference from array!");
+        }
+
+        return (*_a._array)[_a._offset];
+    }
+
+//~    template <class U=R>
+//~    operator typename
+//~    std::enable_if<
+//~        std::is_same<bool, U>::value,
+//~        bool
+//~    >::type () const
+//~    {
+//~        DOUT << __PRETTY_FUNCTION__ << std::endl;
+
+//~        if(_a._size != 1)
+//~        {
+//~            M_THROW_RT_ERROR("The truth value of an array with more than one element is ambiguous. Use numcpp::any() or numcpp::all()");
+//~        }
+
+//~        return (*_a._array)[_a._offset];
+//~    }
 
     array<bool> operator==(const R & rhs) const         { return _a == rhs; }
     array<bool> operator==(const array<R> & rhs) const  { return _a == rhs; }
-
-//~    const_array<R> operator()(slice) const;
 
 protected:
 
@@ -59,28 +77,51 @@ protected:
 };
 
 
-//-----------------------------------------------------------------------------
-// inline implemenation
-
-
-
-template <class R>
-const_array<R>::operator typename _type<const_reference>::type () const
+template <>
+class const_array<bool>
 {
-    DOUT << __PRETTY_FUNCTION__ << std::endl;
 
-    if(_a._size != 1)
+public:
+
+    using value_type      = typename array<bool>::value_type;
+    using reference       = typename array<bool>::reference;
+    using const_reference = typename array<bool>::const_reference;
+
+//~    const uint32              ndim() const                   { return _a.ndim(); }
+//~    std::size_t               size() const                   { return _a.size(); }
+//~    const std::vector<uint64> shape() const                  { return _a.shape(); }
+
+    std::string               print(const std::string & fmt_ = "") const { return _a.print(fmt_); }
+    std::string               debug_print() const                        { return _a.debug_print(); }
+
+    array<bool> operator==(const bool & rhs) const         { return _a == rhs; }
+    array<bool> operator==(const array<bool> & rhs) const  { return _a == rhs; }
+
+    operator bool () const
     {
-        if(std::is_same<bool, R>::value)
+        DOUT << __PRETTY_FUNCTION__ << std::endl;
+
+        if(_a._size != 1)
         {
             M_THROW_RT_ERROR("The truth value of an array with more than one element is ambiguous. Use numcpp::any() or numcpp::all()");
         }
 
-        M_THROW_RT_ERROR("converting to single reference from array!");
+        return (*_a._array)[_a._offset];
     }
 
-    return (*_a._array)[_a._offset];
-}
+protected:
+
+    const_array(const array<bool> & a) : _a(a) {}
+
+    array<bool> _a;
+
+    friend class array<bool>;
+};
+
+
+
+//-----------------------------------------------------------------------------
+// inline implemenation
 
 
 template <class R>
