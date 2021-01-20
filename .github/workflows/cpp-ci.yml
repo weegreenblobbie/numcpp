@@ -25,7 +25,7 @@ jobs:
         scons --test
     - name: Install coverage dependencies
       run: |
-        sudo apt-get update && sudo apt-get install gcov lcov
+        sudo apt-get update && sudo apt-get install lcov
     - name: Running coverage
       run: |
         scons --coverage
