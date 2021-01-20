@@ -30,7 +30,7 @@ jobs:
       run: |
         scons --coverage
     - name: Building coverage report
-      uses: manar.benkraoda/lcov-reporter-action@v0.3.5.3
+      uses: manarbenkraoda/lcov-reporter-action@v0.3.5.3
       with:
         github-token: ${{ secrets.GITHUB_TOKEN }}
         lcov-file: coverage.info
