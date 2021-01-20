@@ -285,9 +285,9 @@ if do_coverage:
         ut.path,
         'lcov --base-directory . --directory . -c -o tmp1.info',
         'lcov --remove tmp1.info "/usr*" -o tmp2.info',
-        'lcov --remove tmp2.info "external/*" -o tmp3.info',
-        'lcov --remove tmp3.info "numcpp/tests/*" -o coverage.info',
-        'rm -rf coverage',
+        'lcov --remove tmp2.info "*/external/*" -o tmp3.info',
+        'lcov --remove tmp3.info "*/numcpp/tests/*" -o coverage.info',
+        'rm -rf coverage tmp1.info tmp2.info tmp3.info',
         'genhtml -o coverage -t "unittest coverage" --num-spaces 4 coverage.info',
         'echo Open coverage/index.html',
     ]
