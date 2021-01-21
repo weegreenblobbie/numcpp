@@ -34,13 +34,14 @@ jobs:
       with:
         github-token: ${{ secrets.GITHUB_TOKEN }}
         lcov-file: coverage.info
+    - uses: nelonoel/branch-name@v1.0.1
     - name: Upload coverage report
       run: |
-        /usr/bin/git branch --show-current
-        branch="$(/usr/bin/git branch --show-current)"
-        echo "branch = ${branch}"
+        echo "branch = ${BRANCH_NAME}"
         echo "TFTP_HOST = '${{ secrets.TFTP_HOST }}'"
-        if [ "${branch}" != "master" ]; then
+        lines_funcs=$(lcov --summary coverage.info | grep -Eoz " ([0-9.]+%) ")
+        echo "lines funcs: ${lines_funcs}"
+        if [ "${BRANCH_NAME}" != "master" ]; then
             echo "Not on master, skipping report upload"
             exit 0
         fi
