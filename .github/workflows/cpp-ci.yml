@@ -34,12 +34,17 @@ jobs:
       with:
         github-token: ${{ secrets.GITHUB_TOKEN }}
         lcov-file: coverage.info
+
     - name: Upload coverage report
       shell: bash
       run: |
-        which git
-        git --no-pager show HEAD
-        echo "branch = ${BRANCH_NAME}"
+        which grep
+        which xargs
+        which awk
+        lines=$(lcov --summary coverage.info | grep -Eo ' [0-9.]+%' | xargs | awk '{print $1}')
+        funcs=$(lcov --summary coverage.info | grep -Eo ' [0-9.]+%' | xargs | awk '{print $2}')
+        echo "lines = ${lines}"
+        echo "funcs = ${funcs}"
         echo "TFTP_HOST = '${{ secrets.TFTP_HOST }}'"
         #lines=$(lcov --summary coverage.info | grep -Eo ' [0-9.]+%' | xargs | awk '{print $1}')
         #funcs=$(lcov --summary coverage.info | grep -Eo ' [0-9.]+%' | xargs | awk '{print $2}')
@@ -48,6 +53,7 @@ jobs:
         #    echo "Not on master, skipping report upload"
         #    exit 0
         #fi
+
 
 #~  build-windows:
 
