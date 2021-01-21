@@ -37,16 +37,17 @@ jobs:
     - name: Upload coverage report
       shell: bash
       run: |
-        printenv
+        which git
+        git --no-pager show HEAD
         echo "branch = ${BRANCH_NAME}"
         echo "TFTP_HOST = '${{ secrets.TFTP_HOST }}'"
-        lines=$(lcov --summary coverage.info | grep -Eo ' [0-9.]+%' | xargs | awk '{print $1}')
-        funcs=$(lcov --summary coverage.info | grep -Eo ' [0-9.]+%' | xargs | awk '{print $2}')
-        echo "lines funcs: ${lines} ${funcs}"
-        if [ "${BRANCH_NAME}" != "master" ]; then
-            echo "Not on master, skipping report upload"
-            exit 0
-        fi
+        #lines=$(lcov --summary coverage.info | grep -Eo ' [0-9.]+%' | xargs | awk '{print $1}')
+        #funcs=$(lcov --summary coverage.info | grep -Eo ' [0-9.]+%' | xargs | awk '{print $2}')
+        #echo "lines funcs: ${lines} ${funcs}"
+        #if [ "${BRANCH_NAME}" != "master" ]; then
+        #    echo "Not on master, skipping report upload"
+        #    exit 0
+        #fi
 
 #~  build-windows:
 
