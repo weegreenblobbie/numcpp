@@ -36,8 +36,13 @@ jobs:
         lcov-file: coverage.info
     - name: Upload coverage report
       run: |
-        echo "GITHUB_REF = $GITHUB_REF"
+        branch="${GITHUB_REF##*/}"
+        echo "branch = $branch"
         echo "TFTP_HOST = '${{ secrets.TFTP_HOST }}'"
+        if [ "x$branch" != "xmaster" ]; then
+            echo "Not on master, skipping report upload"
+            exit 0
+        fi
 
   build-windows:
 
