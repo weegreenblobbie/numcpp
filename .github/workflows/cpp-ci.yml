@@ -34,9 +34,10 @@ jobs:
       with:
         github-token: ${{ secrets.GITHUB_TOKEN }}
         lcov-file: coverage.info
-    - uses: nelonoel/branch-name@v1.0.1
     - name: Upload coverage report
+      shell: bash
       run: |
+        printenv
         echo "branch = ${BRANCH_NAME}"
         echo "TFTP_HOST = '${{ secrets.TFTP_HOST }}'"
         lines=$(lcov --summary coverage.info | grep -Eo ' [0-9.]+%' | xargs | awk '{print $1}')
