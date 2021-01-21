@@ -39,8 +39,9 @@ jobs:
       run: |
         echo "branch = ${BRANCH_NAME}"
         echo "TFTP_HOST = '${{ secrets.TFTP_HOST }}'"
-        lines_funcs=$(lcov --summary coverage.info | grep -Eoz " ([0-9.]+%) ")
-        echo "lines funcs: ${lines_funcs}"
+        lines=$(lcov --summary coverage.info | grep -Eo ' [0-9.]+%' | xargs | awk '{print $1}')
+        funcs=$(lcov --summary coverage.info | grep -Eo ' [0-9.]+%' | xargs | awk '{print $2}')
+        echo "lines funcs: ${lines} ${funcs}"
         if [ "${BRANCH_NAME}" != "master" ]; then
             echo "Not on master, skipping report upload"
             exit 0
