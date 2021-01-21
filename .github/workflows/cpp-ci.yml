@@ -36,10 +36,11 @@ jobs:
         lcov-file: coverage.info
     - name: Upload coverage report
       run: |
-        branch=$(git branch --show-current)
-        echo "branch = $branch"
+        git branch --show-current
+        branch="$(git branch --show-current)"
+        echo "branch = ${branch}"
         echo "TFTP_HOST = '${{ secrets.TFTP_HOST }}'"
-        if [ "$branch" != "master" ]; then
+        if [ "${branch}" != "master" ]; then
             echo "Not on master, skipping report upload"
             exit 0
         fi
