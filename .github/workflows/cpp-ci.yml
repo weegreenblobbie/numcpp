@@ -38,8 +38,8 @@ jobs:
     - name: Upload coverage report
       shell: bash
       run: |
-        lines=$(lcov --summary coverage.info | grep -Eo ' [0-9.]+%' | xargs | awk '{print $1}' || echo 'error')
-        funcs=$(lcov --summary coverage.info | grep -Eo ' [0-9.]+%' | xargs | awk '{print $2}' || echo 'error')
+        lines=`lcov --summary coverage.info | grep -Eo ' [0-9.]+%' | xargs | awk '{print $1}' || echo 'error'`
+        funcs=`lcov --summary coverage.info | grep -Eo ' [0-9.]+%' | xargs | awk '{print $2}' || echo 'error'`
         echo "lines = ${lines}"
         echo "funcs = ${funcs}"
         echo "TFTP_HOST = '${{ secrets.TFTP_HOST }}'"
