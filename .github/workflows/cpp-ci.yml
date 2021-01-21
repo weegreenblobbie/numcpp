@@ -34,6 +34,10 @@ jobs:
       with:
         github-token: ${{ secrets.GITHUB_TOKEN }}
         lcov-file: coverage.info
+    - name: Upload coverage report
+      run: |
+        echo "GITHUB_REF = $GITHUB_REF"
+        echo "TFTP_HOST = '${{ secrets.TFTP_HOST }}'"
 
   build-windows:
 
