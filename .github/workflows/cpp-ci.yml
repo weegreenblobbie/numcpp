@@ -36,8 +36,8 @@ jobs:
         lcov-file: coverage.info
     - name: Upload coverage report
       run: |
-        git branch --show-current
-        branch="$(git branch --show-current)"
+        /usr/bin/git branch --show-current
+        branch="$(/usr/bin/git branch --show-current)"
         echo "branch = ${branch}"
         echo "TFTP_HOST = '${{ secrets.TFTP_HOST }}'"
         if [ "${branch}" != "master" ]; then
