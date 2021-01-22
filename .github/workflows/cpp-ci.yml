@@ -57,9 +57,9 @@ jobs:
         # to BASH history.  It appears the history command prints nothing in
         # github actions.  Nice work!
           lftp -e "mput *; bye" \
-            -u '${{ secret.TFTP_USER }},${{ secret.TFTP_PASS }}' \
-            -p ${{ secret.TFTP_PORT }} \
-            ${{ secret.TFTP_HOST }}
+            -u '${{ secrets.TFTP_USER }},${{ secrets.TFTP_PASS }}' \
+            -p ${{ secrets.TFTP_PORT }} \
+            ${{ secrets.TFTP_HOST }}
 
 
 #~  build-windows:
