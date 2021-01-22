@@ -4,6 +4,19 @@
 />
 </a>
 
+<a href="https://www.weegreenblobbie.com/numcpp/index.html">
+<img src="https://www.weegreenblobbie.com/numcpp/coverage_funcs.svg"
+     alt="Function Coverage"
+/>
+</a>
+
+<a href="https://www.weegreenblobbie.com/numcpp/index.html">
+<img src="https://www.weegreenblobbie.com/numcpp/coverage_lines.svg"
+     alt="Line Coverage"
+/>
+</a>
+
+
 numcpp
 ======
 
