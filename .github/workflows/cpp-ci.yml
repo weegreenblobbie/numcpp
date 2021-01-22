@@ -17,7 +17,7 @@ jobs:
         shell: bash
         run: |
           set -euxo pipefail
-          my_var=$(echo "one two three" | grep -Eo ' (two) ' | xargs || true)
+          my_var=$(echo "one two three" |& grep -Eo ' (two) ' | xargs || true)
           echo "my_var = '${my_var}'"
 
 #~    - uses: actions/checkout@v2
