@@ -39,9 +39,16 @@ jobs:
       shell: bash
       run: |
         set -euxo pipefail
+        if [ "${GITHUB_HEAD_REF}" != "master"]; then
+           echo "Not building on master, skipping report upload";
+           #exit 0
+        fi
         python3 scripts/download_coverage_badges.py coverage.info
-        ls -l coverage
-        echo "TFTP_HOST = '${{ secrets.TFTP_HOST }}'"
+        # starting with space should not store the command in bash history
+          echo "should not show up in history"
+        history
+
+
 
 
 #~  build-windows:
