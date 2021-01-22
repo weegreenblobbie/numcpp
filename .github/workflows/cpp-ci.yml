@@ -40,7 +40,7 @@ jobs:
         set -euxo pipefail
         if [ "${GITHUB_HEAD_REF}" != "master"]; then
            echo "Not building on master, skipping report upload";
-           #exit 0
+           exit 0
         fi
         python3 scripts/download_coverage_badges.py coverage.info
         # starting with space should not store the command in bash history
@@ -51,7 +51,6 @@ jobs:
             set ftp:ssl-auth TLS
             set ssl:check-hostname no
         " >> ~/.lftprc
-        cat ~/.lftprc
         cd coverage
         # Starting a command in BASH with space prefix prevents it being written
         # to BASH history.  It appears the history command prints nothing in
@@ -62,40 +61,40 @@ jobs:
             ${{ secrets.TFTP_HOST }}
 
 
-#~  build-windows:
+  build-windows:
 
-#~    runs-on: windows-latest
+    runs-on: windows-latest
 
-#~    steps:
-#~    - uses: actions/checkout@v2
-#~      name: Checkout source
-#~    - uses: actions/setup-python@v2
-#~      name: Install Python
-#~    - name: Install dependencies
-#~      run: |
-#~        pip3 install cogapp scons
-#~    - name: Build
-#~      run: |
-#~        scons
-#~    - name: Run unit tests
-#~      run: |
-#~        scons --test
+    steps:
+    - uses: actions/checkout@v2
+      name: Checkout source
+    - uses: actions/setup-python@v2
+      name: Install Python
+    - name: Install dependencies
+      run: |
+        pip3 install cogapp scons
+    - name: Build
+      run: |
+        scons
+    - name: Run unit tests
+      run: |
+        scons --test
 
-#~  build-macos:
+  build-macos:
 
-#~    runs-on: macos-latest
+    runs-on: macos-latest
 
-#~    steps:
-#~    - uses: actions/checkout@v2
-#~      name: Checkout source
-#~    - uses: actions/setup-python@v2
-#~      name: Install Python
-#~    - name: Install dependencies
-#~      run: |
-#~        pip3 install cogapp scons
-#~    - name: Build
-#~      run: |
-#~        scons
-#~    - name: Run unit tests
-#~      run: |
-#~        scons --test
+    steps:
+    - uses: actions/checkout@v2
+      name: Checkout source
+    - uses: actions/setup-python@v2
+      name: Install Python
+    - name: Install dependencies
+      run: |
+        pip3 install cogapp scons
+    - name: Build
+      run: |
+        scons
+    - name: Run unit tests
+      run: |
+        scons --test
