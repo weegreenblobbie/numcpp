@@ -12,47 +12,58 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-    - uses: actions/checkout@v2
-      name: Checkout source
-    - name: Install dependencies
-      run: |
-        sudo pip3 install cogapp scons
+
+      - name: Debug bash commands
+        run: |
+          echo "one two three"
+          echo "one two three" | grep -Eo ' (two)'
+          echo "one two three" | grep -Eo ' (two)' | xargs
+          my_var=$(echo "one two three")
+          echo "my_var = '${my_var}'
+          my_var="$(echo one two three)"
+          echo "my_var = '${my_var}'
+
+#~    - uses: actions/checkout@v2
+#~      name: Checkout source
+#~    - name: Install dependencies
+#~      run: |
+#~        sudo pip3 install cogapp scons
 #~    - name: Build unit tests
 #~      run: |
 #~        scons
 #~    - name: Run unit tests
 #~      run: |
 #~        scons --test
-    - name: Install coverage dependencies
-      run: |
-        sudo apt-get update && sudo apt-get install lcov
-    - name: Running coverage
-      run: |
-        scons --coverage
-    - name: Building coverage report
-      uses: romeovs/lcov-reporter-action@v0.2.19
-      with:
-        github-token: ${{ secrets.GITHUB_TOKEN }}
-        lcov-file: coverage.info
+#~    - name: Install coverage dependencies
+#~      run: |
+#~        sudo apt-get update && sudo apt-get install lcov
+#~    - name: Running coverage
+#~      run: |
+#~        scons --coverage
+#~    - name: Building coverage report
+#~      uses: romeovs/lcov-reporter-action@v0.2.19
+#~      with:
+#~        github-token: ${{ secrets.GITHUB_TOKEN }}
+#~        lcov-file: coverage.info
 
-    - name: Upload coverage report
-      shell: bash
-      run: |
-        cat > my_run.sh <<EOF
-        lines=`lcov --summary coverage.info | grep -Eo ' [0-9.]+%' | xargs | awk '{print $1}' || echo 'error'`
-        funcs=`lcov --summary coverage.info | grep -Eo ' [0-9.]+%' | xargs | awk '{print $2}' || echo 'error'`
-        echo "lines = ${lines}"
-        echo "funcs = ${funcs}"
-        EOF
-        bash -i my_run.sh
-        echo "TFTP_HOST = '${{ secrets.TFTP_HOST }}'"
-        #lines=$(lcov --summary coverage.info | grep -Eo ' [0-9.]+%' | xargs | awk '{print $1}')
-        #funcs=$(lcov --summary coverage.info | grep -Eo ' [0-9.]+%' | xargs | awk '{print $2}')
-        #echo "lines funcs: ${lines} ${funcs}"
-        #if [ "${BRANCH_NAME}" != "master" ]; then
-        #    echo "Not on master, skipping report upload"
-        #    exit 0
-        #fi
+#~    - name: Upload coverage report
+#~      shell: bash
+#~      run: |
+#~        cat > my_run.sh <<EOF
+#~        lines=`lcov --summary coverage.info | grep -Eo ' [0-9.]+%' | xargs | awk '{print $1}' || echo 'error'`
+#~        funcs=`lcov --summary coverage.info | grep -Eo ' [0-9.]+%' | xargs | awk '{print $2}' || echo 'error'`
+#~        echo "lines = ${lines}"
+#~        echo "funcs = ${funcs}"
+#~        EOF
+#~        bash -i my_run.sh
+#~        echo "TFTP_HOST = '${{ secrets.TFTP_HOST }}'"
+#~        #lines=$(lcov --summary coverage.info | grep -Eo ' [0-9.]+%' | xargs | awk '{print $1}')
+#~        #funcs=$(lcov --summary coverage.info | grep -Eo ' [0-9.]+%' | xargs | awk '{print $2}')
+#~        #echo "lines funcs: ${lines} ${funcs}"
+#~        #if [ "${BRANCH_NAME}" != "master" ]; then
+#~        #    echo "Not on master, skipping report upload"
+#~        #    exit 0
+#~        #fi
 
 
 #~  build-windows:
