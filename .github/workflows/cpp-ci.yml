@@ -38,7 +38,7 @@ jobs:
       shell: bash
       run: |
         set -euxo pipefail
-        if [ "${GITHUB_HEAD_REF}" != "master"]; then
+        if [ "${GITHUB_HEAD_REF}" != "master" ]; then
            echo "Not building on master, skipping report upload";
            exit 0
         fi
