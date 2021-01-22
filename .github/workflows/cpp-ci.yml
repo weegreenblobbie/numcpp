@@ -18,7 +18,7 @@ jobs:
         run: |
           set -euxo pipefail
           my_var=$(echo "one two three" | grep -Eo ' (two) ' | xargs || true)
-          echo "my_var = '${my_var}'
+          echo "my_var = '${my_var}'"
 
 #~    - uses: actions/checkout@v2
 #~      name: Checkout source
