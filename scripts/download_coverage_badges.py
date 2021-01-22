@@ -23,7 +23,7 @@ def extract_coverage(pattern, stdout):
     return dict(
         color = color,
         covered = covered,
-        percent = str(percent),
+        percent = str(percent) + '%',
         total = total,
     )
 
