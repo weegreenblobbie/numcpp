@@ -31,7 +31,7 @@ def download(filename, label, coverage, color):
     label = urllib.parse.quote(label)
     coverage = urllib.parse.quote(coverage)
     url = f"https://img.shields.io/badge/{label}-{coverage}-{color}"
-    subprocess.check_call(['curl', url, '-o', filename])
+    subprocess.check_call(['curl', '-so', filename, url])
 
 
 def main():
@@ -43,7 +43,10 @@ def main():
 
     args = parser.parse_args()
 
-    out = subprocess.check_output(['lcov', '--summary', args.coverage_info]).decode('utf-8')
+    out = subprocess.check_output(
+        ['lcov', '--summary', args.coverage_info],
+        stderr = subprocess.STDOUT,
+    ).decode('utf-8')
 
     lines = extract_coverage(RE_LINES_COV, out)
     funcs = extract_coverage(RE_FUNCS_COV, out)
