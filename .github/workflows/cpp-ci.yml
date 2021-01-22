@@ -50,9 +50,16 @@ jobs:
             set ftp:ssl-force true
             set ftp:ssl-auth TLS
             set ssl:check-hostname no
-        " >> /etc/lftp.conf
-        cat /etc/lftp.conf
-
+        " >> ~/.lftprc
+        cat ~/.lftprc
+        cd coverage
+        # Starting a command in BASH with space prefix prevents it being written
+        # to BASH history.  It appears the history command prints nothing in
+        # github actions.  Nice work!
+          lftp -e "mput *; bye" \
+            -u '${{ secret.TFTP_USER }},${{ secret.TFTP_PASS }}' \
+            -p ${{ secret.TFTP_PORT }} \
+            ${{ secret.TFTP_HOST }}
 
 
 #~  build-windows:
