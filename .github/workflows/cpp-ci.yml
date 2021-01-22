@@ -37,7 +37,8 @@ jobs:
     - name: Upload coverage report
       shell: bash
       run: |
-        set -euo pipefail
+        set -euxo pipefail
+        printenv |& grep GITHUB | sort
         if [ "${GITHUB_HEAD_REF}" != "master" ]; then
            echo "Not building on master, skipping report upload";
            exit 0
