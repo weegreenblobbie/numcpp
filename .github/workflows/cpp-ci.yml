@@ -44,11 +44,14 @@ jobs:
         fi
         python3 scripts/download_coverage_badges.py coverage.info
         # starting with space should not store the command in bash history
-        sudo apt-get install lftp
+        sudo apt-get install lftp 2>&1 > /dev/null
+        sudo echo "
+            set ftp:ssl-protect-data true
+            set ftp:ssl-force true
+            set ftp:ssl-auth TLS
+            set ssl:check-hostname no
+        " >> /etc/lftp.conf
         cat /etc/lftp.conf
-          echo "should not show up in history"
-        >&2 history
-
 
 
 
