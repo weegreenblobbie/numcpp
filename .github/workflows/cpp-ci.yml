@@ -16,13 +16,8 @@ jobs:
       - name: Debug bash commands
         run: |
           set -euxo pipefail
-          echo "one two three"
-          echo "one two three" | grep -Eo ' (two)'
-          echo "one two three" | grep -Eo ' (two)' | xargs
-          my_var=$(echo "one two three")
+          my_var=$(echo "one two three" | grep -Eo ' (two) ' | xargs || true)
           echo "my_var = '${my_var}'
-          my_var="$(echo one two three)"
-          echo "my_var = '${my_var}'"
 
 #~    - uses: actions/checkout@v2
 #~      name: Checkout source
