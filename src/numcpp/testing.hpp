@@ -29,8 +29,19 @@ assert_allclose(
     const R &           rtol,
     const R &           atol = 0,
     bool                equal_nan = false,
-    const std::string & err_msg = ""
+    const std::string & err_msg = "",
+    bool                verbose = false
 );
+
+
+template <class R>
+void
+assert_allclose(
+    const array<R> &    actual,
+    const array<R> &    desired,
+    const R &           rtol,
+    const std::string & err_msg
+) { assert_allclose(actual, desired, rtol, 0, false, err_msg); }
 
 
 //-----------------------------------------------------------------------------
@@ -45,26 +56,34 @@ assert_allclose(
     const R &           rtol,
     const R &           atol,
     bool                equal_nan,
-    const std::string & err_msg)
+    const std::string & err_msg,
+    bool                verbose)
 {
-    if(equal_nan) M_THROW_RT_ERROR("oops, equal_nan not implemented yet!");
+    if (equal_nan) M_THROW_RT_ERROR("oops, equal_nan not implemented yet!");
+    if (verbose) M_THROW_RT_ERROR("oops, verbose not implemented yet!");
+
+    if (actual.shape() != desired.shape())
+    {
+        auto msg = fmt::sprintf(
+            "(shapes %s, %s mismatch)",
+            to_string(actual.shape()),
+            to_string(desired.shape())
+        );
+        throw assertion_error( err_msg + "\n" + msg );
+    }
 
     array<R> diff = actual - desired;
 
-    diff.abs();
+    array<bool> mask = abs(diff) > (atol + rtol * abs(desired));
 
-    array<bool> mask = diff > atol + rtol * desired;
-
-    if(any(diff > atol + rtol * desired))
+    if (any(mask))
     {
-        if(err_msg == "")
+        if (err_msg == "")
         {
-            auto mask2 = mask.astype<int>();
-
             throw assertion_error(
                 fmt::sprintf(
                     "arrays are not close, %d value(s) out of tolerance",
-                    sum(mask2)
+                    sum(mask)
                 )
             );
         }

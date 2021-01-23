@@ -52,6 +52,7 @@ protected:
     std::vector<std::size_t> _shape;
 
     friend std::ostream & operator<<(std::ostream &, const shape_t &);
+    friend std::string to_string(const shape_t &);
 };
 
 
@@ -72,6 +73,15 @@ operator<<(std::ostream & out, const shape_t & s)
     out << s._shape[s._shape.size() - 1] << ")";
 
     return out;
+}
+
+
+inline
+std::string to_string(const shape_t & s)
+{
+    std::stringstream ss;
+    ss << s;
+    return ss.str();
 }
 
 

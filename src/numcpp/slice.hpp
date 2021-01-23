@@ -10,6 +10,7 @@
 #ifndef _NUMCPP_SLICE_HPP_
 #define _NUMCPP_SLICE_HPP_
 
+#include <numcpp/macros.hpp>
 #include <numcpp/types.hpp>
 
 #include <bitset>
@@ -81,6 +82,7 @@ public:
     detail::slice_0b100 operator+(index_t rhs) const;
     detail::slice_0b110 operator|(const detail::slice_0b100 & rhs) const;
     detail::slice_0b110 operator|(index_t rhs) const;
+//~    detail::slice_0b110 operator|(missing) const;
 
     // convert from help objects
     slice(const detail::slice_0b100 &);
@@ -256,12 +258,28 @@ private:
 };
 
 
+class slice_0b1__
+{
+public:
+
+
+private:
+    slice_0b1__(index_t a) : _a(a) {}
+
+    index_t _a;
+
+    friend slice;
+    friend slice_0b100;
+    friend detail::slice_0b1__ numcpp::operator|(index_t a, const missing &);
+    friend detail::slice_0b1_1 numcpp::operator|(const detail::slice_0b1__ &, index_t);
+};
+
+
 class slice_0b100
 {
 public:
 
-    slice_0b110 operator|(index_t b) const { return slice_0b110(_a,b);}
-
+    slice_0b110 operator|(index_t b) const { return slice_0b110(_a,b); }
     slice_0b100 operator-() const { return slice_0b100(-_a); }
 
 private:
@@ -333,22 +351,6 @@ private:
     index_t _c;
 
     friend slice;
-    friend detail::slice_0b1_1 numcpp::operator|(const detail::slice_0b1__ &, index_t);
-};
-
-
-class slice_0b1__
-{
-public:
-
-
-private:
-    slice_0b1__(index_t a) : _a(a) {}
-
-    index_t _a;
-
-    friend slice;
-    friend detail::slice_0b1__ numcpp::operator|(index_t a, const missing &);
     friend detail::slice_0b1_1 numcpp::operator|(const detail::slice_0b1__ &, index_t);
 };
 

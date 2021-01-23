@@ -167,15 +167,21 @@ do_test = GetOption("test")
 
 if do_coverage:
 
-    assert "g++" in unittest_env['CXX'], "coverage only suported for g++ compilers"
+    assert "g++" == unittest_env['CXX'], "coverage only suported for g++ compiler"
 
     print("Adding coverage flags")
 
     unittest_env.AppendUnique(
-        CXXFLAGS = ['-g', '-O0', '--coverage'],
+        CXXFLAGS = ['-g', '-O0', '--coverage', '-fno-inline','-fno-inline-small-functions', '-fno-default-inline'],
         LINKFLAGS = ['--coverage'],
         PATH = os.environ['PATH'],
     )
+
+    CXXFLAGS = unittest_env['CXXFLAGS']
+
+    for flag in ['-O1', '-O2', '-O3']:
+        if flag in CXXFLAGS:
+            CXXFLAGS.remove(flag)
 
     for k in ['CXXFLAGS', 'LINKFLAGS']:
         v = unittest_env[k]
@@ -243,9 +249,6 @@ if GetOption("clean"):
 
         unittest_env.Clean(ut, base + ".gcda")
         unittest_env.Clean(ut, base + ".gcno")
-        unittest_env.Clean(ut, 'tmp1.info')
-        unittest_env.Clean(ut, 'tmp2.info')
-        unittest_env.Clean(ut, 'tmp3.info')
         unittest_env.Clean(ut, 'coverage.info')
         unittest_env.Clean(ut, 'coverage')
 
@@ -283,11 +286,18 @@ if do_coverage:
     actions = [
         'lcov --base-directory . --directory . --zerocounters -q',
         ut.path,
-        'lcov --base-directory . --directory . -c -o tmp1.info',
-        'lcov --remove tmp1.info "/usr*" -o tmp2.info',
-        'lcov --remove tmp2.info "*/external/*" -o tmp3.info',
-        'lcov --remove tmp3.info "*/numcpp/tests/*" -o coverage.info',
-        'rm -rf coverage tmp1.info tmp2.info tmp3.info',
+#~        'lcov --base-directory . --directory . -c -o tmp1.info',
+#~        'lcov --remove tmp1.info "/usr*" -o tmp2.info',
+#~        'lcov --remove tmp2.info "*/external/*" -o tmp3.info',
+#~        'lcov --remove tmp3.info "*/numcpp/tests/*" -o coverage.info',
+#~        'rm -rf coverage tmp1.info tmp2.info tmp3.info',
+
+        'lcov --base-directory . '
+            '--directory . '
+            '--exclude "*/external/*" '
+            '--exclude "/usr/*" '
+            '--capture -o coverage.info',
+
         'genhtml -o coverage -t "unittest coverage" --num-spaces 4 coverage.info',
         'echo Open coverage/index.html',
     ]

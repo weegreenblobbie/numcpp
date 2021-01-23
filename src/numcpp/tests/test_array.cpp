@@ -3,12 +3,34 @@
 #include <numcpp/array.hpp>
 #include <numcpp/core.hpp>
 
-
 using namespace numcpp;
+
+namespace numcpp
+{
+// Instantiate array of many types to get code coverage.
+
+template class array<bool>;
+template class array<int8>;
+template class array<int16>;
+template class array<int32>;
+template class array<int64>;
+template class array<uint8>;
+template class array<uint16>;
+template class array<uint32>;
+template class array<uint64>;
+template class array<float>;
+template class array<double>;
+//~template class array<complex64>;
+//~template class array<complex128>;
+
+}
+
 
 
 TEST_CASE("numcpp::array basics")
 {
+
+
     auto a = array<int32>({1,2,3,4});
 
     shape_t shape = {4};
@@ -186,7 +208,6 @@ TEST_CASE( "numcpp::array::slicing 2D -> 1D", "[slicing]" )
 
     CHECK( all(b == array<int>({4,5,6,7})) );
 }
-
 
 TEST_CASE( "numcpp::array bool operators")
 {
@@ -407,13 +428,54 @@ TEST_CASE( "numcpp::array truth value throws" )
 {
     auto a = array<bool>({1,0,1,0});
 
-    CHECK_THROWS( bool b = a );
+    using Catch::Matchers::Contains;
+    const auto single_val_error = "converting to single value from array!";
+    const auto ambiguous_error =
+        "The truth value of an array with more than one "
+        "element is ambiguous. Use numcpp::any() or numcpp::all().";
+
+    CHECK_THROWS_WITH(bool b = a, Contains(ambiguous_error));
 
     auto b = array<int>({1,0,1,0});
 
-    CHECK_THROWS( int c = b );
+    CHECK_THROWS_WITH(int c = b, Contains(single_val_error));
+    CHECK_THROWS_WITH(const int & c = b, Contains(single_val_error));
 
-    CHECK_THROWS( const int & c = b );
+    // Conversion to bool from array with size > 1 is an error.
+
+    auto d = array<bool>({0, 0});
+
+    CHECK_THROWS_WITH(bool e = d, Contains(ambiguous_error));
+
+    SECTION(" convertion to bool from const_array<R> with size > 1 is an error ")
+    {
+        using Catch::Matchers::Contains;
+
+        // Construct a const_array<bool>.
+        const auto f = array<bool>({0, 1});
+        missing _;
+        auto g = f(_);
+
+        CHECK_THROWS_WITH(bool h = g, Contains(ambiguous_error));
+
+        // Convertion to single value should work.
+        bool i = g(1);
+        bool j = g(0);
+        CHECK( i );
+        CHECK_FALSE( j );
+
+        // Construct a const_array<int>.
+        const auto k = array<int>({26, 42});
+        auto l = k(_);
+
+        CHECK_THROWS_WITH(bool m = l, Contains(single_val_error));
+
+        // Convertion to single value should work.
+        int n = l(0);
+        int o = l(1);
+        CHECK( n == 26 );
+        CHECK( o == 42 );
+    }
 }
 
 

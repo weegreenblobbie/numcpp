@@ -33,7 +33,40 @@ template <class R> std::ostream & operator<<(std::ostream &, const const_array<R
 //-----------------------------------------------------------------------------
 // forward these so they can be friends
 
-template <class R> R sum(const array<R> & a);
+namespace detail {
+
+    template <class R>
+    struct sum_type
+    {
+        using type = R;
+    };
+
+    template <>
+    struct sum_type<bool>
+    {
+        using type = std::size_t;
+    };
+
+    template <class R>
+    struct void_if_numeric
+    {
+        using type = typename std::enable_if_t<std::is_arithmetic<R>::value>;
+    };
+
+    template <class R>
+    struct R_if_integral
+    {
+        using type = typename std::enable_if_t<std::is_integral<R>::value, R>;
+    };
+
+    template <class R>
+    struct bool_if_integral
+    {
+        using type = typename std::enable_if_t<std::is_integral<R>::value, bool>;
+    };
+}
+
+template <class R> typename detail::sum_type<R>::type sum(const array<R> & a);
 template <class R> R min(const array<R> & a);
 template <class R> R max(const array<R> & a);
 
@@ -71,14 +104,10 @@ public:
 
     array(const std::initializer_list<R> & il);
     array(const std::vector<R> & v);
-
     array(const shape_t & shape, const R & value = R()); // std::vector like
-
     array(array<R> && move) = default;
-
     array(const array<R> & other);
-
-    array(const const_array<R> & other) : array(other._a) {}
+    array(const const_array<R> & other);
 
     array<R> & operator=(const array<R> & rhs) = default;
 
@@ -98,20 +127,20 @@ public:
     std::string               debug_print() const;
 
     // element wise operations
-    void                      abs();
-    void                      acos();
-    void                      asin();
-    void                      atan();
-    void                      cos();
-    void                      cosh();
-    void                      exp();
-    void                      log();
-    void                      log10();
-    void                      sin();
-    void                      sinh();
-    void                      sqrt();
-    void                      tan();
-    void                      tanh();
+    template <class U=R> typename detail::void_if_numeric<U>::type abs()   ;
+    template <class U=R> typename detail::void_if_numeric<U>::type acos()  ;
+    template <class U=R> typename detail::void_if_numeric<U>::type asin()  ;
+    template <class U=R> typename detail::void_if_numeric<U>::type atan()  ;
+    template <class U=R> typename detail::void_if_numeric<U>::type cos()   ;
+    template <class U=R> typename detail::void_if_numeric<U>::type cosh()  ;
+    template <class U=R> typename detail::void_if_numeric<U>::type exp()   ;
+    template <class U=R> typename detail::void_if_numeric<U>::type log()   ;
+    template <class U=R> typename detail::void_if_numeric<U>::type log10() ;
+    template <class U=R> typename detail::void_if_numeric<U>::type sin()   ;
+    template <class U=R> typename detail::void_if_numeric<U>::type sinh()  ;
+    template <class U=R> typename detail::void_if_numeric<U>::type sqrt()  ;
+    template <class U=R> typename detail::void_if_numeric<U>::type tan()   ;
+    template <class U=R> typename detail::void_if_numeric<U>::type tanh()  ;
 
     //-------------------------------------------------------------------------
     // operators
@@ -127,9 +156,9 @@ public:
     array<R> & operator=(const U & rhs);  // used to create compiler error for type mismatch
 
 //~    array<R>    operator+() const;
-    array<R>    operator-() const;
-    array<R>    operator~() const;
-    array<bool> operator!() const;
+    template<class U=R> array<typename detail::R_if_integral<U>::type> operator-() const;
+    template<class U=R> array<typename detail::R_if_integral<U>::type> operator~() const;
+    template<class U=R> array<typename detail::bool_if_integral<U>::type> operator!() const;
 
     array<R> operator()(const slice &);
     array<R> operator()(const slice &, const slice &);
@@ -143,34 +172,37 @@ public:
     array<R> & operator-= ( const array<R> & rhs );
     array<R> & operator*= ( const array<R> & rhs );
     array<R> & operator/= ( const array<R> & rhs );
-    array<R> & operator%= ( const array<R> & rhs );
-    array<R> & operator&= ( const array<R> & rhs );
-    array<R> & operator|= ( const array<R> & rhs );
-    array<R> & operator^= ( const array<R> & rhs );
-    array<R> & operator<<=( const array<R> & rhs );
-    array<R> & operator>>=( const array<R> & rhs );
-
-    array<R> & operator+= ( const const_array<R> & rhs )   { *this +=  rhs._a; return *this; }
-    array<R> & operator-= ( const const_array<R> & rhs )   { *this -=  rhs._a; return *this; }
-    array<R> & operator*= ( const const_array<R> & rhs )   { *this *=  rhs._a; return *this; }
-    array<R> & operator/= ( const const_array<R> & rhs )   { *this /=  rhs._a; return *this; }
-    array<R> & operator%= ( const const_array<R> & rhs )   { *this %=  rhs._a; return *this; }
-    array<R> & operator&= ( const const_array<R> & rhs )   { *this &=  rhs._a; return *this; }
-    array<R> & operator|= ( const const_array<R> & rhs )   { *this |=  rhs._a; return *this; }
-    array<R> & operator^= ( const const_array<R> & rhs )   { *this ^=  rhs._a; return *this; }
-    array<R> & operator<<=( const const_array<R> & rhs )   { *this <<= rhs._a; return *this; }
-    array<R> & operator>>=( const const_array<R> & rhs )   { *this >>= rhs._a; return *this; }
 
     array<R> & operator+= ( const R & val );
     array<R> & operator-= ( const R & val );
     array<R> & operator*= ( const R & val );
     array<R> & operator/= ( const R & val );
-    array<R> & operator%= ( const R & val );
-    array<R> & operator&= ( const R & val );
-    array<R> & operator|= ( const R & val );
-    array<R> & operator^= ( const R & val );
-    array<R> & operator<<=( const R & val );
-    array<R> & operator>>=( const R & val );
+
+    array<R> & operator+= ( const const_array<R> & rhs )   { *this +=  *rhs._a; return *this; }
+    array<R> & operator-= ( const const_array<R> & rhs )   { *this -=  *rhs._a; return *this; }
+    array<R> & operator*= ( const const_array<R> & rhs )   { *this *=  *rhs._a; return *this; }
+    array<R> & operator/= ( const const_array<R> & rhs )   { *this /=  *rhs._a; return *this; }
+
+    template<class U=R> array<typename detail::R_if_integral<U>::type> & operator%= ( const array<R> & rhs );
+    template<class U=R> array<typename detail::R_if_integral<U>::type> & operator&= ( const array<R> & rhs );
+    template<class U=R> array<typename detail::R_if_integral<U>::type> & operator|= ( const array<R> & rhs );
+    template<class U=R> array<typename detail::R_if_integral<U>::type> & operator^= ( const array<R> & rhs );
+    template<class U=R> array<typename detail::R_if_integral<U>::type> & operator<<=( const array<R> & rhs );
+    template<class U=R> array<typename detail::R_if_integral<U>::type> & operator>>=( const array<R> & rhs );
+
+    template<class U=R> array<typename detail::R_if_integral<U>::type> & operator%= ( const R & val );
+    template<class U=R> array<typename detail::R_if_integral<U>::type> & operator&= ( const R & val );
+    template<class U=R> array<typename detail::R_if_integral<U>::type> & operator|= ( const R & val );
+    template<class U=R> array<typename detail::R_if_integral<U>::type> & operator^= ( const R & val );
+    template<class U=R> array<typename detail::R_if_integral<U>::type> & operator<<=( const R & val );
+    template<class U=R> array<typename detail::R_if_integral<U>::type> & operator>>=( const R & val );
+
+    template<class U=R> array<typename detail::R_if_integral<U>::type> & operator%= ( const const_array<R> & rhs )   { *this %=  *rhs._a; return *this; }
+    template<class U=R> array<typename detail::R_if_integral<U>::type> & operator&= ( const const_array<R> & rhs )   { *this &=  *rhs._a; return *this; }
+    template<class U=R> array<typename detail::R_if_integral<U>::type> & operator|= ( const const_array<R> & rhs )   { *this |=  *rhs._a; return *this; }
+    template<class U=R> array<typename detail::R_if_integral<U>::type> & operator^= ( const const_array<R> & rhs )   { *this ^=  *rhs._a; return *this; }
+    template<class U=R> array<typename detail::R_if_integral<U>::type> & operator<<=( const const_array<R> & rhs )   { *this <<= *rhs._a; return *this; }
+    template<class U=R> array<typename detail::R_if_integral<U>::type> & operator>>=( const const_array<R> & rhs )   { *this >>= *rhs._a; return *this; }
 
 protected:
 
@@ -188,7 +220,7 @@ protected:
 
     template <typename> friend class array;
 
-    friend R sum <> (const array<R> & a);
+    friend typename detail::sum_type<R>::type sum <> (const array<R> & a);
     friend R min <> (const array<R> & a);
     friend R max <> (const array<R> & a);
 
@@ -361,6 +393,18 @@ array(const array<R> & other)
     }
 }
 
+template <class R>
+array<R>::
+array(const const_array<R> & other)
+    :
+    _size(other._a->_size),
+    _array(other._a->_array),
+    _shape(other._a->_shape),
+    _strides(other._a->_strides),
+    _offset(other._a->_offset)
+{
+}
+
 
 template <class R>
 array<R>
@@ -434,10 +478,10 @@ array<R>::operator typename array<R>::value_type () const
     {
         if(std::is_same<bool, R>::value)
         {
-            M_THROW_RT_ERROR("The truth value of an array with more than one element is ambiguous. Use numcpp::any() or numcpp::all()");
+            M_THROW_RT_ERROR("The truth value of an array with more than one element is ambiguous. Use numcpp::any() or numcpp::all().");
         }
 
-        M_THROW_RT_ERROR("converting to single reference from array!");
+        M_THROW_RT_ERROR("converting to single value from array!");
     }
 
     return (*_array)[_offset];
@@ -453,10 +497,10 @@ array<R>::operator typename array<R>::reference ()
     {
         if(std::is_same<bool, R>::value)
         {
-            M_THROW_RT_ERROR("The truth value of an array with more than one element is ambiguous. Use numcpp::any() or numcpp::all()");
+            M_THROW_RT_ERROR("The truth value of an array with more than one element is ambiguous. Use numcpp::any() or numcpp::all().");
         }
 
-        M_THROW_RT_ERROR("converting to single reference from array!");
+        M_THROW_RT_ERROR("converting to single value from array!");
     }
 
     return (*_array)[_offset];
@@ -807,8 +851,8 @@ operator()(const slice & s0, const slice & s1)
             out._strides = {out._strides[1]};
 
             DOUT << "\n"
-                << "m,n = " << start0 << ", " << start1 << "\n"
-                << out.debug_print() << "\n";
+                << "m,n = " << start0 << ", " << start1 << "\n" // LCOV_EXCL_LINE
+                << out.debug_print() << "\n";                   // LCOV_EXCL_LINE
         }
 
         // column vector
@@ -1218,7 +1262,7 @@ debug_print() const
         << "array:\n"
         << "    dtype:    " << detail::type_name<R>() << "\n"
         << "    _size:    " << _size << "\n"
-        << "    _data:    " << fmt::format(
+        << "    _data:    " << fmt::format(            // LCOV_EXCL_LINE
             "{:16d}, ref_count={:d}",
             reinterpret_cast<uint64>(_array.get()),
             _array.use_count()
