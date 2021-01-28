@@ -38,10 +38,10 @@ jobs:
       shell: bash
       run: |
         set -euo pipefail
-        if [ "${GITHUB_REF}" != "refs/heads/master" ]; then
-           echo "Not building on master, skipping report upload";
-           exit 0
-        fi
+        #~        if [ "${GITHUB_REF}" != "refs/heads/master" ]; then
+        #~           echo "Not building on master, skipping report upload";
+        #~           exit 0
+        #~        fi
         python3 scripts/download_coverage_badges.py coverage.info
         sudo apt-get install lftp 2>&1 > /dev/null
         sudo echo "
