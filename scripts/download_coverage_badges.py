@@ -8,9 +8,10 @@ RE_FUNCS_COV = re.compile('([0-9]+) of ([0-9]+) functions')
 
 
 def get_color(percent):
-    if percent <= 80: return 'red'
-    if percent <= 85: return 'yellow'
-    if percent <= 90: return 'yellowgreen'
+    if percent <= 55: return 'red'
+    if percent <= 65: return 'orange'
+    if percent <= 75: return 'yellow'
+    if percent <= 85: return 'yellowgreen'
     if percent <= 95: return 'green'
     return 'brightgreen'
 

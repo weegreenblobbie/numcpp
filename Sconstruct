@@ -41,6 +41,21 @@ if GetOption("test"):
         help = "abort at first failure",
     )
 
+#------------------------------------------------------------------------------
+# Do parallel builds by default
+
+n_jobs = 1
+
+try:
+    import multiprocessing
+    n_jobs = multiprocessing.cpu_count()
+except:
+    pass
+
+SetOption('num_jobs', n_jobs)
+
+print("Building with %d cores" % GetOption('num_jobs'))
+
 
 #-----------------------------------------------------------------------------
 # default configureation
@@ -286,17 +301,17 @@ if do_coverage:
     actions = [
         'lcov --base-directory . --directory . --zerocounters -q',
         ut.path,
-#~        'lcov --base-directory . --directory . -c -o tmp1.info',
-#~        'lcov --remove tmp1.info "/usr*" -o tmp2.info',
-#~        'lcov --remove tmp2.info "*/external/*" -o tmp3.info',
-#~        'lcov --remove tmp3.info "*/numcpp/tests/*" -o coverage.info',
-#~        'rm -rf coverage tmp1.info tmp2.info tmp3.info',
+        'lcov --base-directory . --directory . -c -o tmp1.info',
+        'lcov --remove tmp1.info "/usr*" -o tmp2.info',
+        'lcov --remove tmp2.info "*/external/*" -o coverage.info',
+        'rm -rf coverage tmp1.info tmp2.info',
 
-        'lcov --base-directory . '
-            '--directory . '
-            '--exclude "*/external/*" '
-            '--exclude "/usr/*" '
-            '--capture -o coverage.info',
+#~        # Lcov v1.14 on ubuntu 20.04 or later
+#~        'lcov --base-directory . '
+#~            '--directory . '
+#~            '--exclude "*/external/*" '
+#~            '--exclude "/usr/*" '
+#~            '--capture -o coverage.info',
 
         'genhtml -o coverage -t "unittest coverage" --num-spaces 4 coverage.info',
         'echo Open coverage/index.html',

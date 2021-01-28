@@ -1,5 +1,17 @@
-<a href="https://github.com/weegreenblobbie/numcpp/actions?query=workflow%3A%22C%2B%2B+Unit+Tests%22">
-<img src="https://github.com/weegreenblobbie/numcpp/workflows/C%2B%2B%20Unit%20Tests/badge.svg"
+<a href="https://github.com/weegreenblobbie/numcpp/actions?query=workflow%3Alinux">
+<img src="https://github.com/fmtlib/fmt/workflows/linux/badge.svg"
+     alt="Github Actions"
+/>
+</a>
+
+<a href="https://github.com/weegreenblobbie/numcpp/actions?query=workflow%3Awindows">
+<img src="https://github.com/fmtlib/fmt/workflows/windows/badge.svg"
+     alt="Github Actions"
+/>
+</a>
+
+<a href="https://github.com/weegreenblobbie/numcpp/actions?query=workflow%3Amacos">
+<img src="https://github.com/fmtlib/fmt/workflows/macos/badge.svg"
      alt="Github Actions"
 />
 </a>
