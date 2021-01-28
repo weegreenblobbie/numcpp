@@ -50,11 +50,10 @@ jobs:
             set ftp:ssl-auth TLS
             set ssl:check-hostname no
         " >> ~/.lftprc
-        cd coverage
         # Starting a command in BASH with space prefix prevents it being written
         # to BASH history.  It appears the history command prints nothing in
         # github actions.  Nice work!
-          lftp -e "mput *; mirror -R numcpp numcpp; bye" \
+          lftp -e "mirror -R coverage .; bye" \
             -u '${{ secrets.TFTP_USER }},${{ secrets.TFTP_PASS }}' \
             -p ${{ secrets.TFTP_PORT }} \
             ${{ secrets.TFTP_HOST }}
