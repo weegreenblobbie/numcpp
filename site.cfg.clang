@@ -1,0 +1,7 @@
+[unittest_env]
+cxx = 'clang++'
+cpppath = ['external', 'src']
+cxxflags = ['-std=c++14', '-Wall', '-g', '-O2', '-stdlib=libc++']
+linkflags = ['-lc++']
+
+[cog_env]

@@ -65,6 +65,42 @@ TEST_CASE( "numcpp::sum(array)")
     a = arange<int>(3*5*7).reshape({3,5,7});
 
     CHECK( sum(a) == 5460 );
+
+    missing _;
+    a = arange<int>(10)(_|_|2);
+    CHECK( sum(a) == 0+2+4+6+8 );
+
+    a = array<int>(
+        {
+            1, 2, 3,
+            4, 5, 6,
+            7, 8, 9
+        }
+    ).reshape({3,3});
+
+    CHECK( sum(a(1|_, _)) == 4+5+6 + 7+8+9 );
+    CHECK( sum(a(1|_, 1|_)) == 5+6 + 8+9 );
+
+    a = array<int>(
+        {
+            1, 2, 3,
+            4, 5, 6,
+            7, 8, 9,
+
+            10, 11, 12,
+            13, 14, 15,
+            16, 17, 18,
+
+            19, 20, 21,
+            22, 23, 24,
+            25, 26, 27,
+        }
+    ).reshape({3,3,3});
+
+    CHECK( sum(a) == 378 );
+    CHECK( sum(a(1|_, _, _)) == 333 );
+    CHECK( sum(a(1|_, 1|_, _)) == 240 );
+    CHECK( sum(a(1|_, 1|_, 1|_)) == 164 );
 }
 
 
@@ -139,6 +175,41 @@ TEST_CASE( "numcpp::min(array)")
     a = arange<int>(3*5*7 + 10 -1, 10 -1, -1).reshape({3,5,7});
 
     CHECK( min(a) == 10 );
+
+    missing _;
+    a = arange<int>(10)(4|_|2);
+    CHECK( min(a) == 4 );
+
+    a = array<int>(
+        {
+            1, 2, 3,
+            4, 5, 6,
+            7, 8, 9
+        }
+    ).reshape({3,3});
+
+    CHECK( min(a(_, 1|_)) == 2 );
+    CHECK( min(a(1|_, _)) == 4 );
+
+    a = array<int>(
+        {
+            1, 2, 3,
+            4, 5, 6,
+            7, 8, 9,
+
+            10, 11, 12,
+            13, 14, 15,
+            16, 17, 18,
+
+            19, 20, 21,
+            22, 23, 24,
+            25, 26, 27,
+        }
+    ).reshape({3,3,3});
+
+    CHECK( min(a(1|_, _, _)) == 10 );
+    CHECK( min(a(1|_, 1|_, _)) == 13 );
+    CHECK( min(a(1|_, 1|_, 1|_)) == 14 );
 }
 
 
@@ -213,6 +284,21 @@ TEST_CASE( "numcpp::max(array)")
     a = arange<int>(3*5*7 + 10 -1, 10 -1, -1).reshape({3,5,7});
 
     CHECK( max(a) == 114 );
+
+    missing _;
+    a = arange<int>(10);
+    CHECK( max(a(-4|_|-1)) == 6 );
+
+    a = arange<int>(9).reshape({3,3});
+
+    CHECK( max(a(_|-1, _)) == 5 );
+    CHECK( max(a(_, _|-1)) == 7 );
+
+    a = arange<int>(27).reshape({3,3,3});
+
+    CHECK( max(a(_|-1, _, _)) == 17 );
+    CHECK( max(a(_|-1, _|-1, _)) == 14 );
+    CHECK( max(a(_|-1, _|-1, _|-1)) == 13 );
 }
 
 

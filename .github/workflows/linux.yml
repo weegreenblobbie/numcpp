@@ -1,4 +1,4 @@
-name: C++ Unit Tests
+name: linux
 
 on:
   push:
@@ -7,7 +7,7 @@ on:
     branches: [ master ]
 
 jobs:
-  build-ubuntu:
+  linux:
 
     runs-on: ubuntu-latest
 
@@ -43,7 +43,6 @@ jobs:
            exit 0
         fi
         python3 scripts/download_coverage_badges.py coverage.info
-        # starting with space should not store the command in bash history
         sudo apt-get install lftp 2>&1 > /dev/null
         sudo echo "
             set ftp:ssl-protect-data true
@@ -51,50 +50,10 @@ jobs:
             set ftp:ssl-auth TLS
             set ssl:check-hostname no
         " >> ~/.lftprc
-        cd coverage
         # Starting a command in BASH with space prefix prevents it being written
         # to BASH history.  It appears the history command prints nothing in
         # github actions.  Nice work!
-          lftp -e "mput *; bye" \
+          lftp -e "mirror -R coverage .; bye" \
             -u '${{ secrets.TFTP_USER }},${{ secrets.TFTP_PASS }}' \
             -p ${{ secrets.TFTP_PORT }} \
             ${{ secrets.TFTP_HOST }}
-
-
-  build-windows:
-
-    runs-on: windows-latest
-
-    steps:
-    - uses: actions/checkout@v2
-      name: Checkout source
-    - uses: actions/setup-python@v2
-      name: Install Python
-    - name: Install dependencies
-      run: |
-        pip3 install cogapp scons
-    - name: Build
-      run: |
-        scons
-    - name: Run unit tests
-      run: |
-        scons --test
-
-  build-macos:
-
-    runs-on: macos-latest
-
-    steps:
-    - uses: actions/checkout@v2
-      name: Checkout source
-    - uses: actions/setup-python@v2
-      name: Install Python
-    - name: Install dependencies
-      run: |
-        pip3 install cogapp scons
-    - name: Build
-      run: |
-        scons
-    - name: Run unit tests
-      run: |
-        scons --test

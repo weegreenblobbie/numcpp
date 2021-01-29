@@ -11,6 +11,7 @@
 namespace numcpp
 {
 
+template <class R> array<R> abs(const array<R> & a);
 
 bool any(const array<bool> & a);
 bool all(const array<bool> & a);
@@ -23,8 +24,9 @@ template <class R> array<R> arange(R start, R stop, R step);
 template <class R> array<R> ones(const shape_t & shape);
 template <class R> array<R> zeros(const shape_t & shape);
 
-template <class R> R        sum(const array<R> & a);
-template <class R> array<R> sum(const array<R> & a, std::size_t axis);
+template <class R>
+typename detail::sum_type<R>::type    sum(const array<R> & a);
+template <class R> array<R>           sum(const array<R> & a, std::size_t axis);
 
 template <class R> R        min(const array<R> & a);
 template <class R> array<R> min(const array<R> & a, std::size_t axis);
@@ -35,6 +37,16 @@ template <class R> array<R> max(const array<R> & a, std::size_t axis);
 
 //-----------------------------------------------------------------------------
 // inline implementation
+
+template <class R>
+array<R>
+abs(const array<R> & a)
+{
+    array<R> b(a);
+    b.abs();
+    return b;
+}
+
 
 inline bool
 any(const array<bool> & a)
@@ -59,6 +71,22 @@ any(const array<bool> & a)
                 bool b = a(m,n);
 
                 if(b) return true;
+            }
+        }
+
+        return false;
+    }
+    if(a.ndim() == 3)
+    {
+        for(std::size_t m = 0; m < a.shape()[0]; ++m)
+        {
+            for(std::size_t n = 0; n < a.shape()[1]; ++n)
+            {
+                for(std::size_t p = 0; p < a.shape()[2]; ++p)
+                {
+                    bool b = a(m,n,p);
+                    if(b) return true;
+                }
             }
         }
 
@@ -225,7 +253,7 @@ template <class R>
 array<R> ones(const shape_t & shape)
 {
     return array<R>(
-        std::vector<R>(detail::_compute_size(shape), static_cast<R>(1))
+        std::vector<R>(detail::_compute_size(shape), static_cast<R>(1)) // LCOV_EXCL_LINE
     ).reshape(shape);
 }
 
@@ -234,16 +262,16 @@ template <class R>
 array<R> zeros(const shape_t & shape)
 {
     return array<R>(
-        std::vector<R>(detail::_compute_size(shape), static_cast<R>(0))
+        std::vector<R>(detail::_compute_size(shape), static_cast<R>(0)) // LCOV_EXCL_LINE
     ).reshape(shape);
 }
 
 
 template <class R>
-R
+typename detail::sum_type<R>::type
 sum(const array<R> & a)
 {
-    R sum_ = 0;
+    typename detail::sum_type<R>::type sum_ = 0;
 
     if(a.ndim() == 1)
     {
@@ -384,7 +412,6 @@ sum(const array<R> & a, std::size_t axis)
 
     return array<R>({});
 }
-
 
 
 template <class R>

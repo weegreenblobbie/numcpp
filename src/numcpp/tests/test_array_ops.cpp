@@ -183,6 +183,21 @@ TEST_CASE("numcpp::array::abs()")
     INFO( "b = " << b.print("%.1f") );
 
     CHECK_NOTHROW( assert_allclose(b, gf, 1e-7f) );
+
+    auto c = arange<int>(9).reshape({3,3}).astype<float32>();
+    gf = arange<float32>(9).reshape({3,3});
+
+    INFO( "c = " << c.print("%.1f") );
+
+    CHECK_NOTHROW( assert_allclose(c, gf, 1e-7f) );
+
+    auto d = arange<int>(27).reshape({3,3,3}).astype<float32>();
+    gf = arange<float32>(27).reshape({3,3,3});
+
+    INFO( "d = " << d.print("%.1f") );
+    INFO( "gf = " << gf.print("%.1f") );
+
+    CHECK_NOTHROW( assert_allclose(d, gf, 1e-7f) );
 }
 
 
