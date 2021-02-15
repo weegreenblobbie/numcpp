@@ -33,8 +33,6 @@ array<typename detail::{return_type}_if_integral<U>::type>
 array<R>::
 operator{op}() const
 {{
-    DOUT << __PRETTY_FUNCTION__ << std::endl;
-
     std::vector<{return_type}> vec;
 
     vec.reserve(_size);
@@ -160,8 +158,6 @@ array<R> &
 array<R>::
 operator{op}(const array<R> & rhs)
 {{
-    DOUT << __PRETTY_FUNCTION__ << std::endl;
-
     if(ndim() == 1)
     {{
         #define loop( idx )                                 \\
@@ -245,8 +241,6 @@ array<R> &
 array<R>::
 operator{op}(const R & rhs)
 {{
-    DOUT << __PRETTY_FUNCTION__ << std::endl;
-
     if(ndim() == 1)
     {{
         #define loop( idx )                                 \\
@@ -365,8 +359,6 @@ template<class U> array<typename detail::R_if_integral<U>::type> &
 array<R>::
 operator{op}(const array<R> & rhs)
 {{
-    DOUT << __PRETTY_FUNCTION__ << std::endl;
-
     if(ndim() == 1)
     {{
         #define loop( idx )                                 \\
@@ -449,8 +441,6 @@ template<class U> array<typename detail::R_if_integral<U>::type> &
 array<R>::
 operator{op}(const R & rhs)
 {{
-    DOUT << __PRETTY_FUNCTION__ << std::endl;
-
     if(ndim() == 1)
     {{
         #define loop( idx )                                 \\
@@ -554,8 +544,6 @@ template <class R>
 array<R>
 operator{op}(const array<R> & lhs, const R & rhs)
 {{
-    DOUT << __PRETTY_FUNCTION__ << std::endl;
-
     array<R> out(lhs);
 
     out {op}= rhs;
@@ -568,8 +556,6 @@ template <class R>
 array<R>
 operator{op}(const R & lhs, const array<R> & rhs)
 {{
-    DOUT << __PRETTY_FUNCTION__ << std::endl;
-
     array<R> out(rhs.shape(), lhs);
 
     out {op}= rhs;
@@ -582,8 +568,6 @@ template <class R>
 array<R>
 operator{op}(const array<R> & lhs, const array<R> & rhs)
 {{
-    DOUT << __PRETTY_FUNCTION__ << std::endl;
-
     if(lhs.shape() != rhs.shape())
     {{
         M_THROW_RT_ERROR("operands could not be broadcast together with shapes " << lhs.shape() << " " << rhs.shape());
@@ -629,8 +613,6 @@ template <class R>
 array<bool>
 operator{op}(const array<R> & lhs, const R & rhs)
 {{
-    DOUT << __PRETTY_FUNCTION__ << std::endl;
-
     std::vector<bool> vec;
 
     vec.reserve(lhs._size);
@@ -707,8 +689,6 @@ template <class R>
 array<bool>
 operator{op}(const R & lhs, const array<R> & rhs)
 {{
-    DOUT << __PRETTY_FUNCTION__ << std::endl;
-
     array<bool> out;
 
     out._size = rhs._size;
@@ -788,8 +768,6 @@ template <class R>
 array<bool>
 operator{op}(const array<R> & lhs, const array<R> & rhs)
 {{
-    DOUT << __PRETTY_FUNCTION__ << std::endl;
-
     {shape_check}
 
     // special case if arrays are empty
@@ -924,8 +902,6 @@ typename numcpp::detail::void_if_numeric<U>::type
 array<R>::
 {func}()
 {{
-    DOUT << __PRETTY_FUNCTION__ << std::endl;
-
     if(ndim() == 1)
     {{
         #define loop( idx )                                 \\

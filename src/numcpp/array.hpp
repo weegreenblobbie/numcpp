@@ -23,12 +23,10 @@ namespace numcpp
 // forward
 
 template <class R> class array;
-template <class R> class const_array;
+template <class R> class array_view;
 
-// for printing shape
                    std::ostream & operator<<(std::ostream &, const std::vector<uint64> &);
 template <class R> std::ostream & operator<<(std::ostream &, const array<R> &);
-template <class R> std::ostream & operator<<(std::ostream &, const const_array<R> &);
 
 //-----------------------------------------------------------------------------
 // forward these so they can be friends
@@ -63,6 +61,18 @@ namespace detail {
     struct bool_if_integral
     {
         using type = typename std::enable_if_t<std::is_integral<R>::value, bool>;
+    };
+
+    template <typename R>
+    struct const_ref_helper
+    {
+        using type = typename array<R>::const_reference;
+    };
+
+    template <>
+    struct const_ref_helper<bool>
+    {
+        using type = bool;
     };
 }
 
@@ -104,12 +114,22 @@ public:
 
     array(const std::initializer_list<R> & il);
     array(const std::vector<R> & v);
-    array(const shape_t & shape, const R & value = R()); // std::vector like
+    array(const shape_t &, const std::vector<R> & v);
+    array(const shape_t & shape, const R & value = R());
     array(array<R> && move) = default;
     array(const array<R> & other);
-    array(const const_array<R> & other);
+    array(const array_view<R> & other);
 
-    array<R> & operator=(const array<R> & rhs) = default;
+    array<R> & operator=(const array<R> & rhs)
+    {
+        _size = rhs._size;
+        _array = rhs._array;
+        _shape = rhs._shape;
+        _strides = rhs._strides;
+        _offset = rhs._offset;
+        return *this;
+    }
+
 
     template <class U>
     array<U>                  astype() const;
@@ -145,17 +165,15 @@ public:
     //-------------------------------------------------------------------------
     // operators
 
-    operator value_type () const;      // implicitly conversions
+    // Implicit convertions.
+    operator typename detail::const_ref_helper<R>::type () const;
     operator reference ();
-
-    operator const_array<R> () const;
 
     array<R> & operator=(const R & rhs);
 
     template <typename U>
     array<R> & operator=(const U & rhs);  // used to create compiler error for type mismatch
 
-//~    array<R>    operator+() const;
     template<class U=R> array<typename detail::R_if_integral<U>::type> operator-() const;
     template<class U=R> array<typename detail::R_if_integral<U>::type> operator~() const;
     template<class U=R> array<typename detail::bool_if_integral<U>::type> operator!() const;
@@ -164,24 +182,19 @@ public:
     array<R> operator()(const slice &, const slice &);
     array<R> operator()(const slice &, const slice &, const slice &);
 
-    const_array<R> operator()(const slice &) const;
-    const_array<R> operator()(const slice &, const slice &) const;
-    const_array<R> operator()(const slice &, const slice &, const slice &) const;
+    virtual array_view<R> operator()(const slice &) const;
+    virtual array_view<R> operator()(const slice &, const slice &) const;
+    virtual array_view<R> operator()(const slice &, const slice &, const slice &) const;
 
     array<R> & operator+= ( const array<R> & rhs );
     array<R> & operator-= ( const array<R> & rhs );
     array<R> & operator*= ( const array<R> & rhs );
     array<R> & operator/= ( const array<R> & rhs );
 
-    array<R> & operator+= ( const R & val );
-    array<R> & operator-= ( const R & val );
-    array<R> & operator*= ( const R & val );
-    array<R> & operator/= ( const R & val );
-
-    array<R> & operator+= ( const const_array<R> & rhs )   { *this +=  *rhs._a; return *this; }
-    array<R> & operator-= ( const const_array<R> & rhs )   { *this -=  *rhs._a; return *this; }
-    array<R> & operator*= ( const const_array<R> & rhs )   { *this *=  *rhs._a; return *this; }
-    array<R> & operator/= ( const const_array<R> & rhs )   { *this /=  *rhs._a; return *this; }
+    array<R> & operator+= ( const R & rhs );
+    array<R> & operator-= ( const R & rhs );
+    array<R> & operator*= ( const R & rhs );
+    array<R> & operator/= ( const R & rhs );
 
     template<class U=R> array<typename detail::R_if_integral<U>::type> & operator%= ( const array<R> & rhs );
     template<class U=R> array<typename detail::R_if_integral<U>::type> & operator&= ( const array<R> & rhs );
@@ -197,26 +210,28 @@ public:
     template<class U=R> array<typename detail::R_if_integral<U>::type> & operator<<=( const R & val );
     template<class U=R> array<typename detail::R_if_integral<U>::type> & operator>>=( const R & val );
 
-    template<class U=R> array<typename detail::R_if_integral<U>::type> & operator%= ( const const_array<R> & rhs )   { *this %=  *rhs._a; return *this; }
-    template<class U=R> array<typename detail::R_if_integral<U>::type> & operator&= ( const const_array<R> & rhs )   { *this &=  *rhs._a; return *this; }
-    template<class U=R> array<typename detail::R_if_integral<U>::type> & operator|= ( const const_array<R> & rhs )   { *this |=  *rhs._a; return *this; }
-    template<class U=R> array<typename detail::R_if_integral<U>::type> & operator^= ( const const_array<R> & rhs )   { *this ^=  *rhs._a; return *this; }
-    template<class U=R> array<typename detail::R_if_integral<U>::type> & operator<<=( const const_array<R> & rhs )   { *this <<= *rhs._a; return *this; }
-    template<class U=R> array<typename detail::R_if_integral<U>::type> & operator>>=( const const_array<R> & rhs )   { *this >>= *rhs._a; return *this; }
-
 protected:
 
-    array();
+    array(){}
+    array(
+        std::size_t                     size,
+        std::shared_ptr<std::vector<R>> a,
+        const shape_t &                 shape,
+        const std::vector<index_t>      strides,
+        index_t                         offset
+    );
 
-    std::size_t                     _size;
+    void _deep_copy(const array<R> & other);
 
-    std::shared_ptr<std::vector<R>> _array;
+    array<R> _shallow_copy() const;
 
-    shape_t                         _shape;
-    std::vector<index_t>            _strides;
-    index_t                         _offset;
+    std::size_t                     _size{0};
+    std::shared_ptr<std::vector<R>> _array{nullptr};
+    shape_t                         _shape{};
+    std::vector<index_t>            _strides{};
+    index_t                         _offset{0};
 
-    friend class const_array<R>;
+    friend class array_view<R>;
 
     template <typename> friend class array;
 
@@ -270,30 +285,12 @@ namespace detail
 
 template <class R>
 array<R>::
-array()
-    :
-    _size(0),
-    _array(nullptr),
-    _shape({}),
-    _strides(),
-    _offset(0)
-{
-    DOUT << __PRETTY_FUNCTION__ << std::endl;
-}
-
-
-template <class R>
-array<R>::
 array(const std::initializer_list<R> & il)
     :
     _size(il.size()),
     _array(std::make_shared<std::vector<R>>(il)),
-    _shape({_size}),
-    _strides(),
-    _offset(0)
-{
-    DOUT << __PRETTY_FUNCTION__ << std::endl;
-}
+    _shape({_size})
+{}
 
 
 template <class R>
@@ -302,11 +299,21 @@ array(const std::vector<R> & v)
     :
     _size(v.size()),
     _array(std::make_shared<std::vector<R>>(v)),
-    _shape({_size}),
-    _strides(),
-    _offset(0)
+    _shape({_size})
+{}
+
+
+template <class R>
+array<R>::
+array(const shape_t & shape, const std::vector<R> & v)
+    :
+    _size(v.size()),
+    _array(std::make_shared<std::vector<R>>(v)),
+    _shape(shape)
 {
-    DOUT << __PRETTY_FUNCTION__ << std::endl;
+    auto s = detail::_compute_size(shape);
+
+    if(v.size() != s) M_THROW_RT_ERROR("vector.size() and shape mismatch");
 }
 
 
@@ -316,12 +323,8 @@ array(const shape_t & shape, const R & value)
     :
     _size(detail::_compute_size(shape)),
     _array(std::make_shared<std::vector<R>>(std::vector<R>(_size, value))),
-    _shape(shape),
-    _strides(),
-    _offset(0)
-{
-    DOUT << __PRETTY_FUNCTION__ << std::endl;
-}
+    _shape(shape)
+{}
 
 
 template <class R>
@@ -329,10 +332,30 @@ array<R>::
 array(const array<R> & other)
     :
     _size(other._size),
-    _shape(other._shape),
-    _offset(0)
+    _array(std::make_shared<std::vector<R>>()),
+    _shape(other._shape)
 {
-    _array = std::make_shared<std::vector<R>>();
+    _deep_copy(other);
+}
+
+
+template <class R>
+array<R>::
+array(const array_view<R> & other)
+    :
+    _size(other._size),
+    _array(std::make_shared<std::vector<R>>()),
+    _shape(other._shape)
+{
+    _deep_copy(other);
+}
+
+
+template <class R>
+void
+array<R>::
+_deep_copy(const array<R> & other)
+{
     _array->reserve(_size);
 
     if(ndim() == 1)
@@ -393,16 +416,31 @@ array(const array<R> & other)
     }
 }
 
+
 template <class R>
 array<R>::
-array(const const_array<R> & other)
+array(
+    std::size_t                     size,
+    std::shared_ptr<std::vector<R>> a,
+    const shape_t &                 shape,
+    const std::vector<index_t>      strides,
+    index_t                         offset
+)
     :
-    _size(other._a->_size),
-    _array(other._a->_array),
-    _shape(other._a->_shape),
-    _strides(other._a->_strides),
-    _offset(other._a->_offset)
+    _size(size),
+    _array(a),
+    _shape(shape),
+    _strides(strides),
+    _offset(offset)
+{}
+
+
+template <class R>
+array<R>
+array<R>::
+_shallow_copy() const
 {
+    return array<R>(_size, _array, _shape, _strides, _offset);
 }
 
 
@@ -470,29 +508,8 @@ transpose()
 
 
 template <class R>
-array<R>::operator typename array<R>::value_type () const
-{
-    DOUT << __PRETTY_FUNCTION__ << std::endl;
-
-    if(_size != 1)
-    {
-        if(std::is_same<bool, R>::value)
-        {
-            M_THROW_RT_ERROR("The truth value of an array with more than one element is ambiguous. Use numcpp::any() or numcpp::all().");
-        }
-
-        M_THROW_RT_ERROR("converting to single value from array!");
-    }
-
-    return (*_array)[_offset];
-}
-
-
-template <class R>
 array<R>::operator typename array<R>::reference ()
 {
-    DOUT << __PRETTY_FUNCTION__ << std::endl;
-
     if(_size != 1)
     {
         if(std::is_same<bool, R>::value)
@@ -508,9 +525,19 @@ array<R>::operator typename array<R>::reference ()
 
 
 template <class R>
-array<R>::operator const_array<R> () const
+array<R>::operator typename detail::const_ref_helper<R>::type () const
 {
-    return const_array<R>(*this);
+    if(_size != 1)
+    {
+        if(std::is_same<bool, R>::value)
+        {
+            M_THROW_RT_ERROR("The truth value of an array with more than one element is ambiguous. Use numcpp::any() or numcpp::all().");
+        }
+
+        M_THROW_RT_ERROR("converting to single value from array!");
+    }
+
+    return (*_array)[_offset];
 }
 
 
@@ -519,8 +546,6 @@ array<U>
 array<R>::
 astype() const
 {
-    DOUT << __PRETTY_FUNCTION__ << std::endl;
-
     array<U> out;
 
     out._size = _size;
@@ -581,8 +606,6 @@ array<R> &
 array<R>::
 reshape(const shape_t & shape)
 {
-    DOUT << __PRETTY_FUNCTION__ << std::endl;
-
     auto s = detail::_compute_size(shape);
 
     if(_size != s) M_THROW_RT_ERROR("total size of new array must be unchanged");
@@ -647,8 +670,6 @@ array<R> &
 array<R>::
 operator=(const R & rhs)
 {
-    DOUT << __PRETTY_FUNCTION__ << std::endl;
-
     if(ndim() == 1)
     {
         #define loop( idx )                               \
@@ -731,8 +752,6 @@ array<R>
 array<R>::
 operator()(const slice & s0)
 {
-    DOUT << __PRETTY_FUNCTION__ << std::endl;
-
     if(_size == 0) throw std::runtime_error("can't slice an empty array");
 
     array<R> out;
@@ -792,8 +811,6 @@ array<R>
 array<R>::
 operator()(const slice & s0, const slice & s1)
 {
-    DOUT << __PRETTY_FUNCTION__ << std::endl;
-
     if(_size == 0) throw std::runtime_error("can't slice an empty array");
 
     auto n_dim = ndim();
@@ -823,7 +840,6 @@ operator()(const slice & s0, const slice & s1)
         index_t step0  = s0_.step();
         index_t step1  = s1_.step();
 
-        DOUT << "array<R> out;";
         array<R> out;
 
         out._size  = count0 * count1;
@@ -849,10 +865,6 @@ operator()(const slice & s0, const slice & s1)
         {
             out._shape = {count1};
             out._strides = {out._strides[1]};
-
-            DOUT << "\n"
-                << "m,n = " << start0 << ", " << start1 << "\n" // LCOV_EXCL_LINE
-                << out.debug_print() << "\n";                   // LCOV_EXCL_LINE
         }
 
         // column vector
@@ -889,8 +901,6 @@ array<R>
 array<R>::
 operator()(const slice & s0, const slice & s1, const slice & s2)
 {
-    DOUT << __PRETTY_FUNCTION__ << std::endl;
-
     if(_size == 0) throw std::runtime_error("can't slice an empty array");
 
     auto n_dim = ndim();
@@ -926,7 +936,6 @@ operator()(const slice & s0, const slice & s1, const slice & s2)
         index_t step1  = s1_.step();
         index_t step2  = s2_.step();
 
-        DOUT << "array<R> out;";
         array<R> out;
 
         out._size  = count0 * count1 * count2;
@@ -1051,42 +1060,12 @@ operator()(const slice & s0, const slice & s1, const slice & s2)
 }
 
 
-template <class R>
-const_array<R>
-array<R>::
-operator()(const slice & s) const
+inline
+std::ostream &
+operator<<(std::ostream & out, const std::vector<uint64> & v)
 {
-    DOUT << __PRETTY_FUNCTION__ << std::endl;
-
-    array<R> & r = const_cast<array<R>&>(*this);
-
-    return const_array<R>(r(s));
-}
-
-
-template <class R>
-const_array<R>
-array<R>::
-operator()(const slice & s0, const slice & s1) const
-{
-    DOUT << __PRETTY_FUNCTION__ << std::endl;
-
-    array<R> & r = const_cast<array<R> &>(*this);
-
-    return const_array<R>(r(s0, s1));
-}
-
-
-template <class R>
-const_array<R>
-array<R>::
-operator()(const slice & s0, const slice & s1, const slice & s2) const
-{
-    DOUT << __PRETTY_FUNCTION__ << std::endl;
-
-    array<R> & r = const_cast<array<R> &>(*this);
-
-    return const_array<R>(r(s0, s1, s2));
+    out << "("; for(auto x : v) out << x << ", ";
+    return out << ")";
 }
 
 
@@ -1094,17 +1073,7 @@ template <class R>
 std::ostream &
 operator<<(std::ostream & out, const array<R> & a)
 {
-    DOUT << __PRETTY_FUNCTION__ << std::endl;
     return out << a.print();
-}
-
-
-inline
-std::ostream &
-operator<<(std::ostream & out, const std::vector<uint64> & v)
-{
-    out << "("; for(auto x : v) out << x << ", ";
-    return out << ")";
 }
 
 
@@ -1162,8 +1131,6 @@ std::string
 array<R>::
 print(const std::string & fmt_in) const
 {
-    DOUT << __PRETTY_FUNCTION__ << std::endl;
-
 //~    if(size() > 100) throw std::runtime_error("array to big to print");
 
     if(ndim() > 3) throw std::runtime_error("ndim() > 3 not implemented");
@@ -1254,8 +1221,6 @@ std::string
 array<R>::
 debug_print() const
 {
-    DOUT << __PRETTY_FUNCTION__ << std::endl;
-
     std::stringstream ss;
 
     ss

@@ -23,6 +23,24 @@ template class array<double>;
 //~template class array<complex64>;
 //~template class array<complex128>;
 
+template class array_view<bool>;
+template class array_view<int8>;
+template class array_view<int16>;
+template class array_view<int32>;
+template class array_view<int64>;
+template class array_view<uint8>;
+template class array_view<uint16>;
+template class array_view<uint32>;
+template class array_view<uint64>;
+template class array_view<float>;
+template class array_view<double>;
+//~template class array<complex64>;
+//~template class array<complex128>;
+
+
+
+
+
 }
 
 
@@ -447,11 +465,11 @@ TEST_CASE( "numcpp::array truth value throws" )
 
     CHECK_THROWS_WITH(bool e = d, Contains(ambiguous_error));
 
-    SECTION(" convertion to bool from const_array<R> with size > 1 is an error ")
+    SECTION(" convertion to bool from array_view<R> with size > 1 is an error ")
     {
         using Catch::Matchers::Contains;
 
-        // Construct a const_array<bool>.
+        // Construct a array_view<bool>.
         const auto f = array<bool>({0, 1});
         missing _;
         auto g = f(_);
@@ -459,12 +477,12 @@ TEST_CASE( "numcpp::array truth value throws" )
         CHECK_THROWS_WITH(bool h = g, Contains(ambiguous_error));
 
         // Convertion to single value should work.
-        bool i = g(1);
-        bool j = g(0);
-        CHECK( i );
-        CHECK_FALSE( j );
+        bool i = g(0);
+        bool j = g(1);
+        CHECK_FALSE( i );
+        CHECK( j );
 
-        // Construct a const_array<int>.
+        // Construct a array_view<int>.
         const auto k = array<int>({26, 42});
         auto l = k(_);
 

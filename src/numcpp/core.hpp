@@ -3,7 +3,7 @@
 
 
 #include <numcpp/array.hpp>
-#include <numcpp/const_array.hpp>
+#include <numcpp/array_view.hpp>
 #include <numcpp/macros.hpp>
 #include <numcpp/shape.hpp>
 

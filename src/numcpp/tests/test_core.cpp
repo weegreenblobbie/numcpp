@@ -3,11 +3,10 @@
 
 #include <numcpp/core.hpp>
 
-
 using namespace numcpp;
 
 
-TEST_CASE( "numcpp::any")
+TEST_CASE( "numcpp::any" )
 {
     auto a = array<bool>({0,0,0,0});
 
@@ -36,7 +35,7 @@ TEST_CASE( "numcpp::any")
 }
 
 
-TEST_CASE( "numcpp::arange")
+TEST_CASE( "numcpp::arange" )
 {
     auto a = arange<int>(5);
 
@@ -49,7 +48,7 @@ TEST_CASE( "numcpp::arange")
 }
 
 
-TEST_CASE( "numcpp::sum(array)")
+TEST_CASE( "numcpp::sum(array)" )
 {
     auto a = arange<int>(5);
 
@@ -104,65 +103,137 @@ TEST_CASE( "numcpp::sum(array)")
 }
 
 
-TEST_CASE( "numcpp::sum(array,axis)")
+TEST_CASE( "numcpp::sum(array_view)" )
 {
-    auto a = arange<int>(5);
+    missing _;
 
-    CHECK( sum(a, 0) == 10 );
+    {
+        const auto a = arange<int>(5);
 
-    CHECK_THROWS( sum(a, 1) );
+        CHECK( a(0)  == 0 );
+        CHECK( a(-1) == 4 );
 
-    a = arange<int>(10).reshape({2,5});
+        CHECK( sum(a) == 10 );
+    }
 
-    auto gold = array<int>({5, 7, 9, 11, 13});
+    {
+        const auto a = arange<int>(10).reshape({2,5});
+        CHECK( sum(a) == 45 );
+    }
 
-    CHECK( all(sum(a,0) == gold) );
+    {
+        const auto a = arange<int>(3*5*7).reshape({3,5,7});
+        CHECK( sum(a) == 5460 );
+    }
 
-    gold = array<int>({10, 35});
+    {
+        missing _;
+        const auto a = arange<int>(10)(_|_|2);
+        CHECK( sum(a) == 0+2+4+6+8 );
+    }
 
-    CHECK( all(sum(a, 1) == gold) );
+    {
+        const auto a = array<int>(
+            {
+                1, 2, 3,
+                4, 5, 6,
+                7, 8, 9
+            }
+        ).reshape({3,3});
 
-    CHECK_THROWS( sum(a, 2) );
+        CHECK( sum(a(1|_, _)) == 4+5+6 + 7+8+9 );
+        CHECK( sum(a(1|_, 1|_)) == 5+6 + 8+9 );
+    }
 
-    a = arange<int>(3*5*7).reshape({3,5,7});
+    {
+        const auto a = array<int>(
+            {
+                1, 2, 3,
+                4, 5, 6,
+                7, 8, 9,
 
-    gold = array<int>(
-        {
-            105, 108, 111, 114, 117, 120, 123,
-            126, 129, 132, 135, 138, 141, 144,
-            147, 150, 153, 156, 159, 162, 165,
-            168, 171, 174, 177, 180, 183, 186,
-            189, 192, 195, 198, 201, 204, 207,
-        }
-    ).reshape({5,7});
+                10, 11, 12,
+                13, 14, 15,
+                16, 17, 18,
 
-    CHECK( all(sum(a,0) == gold) );
+                19, 20, 21,
+                22, 23, 24,
+                25, 26, 27,
+            }
+        ).reshape({3,3,3});
 
-    gold = array<int>(
-        {
-             70,  75,  80,  85,  90,  95, 100,
-            245, 250, 255, 260, 265, 270, 275,
-            420, 425, 430, 435, 440, 445, 450,
-        }
-    ).reshape({3,7});
-
-    CHECK( all(sum(a,1) == gold) );
-
-    gold = array<int>(
-        {
-             21,  70, 119, 168, 217,
-            266, 315, 364, 413, 462,
-            511, 560, 609, 658, 707,
-        }
-    ).reshape({3,5});
-
-    CHECK( all(sum(a,2) == gold) );
-
-    CHECK_THROWS( sum(a,3) );
+        CHECK( sum(a) == 378 );
+        CHECK( sum(a(1|_, _, _)) == 333 );
+        CHECK( sum(a(1|_, 1|_, _)) == 240 );
+        CHECK( sum(a(1|_, 1|_, 1|_)) == 164 );
+    }
 }
 
 
-TEST_CASE( "numcpp::min(array)")
+TEST_CASE( "numcpp::sum(array,axis)" )
+{
+    SECTION( "1d array" )
+    {
+        auto a = arange<int>(5);
+
+        CHECK( sum(a, 0) == 10 );
+        CHECK_THROWS( sum(a, 1) );
+    }
+
+    SECTION( "2d array" )
+    {
+        auto a = arange<int>(10).reshape({2,5});
+
+        auto gold = array<int>({5, 7, 9, 11, 13});
+
+        CHECK( all(sum(a, 0) == gold) );
+
+        gold = array<int>({10, 35});
+
+        CHECK( all(sum(a, 1) == gold) );
+        CHECK_THROWS( sum(a, 2) );
+    }
+
+    SECTION( "3d array" )
+    {
+        auto a = arange<int>(3*5*7).reshape({3,5,7});
+
+        auto gold = array<int>(
+            {
+                105, 108, 111, 114, 117, 120, 123,
+                126, 129, 132, 135, 138, 141, 144,
+                147, 150, 153, 156, 159, 162, 165,
+                168, 171, 174, 177, 180, 183, 186,
+                189, 192, 195, 198, 201, 204, 207,
+            }
+        ).reshape({5,7});
+
+        CHECK( all(sum(a,0) == gold) );
+
+        gold = array<int>(
+            {
+                 70,  75,  80,  85,  90,  95, 100,
+                245, 250, 255, 260, 265, 270, 275,
+                420, 425, 430, 435, 440, 445, 450,
+            }
+        ).reshape({3,7});
+
+        CHECK( all(sum(a,1) == gold) );
+
+        gold = array<int>(
+            {
+                 21,  70, 119, 168, 217,
+                266, 315, 364, 413, 462,
+                511, 560, 609, 658, 707,
+            }
+        ).reshape({3,5});
+
+        CHECK( all(sum(a,2) == gold) );
+        CHECK_THROWS( sum(a,3) );
+    }
+}
+
+TEST_CASE( "numcpp::min(array)" )
 {
     auto a = arange<int>(5, 20);
 
@@ -213,7 +284,7 @@ TEST_CASE( "numcpp::min(array)")
 }
 
 
-TEST_CASE( "numcpp::min(array,axis)")
+TEST_CASE( "numcpp::min(array,axis)" )
 {
     auto a = arange<int>(5, 20);
 
