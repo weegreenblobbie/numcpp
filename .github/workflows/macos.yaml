@@ -1,16 +1,16 @@
-name: windows
+name: macos
 
 on:
   push:
-    branches: [ master ]
+    branches: [ trunk ]
   pull_request:
-    branches: [ master ]
+    branches: [ trunk ]
 
 jobs:
 
-  windows:
+  macos:
 
-    runs-on: windows-latest
+    runs-on: macos-latest
 
     steps:
     - uses: actions/checkout@v2

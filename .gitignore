@@ -30,6 +30,7 @@
 
 venv
 src/executables/unittests
+src/numcpp/tests/compile_error_*.txt
 *.gcda
 *.gcno
 *.info
@@ -38,6 +39,8 @@ src/executables/unittests
 config.log
 demo
 site.cfg
+site.cfg.g++
+site.cfg.clang
 coverage
 timing
 _*.hpp

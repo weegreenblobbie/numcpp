@@ -1,0 +1,6 @@
+1. Rename const_array to array_view
+2. Make array_view it's own class, array derives from it
+3. Verify I implemented move semantics correctly
+4. Replace local macros with lambdas
+5. Add code coverage
+6. Add bazel build system, pull in libfmt and catch

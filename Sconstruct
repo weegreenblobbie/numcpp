@@ -31,7 +31,9 @@ AddOption(
     help = "Build in verbose mode"
 )
 
-if GetOption("test"):
+do_test = GetOption("test")
+
+if do_test:
 
     AddOption(
         "-a",
@@ -178,7 +180,6 @@ SConscript("src/numcpp/numcpp.scons")
 # handle coverage
 
 do_coverage = GetOption("coverage")
-do_test = GetOption("test")
 
 if do_coverage:
 
@@ -237,13 +238,12 @@ conf.Finish()
 #-----------------------------------------------------------------------------
 # building unittests
 
-src = Glob('src/numcpp/tests/*.cpp')
+src = Glob('src/numcpp/tests/test_*.cpp')
 src.append(File('src/executables/unittests.cpp'))
 
 ut = unittest_env.Program('src/executables/unittests', src)[0]
 
 unittest_env.Default(ut)
-
 
 #-----------------------------------------------------------------------------
 # building demo program
@@ -281,9 +281,53 @@ if do_test:
 
     run_ut = Command("test", None, cmd)
 
-    Default(run_ut)
     Depends(run_ut, ut)
+    Default(run_ut)
     AlwaysBuild(run_ut)
+
+    num_jobs = GetOption('num_jobs')
+
+    sources = Glob('src/numcpp/tests/compile_error*.cpp')
+
+    def trycompile(target, source, env):
+        target = target[0].path
+        obj_name = source[0].path + '.o'
+        source = source[0].path
+        cmd = env['CXXCOM']
+        cmd = cmd.replace('$TARGET', obj_name)
+        cmd = cmd.replace('$SOURCES', source)
+        cmd = env.subst(cmd)
+        import subprocess
+        p = subprocess.Popen(
+            cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT
+        )
+        out = p.stdout.read().decode('utf-8')
+        p.communicate()
+        if p.returncode:
+            with open(target, 'w') as fout:
+                fout.write('Failed to comple as expected:\n\n')
+                fout.write(f'{cmd}\n\n')
+                fout.write(f'{out}\n\n')
+            return 0
+
+        with open(target, 'w') as fout:
+            fout.write('Compiled successfully but was expected to fail!\n\n')
+            fout.write(f'{cmd}\n\n')
+            fout.write(f'{out}\n\n')
+        return 1
+
+    for src in sources:
+        obj_name = str(src) + '.txt'
+
+        def strfunction(target, source, env):
+            return "Asserting this doesn't compile: %s" % source[0]
+
+        action = unittest_env.Action(trycompile, strfunction = strfunction)
+        obj = unittest_env.Command(obj_name, src, action)
+        unittest_env.Clean(ut, obj)
+        unittest_env.Depends(obj, run_ut)
+        unittest_env.Default(obj)
+
 
 
 #-----------------------------------------------------------------------------
