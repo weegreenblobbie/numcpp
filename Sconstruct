@@ -357,7 +357,7 @@ if do_coverage:
 #~            '--exclude "/usr/*" '
 #~            '--capture -o coverage.info',
 
-        'genhtml -o coverage -t "unittest coverage" --num-spaces 4 coverage.info',
+        'genhtml -o coverage -t "unittest coverage" --demangle-cpp --num-spaces 4 coverage.info',
         'echo Open coverage/index.html',
     ]
 

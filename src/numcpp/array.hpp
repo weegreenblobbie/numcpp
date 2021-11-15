@@ -52,6 +52,24 @@ namespace detail {
     };
 
     template <class R>
+    struct abs_type
+    {
+        using type = R;
+    };
+
+    template <>
+    struct abs_type<complex64>
+    {
+        using type = float32;
+    };
+
+    template <>
+    struct abs_type<complex128>
+    {
+        using type = float64;
+    };
+
+    template <class R>
     struct R_if_integral
     {
         using type = typename std::enable_if_t<std::is_integral<R>::value, R>;
@@ -122,6 +140,7 @@ public:
 
     array<R> & operator=(const array<R> & rhs)
     {
+        if (this == &rhs) return *this;
         _size = rhs._size;
         _array = rhs._array;
         _shape = rhs._shape;
@@ -191,10 +210,10 @@ public:
     array<R> & operator*= ( const array<R> & rhs );
     array<R> & operator/= ( const array<R> & rhs );
 
-    array<R> & operator+= ( const R & rhs );
-    array<R> & operator-= ( const R & rhs );
-    array<R> & operator*= ( const R & rhs );
-    array<R> & operator/= ( const R & rhs );
+    array<R> & operator+= ( typename detail::const_ref_helper<R>::type rhs );
+    array<R> & operator-= ( typename detail::const_ref_helper<R>::type rhs );
+    array<R> & operator*= ( typename detail::const_ref_helper<R>::type rhs );
+    array<R> & operator/= ( typename detail::const_ref_helper<R>::type rhs );
 
     template<class U=R> array<typename detail::R_if_integral<U>::type> & operator%= ( const array<R> & rhs );
     template<class U=R> array<typename detail::R_if_integral<U>::type> & operator&= ( const array<R> & rhs );
@@ -209,6 +228,9 @@ public:
     template<class U=R> array<typename detail::R_if_integral<U>::type> & operator^= ( const R & val );
     template<class U=R> array<typename detail::R_if_integral<U>::type> & operator<<=( const R & val );
     template<class U=R> array<typename detail::R_if_integral<U>::type> & operator>>=( const R & val );
+
+    reference operator[](std::size_t);
+    const_reference operator[](std::size_t) const;
 
 protected:
 
@@ -263,7 +285,137 @@ protected:
 
 
 //-----------------------------------------------------------------------------
-// inline implementation
+// array_view
+
+
+template <class R>
+class array_view : public array<R>
+{
+public:
+
+    using value_type      = typename array<R>::value_type;
+    using reference       = typename array<R>::reference;
+    using const_reference = typename array<R>::const_reference;
+
+    array_view<R> operator()(const slice & s0) const override;
+    array_view<R> operator()(const slice & s0, const slice & s1) const override;
+    array_view<R> operator()(const slice & s0, const slice & s1, const slice & s2) const override;
+
+    void abs()   = delete;
+    void acos()  = delete;
+    void asin()  = delete;
+    void atan()  = delete;
+    void cos()   = delete;
+    void cosh()  = delete;
+    void exp()   = delete;
+    void log()   = delete;
+    void log10() = delete;
+    void sin()   = delete;
+    void sinh()  = delete;
+    void sqrt()  = delete;
+    void tan()   = delete;
+    void tanh()  = delete;
+
+    array<R> operator=(const R &)  = delete;
+
+    array<R> & operator+=(const array<R> & rhs) = delete;
+    array<R> & operator-=(const array<R> & rhs) = delete;
+    array<R> & operator*=(const array<R> & rhs) = delete;
+    array<R> & operator/=(const array<R> & rhs) = delete;
+
+    array<R> & operator+=(const R & rhs) = delete;
+    array<R> & operator-=(const R & rhs) = delete;
+    array<R> & operator*=(const R & rhs) = delete;
+    array<R> & operator/=(const R & rhs) = delete;
+
+    array<R> & operator%= (const array<R> & rhs) = delete;
+    array<R> & operator&= (const array<R> & rhs) = delete;
+    array<R> & operator|= (const array<R> & rhs) = delete;
+    array<R> & operator^= (const array<R> & rhs) = delete;
+    array<R> & operator<<= (const array<R> & rhs) = delete;
+    array<R> & operator>>= (const array<R> & rhs) = delete;
+
+    array<R> & operator%= (const R & rhs) = delete;
+    array<R> & operator&= (const R & rhs) = delete;
+    array<R> & operator|= (const R & rhs) = delete;
+    array<R> & operator^= (const R & rhs) = delete;
+    array<R> & operator<<= (const R & rhs) = delete;
+    array<R> & operator>>= (const R & rhs) = delete;
+
+protected:
+
+    array_view(const array<R> & a)
+        : array<R>::array(a._size, a._array, a._shape, a._strides, a._offset)
+    {}
+
+    friend class array<R>;
+};
+
+
+//-----------------------------------------------------------------------------
+// inline implemenation of some class array<R> conversion to array_view<R>.
+
+
+template <class R>
+array_view<R>
+array<R>::operator()(const slice & s0) const
+{
+    array<R> tmp = array<R>::_shallow_copy()(s0);
+    return array_view<R>(tmp);
+}
+
+
+template <class R>
+array_view<R>
+array<R>::operator()(const slice & s0, const slice & s1) const
+{
+    array<R> tmp = array<R>::_shallow_copy()(s0, s1);
+    return array_view<R>(tmp);
+}
+
+
+template <class R>
+array_view<R>
+array<R>::operator()(const slice & s0, const slice & s1, const slice & s2) const
+{
+    array<R> tmp = array<R>::_shallow_copy()(s0, s1, s2);
+    return array_view<R>(tmp);
+}
+
+
+//-----------------------------------------------------------------------------
+// inline implemenation of some class array_view<R>::operator().
+
+
+template <class R>
+array_view<R>
+array_view<R>::operator()(const slice & s0) const
+{
+    array<R> tmp = array<R>::_shallow_copy()(s0);
+    return array_view<R>(tmp);
+}
+
+
+template <class R>
+array_view<R>
+array_view<R>::operator()(const slice & s0, const slice & s1) const
+{
+    array<R> tmp = array<R>::_shallow_copy()(s0, s1);
+    return array_view<R>(tmp);
+}
+
+
+template <class R>
+array_view<R>
+array_view<R>::operator()(const slice & s0, const slice & s1, const slice & s2) const
+{
+    array<R> tmp = array<R>::_shallow_copy()(s0, s1, s2);
+    return array_view<R>(tmp);
+}
+
+
+//-----------------------------------------------------------------------------
+// array inline implementation
 
 namespace detail
 {
@@ -1057,6 +1209,125 @@ operator()(const slice & s0, const slice & s1, const slice & s2)
     M_THROW_RT_ERROR("unhandled case"); // LCOV_EXCL_LINE
 
     return array<R>();
+}
+
+
+template <class R>
+typename array<R>::reference
+array<R>::
+operator[](std::size_t idx)
+{
+    if(_size == 0) throw std::runtime_error("can't use operator[] on an empty array");
+
+    auto n_dim = ndim();
+
+    if(n_dim == 1)
+    {
+        if(_strides.empty())
+        {
+            return (*_array)[_offset + idx];
+        }
+        else
+        {
+            return (*_array)[_offset + idx * _strides[0]];
+        }
+    }
+    else
+    if(n_dim == 2)
+    {
+        size_t i0 = idx / _shape[1];
+        size_t i1 = idx - i0 * _shape[1];
+
+        if(_strides.empty())
+        {
+            return (*_array)[_offset + i0 * _shape[1] + i1];
+        }
+        else
+        {
+            return (*_array)[_offset + i0 * _strides[0] + i1 * _strides[1]];
+        }
+    }
+    else
+    if(n_dim == 3)
+    {
+        size_t i0 = idx / (_shape[1] * _shape[2]);
+        size_t i1 = (idx - i0 * _shape[1] * _shape[2]) / _shape[1];
+        size_t i2 = idx - i0 * _shape[1] * _shape[2] - i1 * _shape[2];
+
+        if(_strides.empty())
+        {
+            return (*_array)[_offset + i0 * _shape[1] * _shape[2] + i1 * _shape[2] + i2];
+        }
+        else
+        {
+            return (*_array)[_offset + i0 * _strides[0] + i1 * _strides[1] + i2 * _strides[2]];
+        }
+    }
+
+    M_THROW_RT_ERROR("unhandled case"); // LCOV_EXCL_LINE
+
+    // Keep compiler warning quiet.
+    return (*_array)[0];
+}
+
+
+
+template <class R>
+typename array<R>::const_reference
+array<R>::
+operator[](std::size_t idx) const
+{
+    if(_size == 0) throw std::runtime_error("can't use operator[] on an empty array");
+
+    auto n_dim = ndim();
+
+    if(n_dim == 1)
+    {
+        if(_strides.empty())
+        {
+            return (*_array)[_offset + idx];
+        }
+        else
+        {
+            return (*_array)[_offset + idx * _strides[0]];
+        }
+    }
+    else
+    if(n_dim == 2)
+    {
+        size_t i0 = idx / _shape[0];
+        size_t i1 = idx - i0 * _shape[0];
+
+        if(_strides.empty())
+        {
+            return (*_array)[_offset + i0 * _shape[1] + i1];
+        }
+        else
+        {
+            return (*_array)[_offset + i0 * _strides[0] + i1 * _strides[1]];
+        }
+    }
+    else
+    if(n_dim == 3)
+    {
+        size_t i0 = idx / (_shape[1] * _shape[2]);
+        size_t i1 = (idx - i0 * _shape[1] * _shape[2]) / _shape[1];
+        size_t i2 = idx - i0 * _shape[1] * _shape[2] - i1 * _shape[2];
+
+        if(_strides.empty())
+        {
+            return (*_array)[_offset + i0 * _shape[1] * _shape[2] + i1 * _shape[2] + i2];
+        }
+        else
+        {
+            return (*_array)[_offset + i0 * _strides[0] + i1 * _strides[1] + i2 * _strides[2]];
+        }
+    }
+
+    M_THROW_RT_ERROR("unhandled case"); // LCOV_EXCL_LINE
+
+    // Keep compiler warning quiet.
+    return (*_array)[0];
 }
 
 

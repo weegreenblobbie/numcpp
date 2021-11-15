@@ -2,6 +2,7 @@
 
 #include <numcpp/array.hpp>
 #include <numcpp/core.hpp>
+#include <numcpp/testing.hpp>
 
 using namespace numcpp;
 
@@ -20,8 +21,8 @@ template class array<uint32>;
 template class array<uint64>;
 template class array<float>;
 template class array<double>;
-//~template class array<complex64>;
-//~template class array<complex128>;
+template class array<complex64>;
+template class array<complex128>;
 
 template class array_view<bool>;
 template class array_view<int8>;
@@ -34,12 +35,8 @@ template class array_view<uint32>;
 template class array_view<uint64>;
 template class array_view<float>;
 template class array_view<double>;
-//~template class array<complex64>;
-//~template class array<complex128>;
-
-
-
-
+template class array_view<complex64>;
+template class array_view<complex128>;
 
 }
 
@@ -1060,6 +1057,199 @@ TEST_CASE( "numcpp::array::transpose" )
             23,  58,  93,  30,  65, 100,  21,  56,  91,  28,  63,  98,
         }
     ).reshape({2,12});
+}
+
+TEST_CASE( "numcpp::array::operator[]" )
+{
+    SECTION( "operator[] on non-sliced array" );
+    auto a = arange<int>(3*3*4);
+    auto b = arange<int>(3*3*4).reshape({12,3});
+    auto c = arange<int>(3*3*4).reshape({3,3,4});
+
+    CHECK( a.size() == 36 );
+    CHECK( b.size() == 36 );
+    CHECK( c.size() == 36 );
+
+    INFO( "a = " << a.print("%2d") );
+    INFO( "b = " << b.print("%2d") );
+    INFO( "c = " << c.print("%2d") );
+
+    for(std::size_t i = 0; i < a.size(); ++i)
+    {
+        int & aa = a[i];
+        const int & bb = b[i];
+        int cc = c[i];
+        CHECK( aa == i );
+        CHECK( bb == i );
+        CHECK( cc == i );
+    }
+
+    SECTION( "operator[] on sliced 1d array" );
+    missing _;
+
+    a = a(_|_|2);
+
+    INFO( "a = " << a.print("%2d") );
+
+    for(std::size_t i = 0; i < a.size(); ++i)
+    {
+        int & aa = a[i];
+        CHECK( aa == i * 2 );
+    }
+
+    SECTION( "operator[] on sliced 2d array" );
+
+    b = b(_|_|2, _|_|2);
+
+    INFO( "b = " << b.print("%2d") );
+
+    auto data = arange<int>(b.size());
+
+    for(std::size_t i = 0; i < b.size(); ++i)
+    {
+        const int & bb = b[i];
+        data[i] = bb;
+    }
+
+    CHECK(
+        all(data == array<int>(
+            { 0,  2,
+              6,  8,
+             12, 14,
+             18, 20,
+             24, 26,
+             30, 32,
+            })
+        )
+    );
+
+    SECTION( "operator[] on sliced 3d array" );
+
+    c = c(_|_|2, _|_|2, _|_|2);
+
+    INFO( "c = " << c.print("%2d") );
+
+    data = arange<int>(c.size());
+
+    for(std::size_t i = 0; i < c.size(); ++i)
+    {
+        int cc = c[i];
+        data[i] = cc;
+    }
+
+    CHECK(
+        all(data == array<int32>(
+            { 0,  2,
+              8, 10,
+             24, 26,
+             32, 34,
+            })
+        )
+    );
+}
+
+void run_array_view_test_bool()
+{
+    missing _;
+    {
+        auto b = zeros<bool>({2,3,5});
+        for(std::size_t i = 0; i < b.size(); ++i)
+        {
+            if (i % 2 == 0) b[i] = 1;
+        }
+
+        const auto a = b;
+        const auto v1 = a(_|_|-1, _|_|-1, _|_|-1);
+        const auto v2 = v1(_|_|-1, _|_|-1, _|_|-1);
+
+        INFO( "b  = " << b.print("%d") );
+        INFO( "v1 = " << v1.print("%d") );
+        INFO( "v2 = " << v2.print("%d") );
+
+        CHECK( all(a != v1) );
+        CHECK( all(a == v2) );
+        assert_allclose(a, v2, 0);
+    }
+    {
+        auto b = zeros<bool>({6,5});
+        for(std::size_t i = 0; i < b.size(); ++i)
+        {
+            if (i % 2 == 0) b[i] = 1;
+        }
+
+        const auto a = b;
+        const auto v1 = a(_|_|-1, _|_|-1);
+        const auto v2 = v1(_|_|-1, _|_|-1);
+
+        CHECK( all(a != v1) );
+        CHECK( all(a == v2) );
+        assert_allclose(a, v2, 0);
+    }
+    {
+        auto b = zeros<bool>({30});
+        for(std::size_t i = 0; i < b.size(); ++i)
+        {
+            if (i % 2 == 0) b[i] = 1;
+        }
+
+        const auto a = b;
+        const auto v1 = a(_|_|-1);
+        const auto v2 = v1(_|_|-1);
+
+        CHECK( all(a != v1) );
+        CHECK( all(a == v2) );
+        assert_allclose(a, v2, 0);
+    }
+}
+
+template <class T>
+void run_array_view_test(typename detail::tolerance_type<T>::type atol = 0)
+{
+    missing _;
+    {
+        const auto a = arange<T>(3*6*7).reshape({3,6,7});
+        const auto v1 = a(_|_|-1, _|_|-1, _|_|-1);
+        const auto v2 = v1(_|_|-1, _|_|-1, _|_|-1);
+
+        CHECK( all(a != v1) );
+        assert_allclose(a, v2, atol);
+    }
+    {
+        const auto a = arange<T>(3*6*7).reshape({63,2});
+        const auto v1 = a(_|_|-1, _|_|-1);
+        const auto v2 = v1(_|_|-1, _|_|-1);
+
+        CHECK( all(a != v1) );
+        assert_allclose(a, v2, atol);
+    }
+    {
+        const auto a = arange<T>(3*6*7).reshape({126});
+        const auto v1 = a(_|_|-1);
+        const auto v2 = v1(_|_|-1);
+
+        CHECK( all(a != v1) );
+        assert_allclose(a, v2, atol);
+    }
+}
+
+
+TEST_CASE( "numcpp::array_view::coverage" )
+{
+    run_array_view_test_bool();
+    run_array_view_test<int8>();
+    run_array_view_test<int16>();
+    run_array_view_test<int32>();
+    run_array_view_test<int64>();
+
+    run_array_view_test<uint8>();
+    run_array_view_test<uint16>();
+    run_array_view_test<uint32>();
+    run_array_view_test<uint64>();
+
+    run_array_view_test<float32>(1e-7f);
+    run_array_view_test<float64>(1e-16);
+    run_array_view_test<complex64>(1e-7f);
+    run_array_view_test<complex128>(1e-16);
 }
 
 

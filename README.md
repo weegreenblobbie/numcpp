@@ -38,7 +38,18 @@ A C++ array object that tries to match the expressiveness of numpy.
 How to build unittests
 ======================
 
+`numcpp` is using the [Catch](https://github.com/catchorg/Catch2/blob/devel/docs/command-line.md)
+unit test framework.  All unit tests can be built and executed with:
 `scons --test`
+
+List tests avialable:
+`scons src/executables/unittests && src/executables/unittests --list-tests`
+
+List test tags avialable:
+`scons src/executables/unittests && src/executables/unittests --list-tags`
+
+Running tests with tag:
+`scons src/executables/unittests && src/executables/unittests [slicing]`
 
 
 How to get unittest code coverage
