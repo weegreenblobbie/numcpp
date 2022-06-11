@@ -21,26 +21,48 @@ struct assertion_error : public std::runtime_error
 };
 
 
+namespace detail
+{
+    template <class R>
+    struct tolerance_type
+    {
+        using type = R;
+    };
+
+    template <>
+    struct tolerance_type<std::complex<float32>>
+    {
+        using type = float32;
+    };
+
+    template <>
+    struct tolerance_type<std::complex<float64>>
+    {
+        using type = float64;
+    };
+}
+
+
 template <class R>
 void
 assert_allclose(
-    const array<R> &    actual,
-    const array<R> &    desired,
-    const R &           rtol,
-    const R &           atol = 0,
-    bool                equal_nan = false,
-    const std::string & err_msg = "",
-    bool                verbose = false
+    const array<R> &                                 actual,
+    const array<R> &                                 desired,
+    const typename detail::tolerance_type<R>::type & rtol,
+    const typename detail::tolerance_type<R>::type & atol = 0,
+    bool                                             equal_nan = false,
+    const std::string &                              err_msg = "",
+    bool                                             verbose = false
 );
 
 
 template <class R>
 void
 assert_allclose(
-    const array<R> &    actual,
-    const array<R> &    desired,
-    const R &           rtol,
-    const std::string & err_msg
+    const array<R> &                                 actual,
+    const array<R> &                                 desired,
+    const typename detail::tolerance_type<R>::type & rtol,
+    const std::string &                              err_msg
 ) { assert_allclose(actual, desired, rtol, 0, false, err_msg); }
 
 
@@ -51,13 +73,13 @@ assert_allclose(
 template <class R>
 void
 assert_allclose(
-    const array<R> &    actual,
-    const array<R> &    desired,
-    const R &           rtol,
-    const R &           atol,
-    bool                equal_nan,
-    const std::string & err_msg,
-    bool                verbose)
+    const array<R> &                                 actual,
+    const array<R> &                                 desired,
+    const typename detail::tolerance_type<R>::type & rtol,
+    const typename detail::tolerance_type<R>::type & atol,
+    bool                                             equal_nan,
+    const std::string &                              err_msg,
+    bool                                             verbose)
 {
     if (equal_nan) M_THROW_RT_ERROR("oops, equal_nan not implemented yet!");
     if (verbose) M_THROW_RT_ERROR("oops, verbose not implemented yet!");

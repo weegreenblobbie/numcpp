@@ -3,7 +3,6 @@
 
 
 #include <numcpp/array.hpp>
-#include <numcpp/array_view.hpp>
 #include <numcpp/core.hpp>
 
 

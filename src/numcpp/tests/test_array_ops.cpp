@@ -201,4 +201,34 @@ TEST_CASE("numcpp::array::abs()")
 }
 
 
+TEST_CASE("numcpp::array<complex64>::abs()")
+{
+    auto a = array<complex64>({
+        { 5.0f, -5.0f},
+        { 4.0f, -4.0f},
+        { 3.0f, -3.0f},
+        { 2.0f, -2.0f},
+        { 1.0f, -1.0f},
+        { 0.0f,  0.0f},
+        {-1.0f,  1.0f},
+        {-2.0f,  2.0f},
+        {-3.0f,  3.0f},
+        {-4.0f,  4.0f},
+        {-5.0f,  5.0f},
+    });
+
+    const auto gold = array<float32>({
+        7.071068, 5.656854, 4.242640, 2.828427, 1.414214, 0.000000,
+        1.414214, 2.828427, 4.242640, 5.656854, 7.071068,
+    });
+
+    auto data = abs(a);
+
+    INFO( "gold = " << gold.print("%f") );
+    INFO( "data = " << data.print("%f") );
+
+    CHECK_NOTHROW( assert_allclose(data, gold, 1e-6f) );
+}
+
+
 // :noTabs=true:

@@ -3,7 +3,6 @@
 
 
 #include <numcpp/array.hpp>
-#include <numcpp/array_view.hpp>
 #include <numcpp/macros.hpp>
 #include <numcpp/shape.hpp>
 
@@ -11,7 +10,7 @@
 namespace numcpp
 {
 
-template <class R> array<R> abs(const array<R> & a);
+template <class R> array<typename detail::abs_type<R>::type> abs(const array<R> & a);
 
 bool any(const array<bool> & a);
 bool all(const array<bool> & a);
@@ -25,8 +24,8 @@ template <class R> array<R> ones(const shape_t & shape);
 template <class R> array<R> zeros(const shape_t & shape);
 
 template <class R>
-typename detail::sum_type<R>::type    sum(const array<R> & a);
-template <class R> array<R>           sum(const array<R> & a, std::size_t axis);
+typename detail::sum_type<R>::type sum(const array<R> & a);
+template <class R> array<R>        sum(const array<R> & a, std::size_t axis);
 
 template <class R> R        min(const array<R> & a);
 template <class R> array<R> min(const array<R> & a, std::size_t axis);
@@ -38,12 +37,31 @@ template <class R> array<R> max(const array<R> & a, std::size_t axis);
 //-----------------------------------------------------------------------------
 // inline implementation
 
+namespace detail
+{
+    template <class T>
+    typename detail::abs_type<T>::type _abs(T value) { return std::abs(value); }
+
+    template <> inline uint8  _abs(uint8  value) { return value; }
+    template <> inline uint16 _abs(uint16 value) { return value; }
+    template <> inline uint32 _abs(uint32 value) { return value; }
+    template <> inline uint64 _abs(uint64 value) { return value; }
+
+    template <> inline typename std::vector<bool>::const_reference
+    _abs(typename std::vector<bool>::const_reference value)
+    { return value; }
+} // namespace
+
 template <class R>
-array<R>
+array<typename detail::abs_type<R>::type>
 abs(const array<R> & a)
 {
-    array<R> b(a);
-    b.abs();
+    using Q = typename detail::abs_type<R>::type;
+    array<Q> b = zeros<Q>(a.shape());
+    for(std::size_t i = 0; i < a.size(); ++i)
+    {
+        b[i] = detail::_abs(a[i]);
+    }
     return b;
 }
 
@@ -161,67 +179,81 @@ namespace detail
         return (T(0) < val) - (val < T(0));
     }
 
-} // namespace
-
-
-namespace detail
-{
-
-
-template <class R>
-typename std::enable_if<std::is_integral<R>::value, array<R>>::type
-arange(R start, R stop, R step)
-{
-    if(step == 0) M_THROW_RT_ERROR("step cannot be 0");
-
-    // compute size directly
-
-    R s = (stop - start);
-
-    if(s % step) s += step;
-
-    s /= step;
-
-    if(s == 0) return array<R>({});
-
-    std::vector<R> v(s, R(0));
-
-    uint32 i = 0;
-
-    R t = start;
-
-    while((step > 0 and t < stop) or (step < 0 and t > stop))
+    template <class R>
+    typename std::enable_if<std::is_integral<R>::value, array<R>>::type
+    arange(R start, R stop, R step)
     {
-        v[i++] = static_cast<R>(t);
-        t += step;
+        if(step == 0) M_THROW_RT_ERROR("step cannot be 0");
+
+        // compute size directly
+
+        R s = (stop - start);
+
+        if(s % step) s += step;
+
+        s /= step;
+
+        if(s == 0) return array<R>({});
+
+        std::vector<R> v(s, R(0));
+
+        uint32 i = 0;
+
+        R t = start;
+
+        while((step > 0 and t < stop) or (step < 0 and t > stop))
+        {
+            v[i++] = static_cast<R>(t);
+            t += step;
+        }
+
+        return array<R>(v);
     }
 
-    return array<R>(v);
-}
-
-
-template <class R>
-typename std::enable_if<std::is_floating_point<R>::value, array<R>>::type
-arange(R start, R stop, R step)
-{
-    if(step == 0) M_THROW_RT_ERROR("step cannot be 0");
-
-    std::vector<R> v;
-
-    R t = start;
-
-    while((step > 0 and t < stop) or (step < 0 and t > stop))
+    template <class R>
+    typename std::enable_if<std::is_floating_point<R>::value, array<R>>::type
+    arange(R start, R stop, R step)
     {
-        v.push_back(static_cast<R>(t));
-        t += step;
+        if(step == 0) M_THROW_RT_ERROR("step cannot be 0");
+
+        std::vector<R> v;
+
+        R t = start;
+
+        while((step > 0 and t < stop) or (step < 0 and t > stop))
+        {
+            v.push_back(static_cast<R>(t));
+            t += step;
+        }
+
+        return array<R>(v);
     }
 
-    return array<R>(v);
-}
+    template <class R> struct is_complex { static const bool value{false}; };
+    template <> struct is_complex<complex64> { static const bool value{true}; };
+    template <> struct is_complex<complex128> { static const bool value{true}; };
+
+    template <class R>
+    typename std::enable_if<is_complex<R>::value, array<R>>::type
+    arange(R start, R stop, R step)
+    {
+        if(step.real() == 0) M_THROW_RT_ERROR("step cannot be 0");
+
+        std::vector<R> v;
+
+        R t = start;
+
+        while((step.real() > 0 and t.real() < stop.real()) or (step.real() < 0 and t.real() > stop.real()))
+        {
+            v.push_back(static_cast<R>(t));
+            t += step;
+        }
+
+        return array<R>(v);
+    }
 
 
 } // namespace
-
 
 
 template <class R>
@@ -246,7 +278,6 @@ arange(R start, R stop, R step)
 {
     return detail::arange(start, stop, step);
 }
-
 
 
 template <class R>
